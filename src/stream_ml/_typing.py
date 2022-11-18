@@ -4,10 +4,10 @@
 from collections.abc import Mapping
 
 # THIRD-PARTY
-from torch import Tensor
+from torch import Tensor as Array
 
-__all__: list[str] = []
+__all__: list[str] = ["Array", "DataT", "ParsT"]
 
 
-ParsT = Mapping[str, Tensor]
-DataT = Mapping[str, Tensor]
+ParsT = Mapping[str, Array]
+DataT = Mapping[str, Array]

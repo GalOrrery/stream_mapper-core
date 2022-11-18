@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 # STDLIB
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 # THIRD-PARTY
 import torch as xp
@@ -12,11 +12,8 @@ import torch as xp
 from stream_ml.background.base import BackgroundModel
 
 if TYPE_CHECKING:
-    # THIRD-PARTY
-    from torch import Tensor
-
     # LOCAL
-    from stream_ml._typing import DataT, ParsT
+    from stream_ml._typing import Array, DataT, ParsT
 
 __all__: list[str] = []
 
@@ -24,7 +21,9 @@ __all__: list[str] = []
 class UniformBackgroundModel(BackgroundModel):
     """Stream Model."""
 
-    def __init__(self, bkg_min: Tensor, bkg_max: Tensor) -> None:
+    param_names: ClassVar[dict[str, int]] = {"fraction": 1}
+
+    def __init__(self, bkg_min: Array, bkg_max: Array) -> None:
         super().__init__()
 
         self.bkg_min = bkg_min
@@ -32,23 +31,26 @@ class UniformBackgroundModel(BackgroundModel):
 
         self._logdiff = xp.log(self.bkg_max - self.bkg_min)
 
-    def ln_likelihood(self, pars: ParsT, data: DataT) -> Tensor:
+    # ========================================================================
+    # Statistics
+
+    def ln_likelihood(self, pars: ParsT, data: DataT) -> Array:
         """Log-likelihood of the background.
 
         Parameters
         ----------
         pars : ParsT
             Parameters.
-        data : Tensor
+        data : DataT
             Data (phi1).
 
         Returns
         -------
-        Tensor
+        Array
         """
         return xp.log(1 - pars["fraction"]) - self._logdiff
 
-    def ln_prior(self, pars: ParsT) -> Tensor:
+    def ln_prior(self, pars: ParsT) -> Array:
         """Log prior.
 
         Parameters
@@ -58,6 +60,24 @@ class UniformBackgroundModel(BackgroundModel):
 
         Returns
         -------
-        Tensor
+        Array
         """
-        return xp.tensor(0.0)  # TODO: Implement this
+        return xp.asarray(1.0)
+
+    # ========================================================================
+    # ML
+
+    def forward(self, *args: Array) -> Array:
+        """Forward pass.
+
+        Parameters
+        ----------
+        args : Array
+            Input.
+
+        Returns
+        -------
+        Array
+            fraction, mean, sigma
+        """
+        return xp.asarray([])

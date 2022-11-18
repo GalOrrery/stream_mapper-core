@@ -10,11 +10,8 @@ from typing import TYPE_CHECKING
 from stream_ml.base import Model
 
 if TYPE_CHECKING:
-    # THIRD-PARTY
-    from torch import Tensor
-
     # LOCAL
-    from stream_ml._typing import DataT, ParsT
+    from stream_ml._typing import Array, DataT, ParsT
 
 
 __all__: list[str] = []
@@ -24,24 +21,24 @@ class StreamModel(Model):
     """Stream Model."""
 
     @abc.abstractmethod
-    def ln_likelihood(self, pars: ParsT, data: DataT) -> Tensor:
+    def ln_likelihood(self, pars: ParsT, data: DataT) -> Array:
         """Log-likelihood of the background.
 
         Parameters
         ----------
         pars : ParsT
             Parameters.
-        data : Tensor
+        data : DataT
             Data (phi1).
 
         Returns
         -------
-        Tensor
+        Array
         """
         raise NotImplementedError
 
     @abc.abstractmethod
-    def ln_prior(self, pars: ParsT) -> Tensor:
+    def ln_prior(self, pars: ParsT) -> Array:
         """Log prior.
 
         Parameters
@@ -51,6 +48,25 @@ class StreamModel(Model):
 
         Returns
         -------
-        Tensor
+        Array
+        """
+        raise NotImplementedError
+
+    # ========================================================================
+    # ML
+
+    @abc.abstractmethod
+    def forward(self, *args: Array) -> Array:
+        """Forward pass.
+
+        Parameters
+        ----------
+        args : Array
+            Input.
+
+        Returns
+        -------
+        Array
+            fraction, mean, sigma
         """
         raise NotImplementedError
