@@ -38,15 +38,15 @@ class SingleGaussianStreamModel(StreamModel):
         Upper limit on fraction, by default 0.45.s
     """
 
-    param_names: ClassVar[dict[str, int]] = {"fraction": 0, "phi2_mu": 0, "phi2_sigma": 0}
+    param_names: ClassVar[dict[str, int]] = {"fraction": 0, "mu": 0, "sigma": 0}
 
     def __init__(
         self,
         n_layers: int = 3,
         hidden_features: int = 50,
         *,
-        sigma_upper_limit: float = 0.3,
         fraction_upper_limit: float = 0.45,
+        sigma_upper_limit: float = 0.3,
     ) -> None:
         super().__init__()  # Need to do this first.
 
@@ -59,7 +59,7 @@ class SingleGaussianStreamModel(StreamModel):
         self.layers = nn.Sequential(
             nn.Linear(1, hidden_features),
             *functools.reduce(
-                operator.add, ((nn.Linear(hidden_features, hidden_features), nn.Tanh()) for n in range(n_layers - 2))
+                operator.add, ((nn.Linear(hidden_features, hidden_features), nn.Tanh()) for _ in range(n_layers - 2))
             ),
             nn.Linear(hidden_features, 3),
         )
@@ -77,7 +77,7 @@ class SingleGaussianStreamModel(StreamModel):
         data : DataT
             Data (phi1, phi2).
         """
-        return xp.log(pars["fraction"]) + log_of_normal(data["phi2"], pars["phi2_mu"], pars["phi2_sigma"])
+        return xp.log(pars["fraction"]) + log_of_normal(data["phi2"], pars["mu"], pars["sigma"])
 
     def ln_prior(self, pars: ParsT) -> Array:
         """Log prior.
@@ -91,7 +91,7 @@ class SingleGaussianStreamModel(StreamModel):
         if pars["fraction"] < 0 or self.fraction_upper_limit < pars["fraction"]:
             return -xp.asarray(xp.inf)
         # Bound sigma in [0, <upper limit>]
-        elif pars["phi2_sigma"] < 0 or self.sigma_upper_limit < pars["phi2_sigma"]:
+        elif pars["sigma"] < 0 or self.sigma_upper_limit < pars["sigma"]:
             return -xp.asarray(xp.inf)
 
         return xp.asarray(1.0)  # TODO: Implement this!
