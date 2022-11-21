@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 # STDLIB
-from collections.abc import Iterator, Mapping
+from collections.abc import ItemsView, Iterator, Mapping
 from typing import TYPE_CHECKING
 
 # THIRD-PARTY
@@ -24,8 +24,11 @@ class CompositeModel(Model, Mapping[str, Model]):
 
     Parameters
     ----------
-    models : Model
-        Models.
+    models : Mapping[str, Model], optional postional-only
+        Mapping of Models. This allows for strict ordering of the Models and
+        control over the type of the models attribute.
+    **more_models : Model
+        Additional Models.
     """
 
     def __init__(self, models: Mapping[str, Model] | None = None, /, **more_models: Model) -> None:
@@ -35,6 +38,11 @@ class CompositeModel(Model, Mapping[str, Model]):
         # NOTE: don't need this in JAX
         for name, model in self._models.items():
             self.add_module(name=name, module=model)
+
+    @property
+    def models(self) -> ItemsView[str, Model]:
+        """Models (view)."""
+        return self._models.items()
 
     @property
     def param_names(self) -> dict[str, int]:  # type: ignore[override]
