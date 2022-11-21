@@ -28,9 +28,9 @@ class CompositeModel(Model, Mapping[str, Model]):
         Models.
     """
 
-    def __init__(self, **models: Model) -> None:
+    def __init__(self, models: Mapping[str, Model] | None = None, /, **more_models: Model) -> None:
         super().__init__()
-        self._models = models
+        self._models = (models if models is not None else {}) | more_models
 
         # NOTE: don't need this in JAX
         for name, model in self._models.items():

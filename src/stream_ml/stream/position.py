@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 # STDLIB
+import functools
+import operator
 from typing import TYPE_CHECKING, ClassVar
 
 # THIRD-PARTY
@@ -22,25 +24,44 @@ __all__: list[str] = []
 
 
 class SingleGaussianStreamModel(StreamModel):
-    """Stream Model."""
+    """Stream Model.
+
+    Parameters
+    ----------
+    n_layers : int, optional
+        Number of hidden layers, by default 3.
+    hidden_features : int, optional
+        Number of hidden features, by default 50.
+    sigma_upper_limit : float, optional keyword-only
+        Upper limit on sigma, by default 0.3.
+    fraction_upper_limit : float, optional keyword-only
+        Upper limit on fraction, by default 0.45.s
+    """
 
     param_names: ClassVar[dict[str, int]] = {"fraction": 0, "phi2_mu": 0, "phi2_sigma": 0}
 
-    def __init__(self, sigma_upper_limit: float = 0.3, fraction_upper_limit: float = 0.45) -> None:
+    def __init__(
+        self,
+        n_layers: int = 3,
+        hidden_features: int = 50,
+        *,
+        sigma_upper_limit: float = 0.3,
+        fraction_upper_limit: float = 0.45,
+    ) -> None:
         super().__init__()  # Need to do this first.
 
-        # The priors. # TODO! implement in the Stream/Background models
+        # The priors.
         self.sigma_upper_limit = sigma_upper_limit
         self.fraction_upper_limit = fraction_upper_limit
 
         # Define the layers of the neural network:
-        # Total: 1 (phi) -> 3 (fraction, mean, sigma)
+        # Total: in (phi) -> out (fraction, mean, sigma)
         self.layers = nn.Sequential(
-            nn.Linear(1, 50),  # layer 1: 1 node -> 50 nodes
-            nn.Tanh(),
-            nn.Linear(50, 50),  # layer 2: 50 node -> 50 nodes
-            nn.Tanh(),
-            nn.Linear(50, 3),  # layer 3: 50 node -> 3 nodes
+            nn.Linear(1, hidden_features),
+            *functools.reduce(
+                operator.add, ((nn.Linear(hidden_features, hidden_features), nn.Tanh()) for n in range(n_layers - 2))
+            ),
+            nn.Linear(hidden_features, 3),
         )
 
     # ========================================================================
@@ -66,6 +87,13 @@ class SingleGaussianStreamModel(StreamModel):
         pars : ParsT
             Parameters.
         """
+        # Bound fraction in [0, <upper limit>]
+        if pars["fraction"] < 0 or self.fraction_upper_limit < pars["fraction"]:
+            return -xp.asarray(xp.inf)
+        # Bound sigma in [0, <upper limit>]
+        elif pars["phi2_sigma"] < 0 or self.sigma_upper_limit < pars["phi2_sigma"]:
+            return -xp.asarray(xp.inf)
+
         return xp.asarray(1.0)  # TODO: Implement this!
 
     # ========================================================================
@@ -86,7 +114,7 @@ class SingleGaussianStreamModel(StreamModel):
         """
         pred = self.layers(args[0])
 
-        # TODO: Use the the priors from ln_prior!
+        # TODO: somehow use the the priors from ln_prior!
         fraction = sigmoid(pred[:, 2]) * self.fraction_upper_limit
         mean = pred[:, 0]
         sigma = sigmoid(pred[:, 1]) * self.sigma_upper_limit
