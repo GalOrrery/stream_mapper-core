@@ -2,6 +2,6 @@
 
 # LOCAL
 from .base import StreamModel
-from .builtin import SingleGaussianStreamModel
+from .position import SingleGaussianStreamModel
 
 __all__ = ["StreamModel", "SingleGaussianStreamModel"]
