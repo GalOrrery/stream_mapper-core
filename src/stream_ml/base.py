@@ -133,23 +133,3 @@ class Model(nn.Module, metaclass=abc.ABCMeta):  # type: ignore[misc]
 
     # ========================================================================
     # Convenience functions
-
-    def neg_ln_likelihood(self, pars: ParsT, data: DataT, scalar: bool = True) -> Array:
-        """Negative log-likelihood.
-
-        Parameters
-        ----------
-        pars : ParsT
-            Parameters.
-        data : DataT
-            Data (phi1).
-        scalar : bool, optional
-            Sum over the batch dimension, by default `True`.
-
-        Returns
-        -------
-        Array
-        """
-        if scalar:
-            return -self.ln_likelihood(pars, data).sum()
-        return -self.ln_likelihood(pars, data)
