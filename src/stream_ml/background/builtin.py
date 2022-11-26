@@ -48,7 +48,8 @@ class UniformBackgroundModel(BackgroundModel):
         -------
         Array
         """
-        return xp.log(1 - pars["fraction"]) - self._logdiff
+        # Need to protect the fraction if < 0
+        return xp.log(xp.clamp(pars["fraction"], min=0)) - self._logdiff
 
     def ln_prior(self, pars: ParsT) -> Array:
         """Log prior.
