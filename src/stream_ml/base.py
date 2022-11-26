@@ -94,23 +94,23 @@ class Model(nn.Module, metaclass=abc.ABCMeta):  # type: ignore[misc]
         """
         raise NotImplementedError
 
-    # def ln_posterior(self, pars: ParsT, data: Array, *args: Array) -> Array:
-    #     """Log posterior.
+    def ln_posterior(self, pars: ParsT, data: DataT, *args: Array) -> Array:
+        """Log posterior.
 
-    #     Parameters
-    #     ----------
-    #     pars : ParsT
-    #         Parameters.
-    #     data : DataT
-    #         Data.
-    #     args : Array
-    #         Arguments.
+        Parameters
+        ----------
+        pars : ParsT
+            Parameters.
+        data : DataT
+            Data.
+        args : Array
+            Arguments.
 
-    #     Returns
-    #     -------
-    #     Array
-    #     """
-    #     return self.ln_likelihood(pars, data, *args) + self.ln_prior(pars)
+        Returns
+        -------
+        Array
+        """
+        return self.ln_likelihood(pars, data, *args) + self.ln_prior(pars)
 
     # ========================================================================
     # ML
