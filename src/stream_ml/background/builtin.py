@@ -63,7 +63,7 @@ class UniformBackgroundModel(BackgroundModel):
         -------
         Array
         """
-        return xp.asarray(1.0)
+        return xp.zeros_like(pars["fraction"])
 
     # ========================================================================
     # ML
