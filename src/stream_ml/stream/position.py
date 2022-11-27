@@ -58,6 +58,7 @@ class SingleGaussianStreamModel(StreamModel):
         # Total: in (phi) -> out (fraction, mean, sigma)
         self.layers = nn.Sequential(
             nn.Linear(1, hidden_features),
+            nn.Tanh(),
             *functools.reduce(
                 operator.add, ((nn.Linear(hidden_features, hidden_features), nn.Tanh()) for _ in range(n_layers - 2))
             ),
