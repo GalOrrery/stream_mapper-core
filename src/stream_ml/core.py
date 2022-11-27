@@ -71,8 +71,8 @@ class CompositeModel(Model, Mapping[str, Model]):
 
     @property
     def param_names(self) -> dict[str, int]:  # type: ignore[override]
-        """Parameter names."""
-        return {k: v for d in self._models.values() for k, v in d.param_names.items()}
+        """Parameter names, flattening over the models."""
+        return {f"{n}_{p}": v for n, m in self._models.items() for p, v in m.param_names.items()}
 
     # ===============================================================
     # Mapping
