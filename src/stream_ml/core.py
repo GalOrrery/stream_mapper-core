@@ -31,9 +31,20 @@ class CompositeModel(Model, Mapping[str, Model]):
         Additional Models.
     """
 
-    def __init__(self, models: Mapping[str, Model] | None = None, /, **more_models: Model) -> None:
+    def __init__(
+        self,
+        models: Mapping[str, Model] | list[tuple[str, Model]] | None = None,
+        /,
+    ) -> None:
         super().__init__()
-        self._models = (models if models is not None else {}) | more_models
+
+        self._models: Mapping[str, Model]
+        if models is None:
+            self._models = {}
+        elif isinstance(models, Mapping):
+            self._models = models
+        else:
+            self._models = dict(models)
 
         # NOTE: don't need this in JAX
         for name, model in self._models.items():
