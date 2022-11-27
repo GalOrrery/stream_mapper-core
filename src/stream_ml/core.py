@@ -4,7 +4,7 @@ from __future__ import annotations
 
 # STDLIB
 from collections.abc import ItemsView, Iterator, Mapping
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 # THIRD-PARTY
 import torch as xp
@@ -35,6 +35,7 @@ class CompositeModel(Model, Mapping[str, Model]):
         self,
         models: Mapping[str, Model] | list[tuple[str, Model]] | None = None,
         /,
+        tied_params: dict[str, Callable[[ParsT], Array]] | None = None,  # noqa: N805
     ) -> None:
         super().__init__()
 
@@ -46,6 +47,7 @@ class CompositeModel(Model, Mapping[str, Model]):
         else:
             self._models = dict(models)
 
+        self._tied = tied_params if tied_params is not None else {}
         # NOTE: don't need this in JAX
         for name, model in self._models.items():
             self.add_module(name=name, module=model)
@@ -54,6 +56,11 @@ class CompositeModel(Model, Mapping[str, Model]):
     def models(self) -> ItemsView[str, Model]:
         """Models (view)."""
         return self._models.items()
+
+    @property
+    def tied_params(self) -> ItemsView[str, Callable[[ParsT], Array]]:
+        """Tied parameters (view)."""
+        return self._tied.items()
 
     @property
     def param_names(self) -> dict[str, int]:  # type: ignore[override]
