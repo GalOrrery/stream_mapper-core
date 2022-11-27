@@ -174,7 +174,19 @@ class CompositeModel(Model, Mapping[str, Model]):
         -------
         Array
         """
-        return xp.stack([model.ln_prior(pars) for model in self._models.values()]).sum()
+        ps = []
+        for name, model in self._models.items():
+            # Get the parameters for this model, stripping the model name
+            mps = get_params_for_model(name, pars)
+            # Add the prior
+            ps.append(model.ln_prior(mps))
+
+        # Plugin for priors
+        for hook in self._hook_prior.values():
+            ps.append(hook(pars))
+
+        # Sum over the priors
+        return xp.hstack(ps).sum(dim=1)[:, None]
 
     # ========================================================================
     # ML
