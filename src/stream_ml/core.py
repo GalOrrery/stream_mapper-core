@@ -7,6 +7,7 @@ from collections.abc import ItemsView, Iterator, Mapping
 from typing import TYPE_CHECKING, Callable
 
 # THIRD-PARTY
+import numpy as np
 import torch as xp
 
 # LOCAL
@@ -88,6 +89,44 @@ class CompositeModel(Model, Mapping[str, Model]):
 
     def __hash__(self) -> int:
         return hash(tuple(self.keys()))
+
+    # ===============================================================
+
+    def unpack_pars(self, p_arr: Array) -> ParsT:
+        """Unpack parameters into a dictionary.
+
+        This function takes a parameter array and unpacks it into a dictionary
+        with the parameter names as keys.
+
+        Parameters
+        ----------
+        p_arr : Array
+            Parameter array.
+
+        Returns
+        -------
+        ParsT
+        """
+        # Unpack the parameters
+        p_dict = {}
+        for j, (n, m) in enumerate(self._models.items()):  # iter thru models
+            # Get relevant parameters by index
+            param_inds = np.array(tuple(i for i, p in enumerate(m.param_names) if f"{n}_{p}" not in self._tied))
+            mp_arr = p_arr[:, j + param_inds]
+
+            # Skip empty
+            if mp_arr.shape[1] == 0:
+                continue
+
+            mp_dict = m.unpack_pars(mp_arr)
+            for k, p in mp_dict.items():
+                p_dict[f"{n}_{k}"] = p
+
+        # Add the dependent parameters
+        for name, tie in self._tied.items():
+            p_dict[name] = tie(p_dict)
+
+        return p_dict
 
     # ===============================================================
     # Statistics
