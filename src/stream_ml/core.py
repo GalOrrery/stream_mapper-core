@@ -12,6 +12,7 @@ import torch as xp
 
 # LOCAL
 from stream_ml.base import Model
+from stream_ml.utils import get_params_for_model
 
 if TYPE_CHECKING:
     # LOCAL
@@ -150,9 +151,16 @@ class CompositeModel(Model, Mapping[str, Model]):
         Array
         """
         # (n_models, n_dat, 1)
-        liks = xp.stack([xp.exp(model.ln_likelihood(pars, data, *args)) for model in self._models.values()])
-        lik = liks.sum(dim=0)  # (n_dat, 1)
-        return xp.log(lik)
+        liks = []
+        for name, model in self.items():
+            # Get the parameters for this model, stripping the model name
+            mps = get_params_for_model(name, pars)
+            # Add the likelihood
+            lik = model.ln_likelihood(mps, data, *args)
+            liks.append(lik)
+
+        # Sum over the models, keeping the data dimension
+        return xp.logsumexp(xp.hstack(liks), dim=1)[:, None]
 
     def ln_prior(self, pars: ParsT) -> Array:
         """Log prior.
