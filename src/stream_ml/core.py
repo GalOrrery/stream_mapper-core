@@ -36,6 +36,7 @@ class CompositeModel(Model, Mapping[str, Model]):
         models: Mapping[str, Model] | list[tuple[str, Model]] | None = None,
         /,
         tied_params: dict[str, Callable[[ParsT], Array]] | None = None,  # noqa: N805
+        hook_prior: Mapping[str, Callable[[ParsT], Array]] | None = None,
     ) -> None:
         super().__init__()
 
@@ -48,6 +49,12 @@ class CompositeModel(Model, Mapping[str, Model]):
             self._models = dict(models)
 
         self._tied = tied_params if tied_params is not None else {}
+        self._hook_prior: Mapping[str, Callable[[ParsT], Array]]
+        if hook_prior is None:
+            self._hook_prior = {}
+        else:
+            self._hook_prior = hook_prior
+
         # NOTE: don't need this in JAX
         for name, model in self._models.items():
             self.add_module(name=name, module=model)
