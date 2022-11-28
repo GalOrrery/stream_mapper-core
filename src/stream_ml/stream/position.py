@@ -10,10 +10,10 @@ from typing import TYPE_CHECKING, ClassVar
 # THIRD-PARTY
 import torch as xp
 import torch.nn as nn
-from torch import sigmoid
 
 # LOCAL
 from stream_ml.funcs import log_of_normal
+from stream_ml.sigmoid import ColumnarScaledSigmoid
 from stream_ml.stream.base import StreamModel
 
 if TYPE_CHECKING:
@@ -62,6 +62,7 @@ class SingleGaussianStreamModel(StreamModel):
                 operator.add, ((nn.Linear(hidden_features, hidden_features), nn.Tanh()) for _ in range(n_layers - 2))
             ),
             nn.Linear(hidden_features, 3),
+            ColumnarScaledSigmoid((0, 2), ((0, fraction_upper_limit), (0, sigma_upper_limit))),  # fraction, sigma
         )
 
     # ========================================================================
@@ -112,11 +113,4 @@ class SingleGaussianStreamModel(StreamModel):
         Array
             fraction, mean, sigma
         """
-        pred = self.layers(args[0])
-
-        # TODO: somehow use the the priors from ln_prior!
-        fraction = sigmoid(pred[:, 2]) * self.fraction_upper_limit
-        mean = pred[:, 0]
-        sigma = sigmoid(pred[:, 1]) * self.sigma_upper_limit
-
-        return xp.vstack([fraction, mean, sigma]).T
+        return self.layers(args[0])
