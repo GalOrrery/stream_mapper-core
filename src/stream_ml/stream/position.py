@@ -10,9 +10,9 @@ from typing import TYPE_CHECKING, ClassVar
 # THIRD-PARTY
 import torch as xp
 import torch.nn as nn
+from torch.distributions.normal import Normal
 
 # LOCAL
-from stream_ml.funcs import log_of_normal
 from stream_ml.sigmoid import ColumnarScaledSigmoid
 from stream_ml.stream.base import StreamModel
 
@@ -77,8 +77,14 @@ class SingleGaussianStreamModel(StreamModel):
             Parameters.
         data : DataT
             Data (phi1, phi2).
+
+        Returns
+        -------
+        Array
         """
-        return xp.log(pars["fraction"]) + log_of_normal(data["phi2"], pars["mu"], pars["sigma"])
+        return xp.log(xp.clamp(pars["fraction"], min=0)) + Normal(pars["mu"], xp.clamp(pars["sigma"], min=0)).log_prob(
+            data["phi2"]
+        )
 
     def ln_prior(self, pars: ParsT) -> Array:
         """Log prior.
@@ -87,6 +93,10 @@ class SingleGaussianStreamModel(StreamModel):
         ----------
         pars : ParsT
             Parameters.
+
+        Returns
+        -------
+        Array
         """
         # Bound fraction in [0, <upper limit>]
         if pars["fraction"] < 0 or self.fraction_upper_limit < pars["fraction"]:
