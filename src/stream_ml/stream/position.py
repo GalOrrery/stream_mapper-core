@@ -10,11 +10,12 @@ from typing import TYPE_CHECKING, ClassVar
 # THIRD-PARTY
 import torch as xp
 import torch.nn as nn
-from torch import sigmoid
+from torch.distributions.normal import Normal
 
 # LOCAL
-from stream_ml.funcs import log_of_normal
+from stream_ml.sigmoid import ColumnarScaledSigmoid
 from stream_ml.stream.base import StreamModel
+from stream_ml.utils import within_bounds
 
 if TYPE_CHECKING:
     # LOCAL
@@ -38,30 +39,32 @@ class SingleGaussianStreamModel(StreamModel):
         Upper limit on fraction, by default 0.45.s
     """
 
-    param_names: ClassVar[dict[str, int]] = {"fraction": 0, "mu": 0, "sigma": 0}
+    param_names: ClassVar[dict[str, int]] = {"fraction": 1, "mu": 1, "sigma": 1}
 
     def __init__(
         self,
         n_layers: int = 3,
         hidden_features: int = 50,
         *,
-        fraction_upper_limit: float = 0.45,
-        sigma_upper_limit: float = 0.3,
+        fraction_limit: tuple[float, float] = (0.0, 0.45),
+        sigma_limit: tuple[float, float] = (0.0, 0.3),
     ) -> None:
         super().__init__()  # Need to do this first.
 
         # The priors.
-        self.sigma_upper_limit = sigma_upper_limit
-        self.fraction_upper_limit = fraction_upper_limit
+        self.sigma_limit = sigma_limit
+        self.fraction_limit = fraction_limit
 
         # Define the layers of the neural network:
         # Total: in (phi) -> out (fraction, mean, sigma)
         self.layers = nn.Sequential(
             nn.Linear(1, hidden_features),
+            nn.Tanh(),
             *functools.reduce(
                 operator.add, ((nn.Linear(hidden_features, hidden_features), nn.Tanh()) for _ in range(n_layers - 2))
             ),
             nn.Linear(hidden_features, 3),
+            ColumnarScaledSigmoid((0, 2), (fraction_limit, sigma_limit)),  # fraction, sigma
         )
 
     # ========================================================================
@@ -76,8 +79,14 @@ class SingleGaussianStreamModel(StreamModel):
             Parameters.
         data : DataT
             Data (phi1, phi2).
+
+        Returns
+        -------
+        Array
         """
-        return xp.log(pars["fraction"]) + log_of_normal(data["phi2"], pars["mu"], pars["sigma"])
+        return xp.log(xp.clamp(pars["fraction"], min=0)) + Normal(pars["mu"], xp.clamp(pars["sigma"], min=0)).log_prob(
+            data["phi2"]
+        )
 
     def ln_prior(self, pars: ParsT) -> Array:
         """Log prior.
@@ -86,15 +95,18 @@ class SingleGaussianStreamModel(StreamModel):
         ----------
         pars : ParsT
             Parameters.
-        """
-        # Bound fraction in [0, <upper limit>]
-        if pars["fraction"] < 0 or self.fraction_upper_limit < pars["fraction"]:
-            return -xp.asarray(xp.inf)
-        # Bound sigma in [0, <upper limit>]
-        elif pars["sigma"] < 0 or self.sigma_upper_limit < pars["sigma"]:
-            return -xp.asarray(xp.inf)
 
-        return xp.asarray(1.0)  # TODO: Implement this!
+        Returns
+        -------
+        Array
+        """
+        lnp = xp.zeros_like(pars["fraction"])  # 100%
+
+        # Bounds
+        lnp[~within_bounds(pars["fraction"], *self.fraction_limit)] = -xp.inf
+        lnp[~within_bounds(pars["sigma"], *self.sigma_limit)] = -xp.inf
+
+        return lnp
 
     # ========================================================================
     # ML
@@ -112,11 +124,4 @@ class SingleGaussianStreamModel(StreamModel):
         Array
             fraction, mean, sigma
         """
-        pred = self.layers(args[0])
-
-        # TODO: somehow use the the priors from ln_prior!
-        fraction = sigmoid(pred[:, 2]) * self.fraction_upper_limit
-        mean = pred[:, 0]
-        sigma = sigmoid(pred[:, 1]) * self.sigma_upper_limit
-
-        return xp.vstack([fraction, mean, sigma]).T
+        return self.layers(args[0])

@@ -4,13 +4,15 @@ from __future__ import annotations
 
 # STDLIB
 from collections.abc import ItemsView, Iterator, Mapping
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 # THIRD-PARTY
+import numpy as np
 import torch as xp
 
 # LOCAL
 from stream_ml.base import Model
+from stream_ml.utils import get_params_for_model
 
 if TYPE_CHECKING:
     # LOCAL
@@ -31,9 +33,29 @@ class CompositeModel(Model, Mapping[str, Model]):
         Additional Models.
     """
 
-    def __init__(self, models: Mapping[str, Model] | None = None, /, **more_models: Model) -> None:
+    def __init__(
+        self,
+        models: Mapping[str, Model] | list[tuple[str, Model]] | None = None,
+        /,
+        tied_params: dict[str, Callable[[ParsT], Array]] | None = None,  # noqa: N805
+        hook_prior: Mapping[str, Callable[[ParsT], Array]] | None = None,
+    ) -> None:
         super().__init__()
-        self._models = (models if models is not None else {}) | more_models
+
+        self._models: Mapping[str, Model]
+        if models is None:
+            self._models = {}
+        elif isinstance(models, Mapping):
+            self._models = models
+        else:
+            self._models = dict(models)
+
+        self._tied = tied_params if tied_params is not None else {}
+        self._hook_prior: Mapping[str, Callable[[ParsT], Array]]
+        if hook_prior is None:
+            self._hook_prior = {}
+        else:
+            self._hook_prior = hook_prior
 
         # NOTE: don't need this in JAX
         for name, model in self._models.items():
@@ -45,9 +67,14 @@ class CompositeModel(Model, Mapping[str, Model]):
         return self._models.items()
 
     @property
+    def tied_params(self) -> ItemsView[str, Callable[[ParsT], Array]]:
+        """Tied parameters (view)."""
+        return self._tied.items()
+
+    @property
     def param_names(self) -> dict[str, int]:  # type: ignore[override]
-        """Parameter names."""
-        return {k: v for d in self._models.values() for k, v in d.param_names.items()}
+        """Parameter names, flattening over the models."""
+        return {f"{n}_{p}": v for n, m in self._models.items() for p, v in m.param_names.items()}
 
     # ===============================================================
     # Mapping
@@ -63,6 +90,44 @@ class CompositeModel(Model, Mapping[str, Model]):
 
     def __hash__(self) -> int:
         return hash(tuple(self.keys()))
+
+    # ===============================================================
+
+    def unpack_pars(self, p_arr: Array) -> ParsT:
+        """Unpack parameters into a dictionary.
+
+        This function takes a parameter array and unpacks it into a dictionary
+        with the parameter names as keys.
+
+        Parameters
+        ----------
+        p_arr : Array
+            Parameter array.
+
+        Returns
+        -------
+        ParsT
+        """
+        # Unpack the parameters
+        p_dict = {}
+        for j, (n, m) in enumerate(self._models.items()):  # iter thru models
+            # Get relevant parameters by index
+            param_inds = np.array(tuple(i for i, p in enumerate(m.param_names) if f"{n}_{p}" not in self._tied))
+            mp_arr = p_arr[:, j + param_inds]
+
+            # Skip empty
+            if mp_arr.shape[1] == 0:
+                continue
+
+            mp_dict = m.unpack_pars(mp_arr)
+            for k, p in mp_dict.items():
+                p_dict[f"{n}_{k}"] = p
+
+        # Add the dependent parameters
+        for name, tie in self._tied.items():
+            p_dict[name] = tie(p_dict)
+
+        return p_dict
 
     # ===============================================================
     # Statistics
@@ -86,9 +151,16 @@ class CompositeModel(Model, Mapping[str, Model]):
         Array
         """
         # (n_models, n_dat, 1)
-        liks = xp.stack([xp.exp(model.ln_likelihood(pars, data, *args)) for model in self._models.values()])
-        lik = liks.sum(dim=0)  # (n_dat, 1)
-        return xp.log(lik)
+        liks = []
+        for name, model in self.items():
+            # Get the parameters for this model, stripping the model name
+            mps = get_params_for_model(name, pars)
+            # Add the likelihood
+            lik = model.ln_likelihood(mps, data, *args)
+            liks.append(lik)
+
+        # Sum over the models, keeping the data dimension
+        return xp.logsumexp(xp.hstack(liks), dim=1)[:, None]
 
     def ln_prior(self, pars: ParsT) -> Array:
         """Log prior.
@@ -102,7 +174,19 @@ class CompositeModel(Model, Mapping[str, Model]):
         -------
         Array
         """
-        return xp.stack([model.ln_prior(pars) for model in self._models.values()]).sum()
+        ps = []
+        for name, model in self._models.items():
+            # Get the parameters for this model, stripping the model name
+            mps = get_params_for_model(name, pars)
+            # Add the prior
+            ps.append(model.ln_prior(mps))
+
+        # Plugin for priors
+        for hook in self._hook_prior.values():
+            ps.append(hook(pars))
+
+        # Sum over the priors
+        return xp.hstack(ps).sum(dim=1)[:, None]
 
     # ========================================================================
     # ML
