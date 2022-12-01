@@ -7,11 +7,11 @@ import abc
 from typing import TYPE_CHECKING
 
 # LOCAL
-from stream_ml.base import Model
+from stream_ml.pytorch.base import Model
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml._typing import Array, DataT, ParsT
+    from stream_ml.pytorch._typing import Array, DataT, ParsT
 
 __all__: list[str] = []
 

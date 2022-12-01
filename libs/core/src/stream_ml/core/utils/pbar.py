@@ -10,7 +10,7 @@ import logging
 from typing import TYPE_CHECKING, Any, TypeVar
 
 # LOCAL
-from stream_ml.setup_package import HAS_TQDM
+from stream_ml.core.setup_package import HAS_TQDM
 
 if HAS_TQDM:
     # THIRD-PARTY

@@ -1,39 +1,26 @@
-"""Built-in background models."""
+"""Base Stream Model class."""
 
 from __future__ import annotations
 
 # STDLIB
-from typing import TYPE_CHECKING, ClassVar
-
-# THIRD-PARTY
-import torch as xp
+import abc
+from typing import TYPE_CHECKING
 
 # LOCAL
-from stream_ml.background.base import BackgroundModel
+from stream_ml.pytorch.base import Model
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml._typing import Array, DataT, ParsT
+    from stream_ml.pytorch._typing import Array, DataT, ParsT
+
 
 __all__: list[str] = []
 
 
-class UniformBackgroundModel(BackgroundModel):
+class StreamModel(Model):
     """Stream Model."""
 
-    param_names: ClassVar[dict[str, int]] = {"fraction": 1}
-
-    def __init__(self, bkg_min: Array, bkg_max: Array) -> None:
-        super().__init__()
-
-        self.bkg_min = bkg_min
-        self.bkg_max = bkg_max
-
-        self._logdiff = xp.log(self.bkg_max - self.bkg_min)
-
-    # ========================================================================
-    # Statistics
-
+    @abc.abstractmethod
     def ln_likelihood(self, pars: ParsT, data: DataT) -> Array:
         """Log-likelihood of the background.
 
@@ -48,9 +35,9 @@ class UniformBackgroundModel(BackgroundModel):
         -------
         Array
         """
-        # Need to protect the fraction if < 0
-        return xp.log(xp.clamp(pars["fraction"], min=0)) - self._logdiff
+        raise NotImplementedError
 
+    @abc.abstractmethod
     def ln_prior(self, pars: ParsT) -> Array:
         """Log prior.
 
@@ -63,11 +50,12 @@ class UniformBackgroundModel(BackgroundModel):
         -------
         Array
         """
-        return xp.zeros_like(pars["fraction"])
+        raise NotImplementedError
 
     # ========================================================================
     # ML
 
+    @abc.abstractmethod
     def forward(self, *args: Array) -> Array:
         """Forward pass.
 
@@ -81,4 +69,4 @@ class UniformBackgroundModel(BackgroundModel):
         Array
             fraction, mean, sigma
         """
-        return xp.asarray([])
+        raise NotImplementedError

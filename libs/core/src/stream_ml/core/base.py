@@ -4,25 +4,26 @@ from __future__ import annotations
 
 # STDLIB
 import abc
-from typing import TYPE_CHECKING, ClassVar
-
-# THIRD-PARTY
-import torch as xp
-import torch.nn as nn
+from typing import TYPE_CHECKING, Generic
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml._typing import Array, DataT, ParsT
+    from stream_ml.core._typing import ArrayT, DataT, ParsT
 
 __all__: list[str] = []
 
 
-class Model(nn.Module, metaclass=abc.ABCMeta):  # type: ignore[misc]
+class ModelBase(Generic["ArrayT"], metaclass=abc.ABCMeta):
     """Model base class."""
 
-    param_names: ClassVar[dict[str, int]]
+    @property
+    @abc.abstractmethod
+    def param_names(self) -> dict[str, int]:
+        """Parameter names."""
+        raise NotImplementedError
 
-    def unpack_pars(self, p_arr: Array) -> ParsT:
+    @abc.abstractmethod
+    def unpack_pars(self, p_arr: ArrayT) -> ParsT[ArrayT]:
         """Unpack parameters into a dictionary.
 
         This function takes a parameter array and unpacks it into a dictionary
@@ -37,12 +38,10 @@ class Model(nn.Module, metaclass=abc.ABCMeta):  # type: ignore[misc]
         -------
         ParsT
         """
-        p_dict = {}
-        for i, name in enumerate(self.param_names):
-            p_dict[name] = p_arr[:, i].view(-1, 1)
-        return p_dict
+        raise NotImplementedError
 
-    def pack_pars(self, p_dict: ParsT) -> Array:
+    @abc.abstractmethod
+    def pack_pars(self, p_dict: ParsT[ArrayT]) -> ArrayT:
         """Pack parameters into an array.
 
         Parameters
@@ -54,16 +53,13 @@ class Model(nn.Module, metaclass=abc.ABCMeta):  # type: ignore[misc]
         -------
         Array
         """
-        p_arrs = []
-        for name in self.param_names:
-            p_arrs.append(xp.atleast_1d(p_dict[name]))
-        return xp.concatenate(p_arrs)
+        raise NotImplementedError
 
     # ========================================================================
     # Statistics
 
     @abc.abstractmethod
-    def ln_likelihood(self, pars: ParsT, data: DataT) -> Array:
+    def ln_likelihood(self, pars: ParsT[ArrayT], data: DataT[ArrayT]) -> ArrayT:
         """Log-likelihood of the model.
 
         Parameters
@@ -80,7 +76,7 @@ class Model(nn.Module, metaclass=abc.ABCMeta):  # type: ignore[misc]
         raise NotImplementedError
 
     @abc.abstractmethod
-    def ln_prior(self, pars: ParsT) -> Array:
+    def ln_prior(self, pars: ParsT[ArrayT]) -> ArrayT:
         """Log prior.
 
         Parameters
@@ -94,7 +90,9 @@ class Model(nn.Module, metaclass=abc.ABCMeta):  # type: ignore[misc]
         """
         raise NotImplementedError
 
-    def ln_posterior(self, pars: ParsT, data: DataT, *args: Array) -> Array:
+    def ln_posterior(
+        self, pars: ParsT[ArrayT], data: DataT[ArrayT], *args: ArrayT
+    ) -> ArrayT:
         """Log posterior.
 
         Parameters
@@ -110,26 +108,5 @@ class Model(nn.Module, metaclass=abc.ABCMeta):  # type: ignore[misc]
         -------
         Array
         """
-        return self.ln_likelihood(pars, data, *args) + self.ln_prior(pars)
-
-    # ========================================================================
-    # ML
-
-    @abc.abstractmethod
-    def forward(self, *args: Array) -> Array:
-        """Forward pass.
-
-        Parameters
-        ----------
-        args : Array
-            Input.
-
-        Returns
-        -------
-        Array
-            fraction, mean, sigma
-        """
-        raise NotImplementedError
-
-    # ========================================================================
-    # Convenience functions
+        ln_post: ArrayT = self.ln_likelihood(pars, data, *args) + self.ln_prior(pars)
+        return ln_post

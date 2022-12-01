@@ -1,26 +1,44 @@
-"""Base Stream Model class."""
+"""Built-in background models."""
 
 from __future__ import annotations
 
 # STDLIB
-import abc
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
+
+# THIRD-PARTY
+import torch as xp
 
 # LOCAL
-from stream_ml.base import Model
+from stream_ml.pytorch.background.base import BackgroundModel
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml._typing import Array, DataT, ParsT
-
+    from stream_ml.pytorch._typing import Array, DataT, ParsT
 
 __all__: list[str] = []
 
 
-class StreamModel(Model):
+class UniformBackgroundModel(BackgroundModel):
     """Stream Model."""
 
-    @abc.abstractmethod
+    _param_names: ClassVar[dict[str, int]] = {"fraction": 1}
+
+    def __init__(self, bkg_min: Array, bkg_max: Array) -> None:
+        super().__init__()
+
+        self.bkg_min = bkg_min
+        self.bkg_max = bkg_max
+
+        self._logdiff = xp.log(self.bkg_max - self.bkg_min)
+
+    @property
+    def param_names(self) -> dict[str, int]:
+        """Parameter names."""
+        return self._param_names
+
+    # ========================================================================
+    # Statistics
+
     def ln_likelihood(self, pars: ParsT, data: DataT) -> Array:
         """Log-likelihood of the background.
 
@@ -35,9 +53,9 @@ class StreamModel(Model):
         -------
         Array
         """
-        raise NotImplementedError
+        # Need to protect the fraction if < 0
+        return xp.log(xp.clamp(pars["fraction"], min=0)) - self._logdiff
 
-    @abc.abstractmethod
     def ln_prior(self, pars: ParsT) -> Array:
         """Log prior.
 
@@ -50,12 +68,11 @@ class StreamModel(Model):
         -------
         Array
         """
-        raise NotImplementedError
+        return xp.zeros_like(pars["fraction"])
 
     # ========================================================================
     # ML
 
-    @abc.abstractmethod
     def forward(self, *args: Array) -> Array:
         """Forward pass.
 
@@ -69,4 +86,4 @@ class StreamModel(Model):
         Array
             fraction, mean, sigma
         """
-        raise NotImplementedError
+        return xp.asarray([])

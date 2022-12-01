@@ -10,16 +10,15 @@ from typing import TYPE_CHECKING, ClassVar
 # THIRD-PARTY
 import torch as xp
 import torch.nn as nn
-from torch.distributions.normal import Normal
 
 # LOCAL
-from stream_ml.sigmoid import ColumnarScaledSigmoid
-from stream_ml.stream.base import StreamModel
-from stream_ml.utils import within_bounds
+from stream_ml.pytorch.stream.base import StreamModel
+from stream_ml.pytorch.utils import within_bounds
+from stream_ml.pytorch.utils.funcs import norm_logpdf, sigmoid
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml._typing import Array, DataT, ParsT
+    from stream_ml.pytorch._typing import Array, DataT, ParsT
 
 __all__: list[str] = []
 
@@ -39,7 +38,7 @@ class SingleGaussianStreamModel(StreamModel):
         Upper limit on fraction, by default 0.45.s
     """
 
-    param_names: ClassVar[dict[str, int]] = {"fraction": 1, "mu": 1, "sigma": 1}
+    _param_names: ClassVar[dict[str, int]] = {"fraction": 1, "mu": 1, "sigma": 1}
 
     def __init__(
         self,
@@ -61,10 +60,13 @@ class SingleGaussianStreamModel(StreamModel):
             nn.Linear(1, hidden_features),
             nn.Tanh(),
             *functools.reduce(
-                operator.add, ((nn.Linear(hidden_features, hidden_features), nn.Tanh()) for _ in range(n_layers - 2))
+                operator.add,
+                (
+                    (nn.Linear(hidden_features, hidden_features), nn.Tanh())
+                    for _ in range(n_layers - 2)
+                ),
             ),
             nn.Linear(hidden_features, 3),
-            ColumnarScaledSigmoid((0, 2), (fraction_limit, sigma_limit)),  # fraction, sigma
         )
 
     # ========================================================================
@@ -79,13 +81,9 @@ class SingleGaussianStreamModel(StreamModel):
             Parameters.
         data : DataT
             Data (phi1, phi2).
-
-        Returns
-        -------
-        Array
         """
-        return xp.log(xp.clamp(pars["fraction"], min=0)) + Normal(pars["mu"], xp.clamp(pars["sigma"], min=0)).log_prob(
-            data["phi2"]
+        return norm_logpdf(
+            data["phi2"], mu=pars["mu"], sigma=pars["sigma"], amp=pars["fraction"]
         )
 
     def ln_prior(self, pars: ParsT) -> Array:
@@ -124,4 +122,10 @@ class SingleGaussianStreamModel(StreamModel):
         Array
             fraction, mean, sigma
         """
-        return self.layers(args[0])
+        pred = self.layers(args[0])
+
+        fraction = sigmoid(pred[:, 0], *self.fraction_limit)
+        mean = pred[:, 1]
+        sigma = sigmoid(pred[:, 2], *self.sigma_limit)
+
+        return xp.vstack([fraction, mean, sigma]).T
