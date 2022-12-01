@@ -15,6 +15,7 @@ from torch.distributions.normal import Normal
 # LOCAL
 from stream_ml.sigmoid import ColumnarScaledSigmoid
 from stream_ml.stream.base import StreamModel
+from stream_ml.utils import within_bounds
 
 if TYPE_CHECKING:
     # LOCAL
@@ -38,21 +39,21 @@ class SingleGaussianStreamModel(StreamModel):
         Upper limit on fraction, by default 0.45.s
     """
 
-    param_names: ClassVar[dict[str, int]] = {"fraction": 0, "mu": 0, "sigma": 0}
+    param_names: ClassVar[dict[str, int]] = {"fraction": 1, "mu": 1, "sigma": 1}
 
     def __init__(
         self,
         n_layers: int = 3,
         hidden_features: int = 50,
         *,
-        fraction_upper_limit: float = 0.45,
-        sigma_upper_limit: float = 0.3,
+        fraction_limit: tuple[float, float] = (0.0, 0.45),
+        sigma_limit: tuple[float, float] = (0.0, 0.3),
     ) -> None:
         super().__init__()  # Need to do this first.
 
         # The priors.
-        self.sigma_upper_limit = sigma_upper_limit
-        self.fraction_upper_limit = fraction_upper_limit
+        self.sigma_limit = sigma_limit
+        self.fraction_limit = fraction_limit
 
         # Define the layers of the neural network:
         # Total: in (phi) -> out (fraction, mean, sigma)
@@ -63,7 +64,7 @@ class SingleGaussianStreamModel(StreamModel):
                 operator.add, ((nn.Linear(hidden_features, hidden_features), nn.Tanh()) for _ in range(n_layers - 2))
             ),
             nn.Linear(hidden_features, 3),
-            ColumnarScaledSigmoid((0, 2), ((0, fraction_upper_limit), (0, sigma_upper_limit))),  # fraction, sigma
+            ColumnarScaledSigmoid((0, 2), (fraction_limit, sigma_limit)),  # fraction, sigma
         )
 
     # ========================================================================
@@ -99,14 +100,13 @@ class SingleGaussianStreamModel(StreamModel):
         -------
         Array
         """
-        # Bound fraction in [0, <upper limit>]
-        if pars["fraction"] < 0 or self.fraction_upper_limit < pars["fraction"]:
-            return -xp.asarray(xp.inf)
-        # Bound sigma in [0, <upper limit>]
-        elif pars["sigma"] < 0 or self.sigma_upper_limit < pars["sigma"]:
-            return -xp.asarray(xp.inf)
+        lnp = xp.zeros_like(pars["fraction"])  # 100%
 
-        return xp.asarray(1.0)  # TODO: Implement this!
+        # Bounds
+        lnp[~within_bounds(pars["fraction"], *self.fraction_limit)] = -xp.inf
+        lnp[~within_bounds(pars["sigma"], *self.sigma_limit)] = -xp.inf
+
+        return lnp
 
     # ========================================================================
     # ML
