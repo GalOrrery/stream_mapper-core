@@ -2,6 +2,8 @@
 
 __all__ = ["HAS_TQDM"]
 
+HAS_TQDM: bool
+
 try:
     # THIRD-PARTY
     import tqdm  # noqa: F401
