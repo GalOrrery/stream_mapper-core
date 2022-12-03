@@ -2,7 +2,7 @@
 
 # LOCAL
 from . import background, stream, utils
-from .core import MixtureModel
+from .mixture import MixtureModel
 
 __all__ = [
     # modules

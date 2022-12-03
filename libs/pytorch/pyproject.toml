@@ -24,8 +24,6 @@
   dependencies = [
     "stream_ml.core",
     "numpy",
-    "astropy",
-    "scipy",
     "torch",
   ]
 

@@ -2,6 +2,6 @@
 
 # LOCAL
 from .base import BackgroundModel
-from .builtin import UniformBackgroundModel
+from .uniform import UniformBackgroundModel
 
 __all__ = ["BackgroundModel", "UniformBackgroundModel"]

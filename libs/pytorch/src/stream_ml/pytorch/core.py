@@ -3,123 +3,120 @@
 from __future__ import annotations
 
 # STDLIB
-from collections.abc import Mapping
-from dataclasses import KW_ONLY, dataclass, field
-from typing import TYPE_CHECKING, Callable
+from abc import abstractmethod
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 # THIRD-PARTY
-import torch as xp
+import torch.nn as nn
 
 # LOCAL
-from stream_ml.core.core import MixtureModelBase
-from stream_ml.core.utils import get_params_for_model
+from stream_ml.core.core import ModelBase as CoreModelBase
+from stream_ml.core.utils.params import MutableParams, Params
+from stream_ml.pytorch._typing import Array
 from stream_ml.pytorch.base import Model
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.pytorch._typing import Array, DataT, ParsT
+    from stream_ml.pytorch._typing import DataT
 
 __all__: list[str] = []
 
 
-@dataclass
-class MixtureModel(MixtureModelBase[Array], Model):
-    """Full Model.
+@dataclass(unsafe_hash=True)
+class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
+    """Model base class."""
 
-    Parameters
-    ----------
-    models : Mapping[str, Model], optional postional-only
-        Mapping of Models. This allows for strict ordering of the Models and
-        control over the type of the models attribute.
-    **more_models : Model
-        Additional Models.
-    """
+    # ========================================================================
 
-    _models: Mapping[str, Model] = field(default_factory=dict)
-    _: KW_ONLY
-    tied_params: dict[str, Callable[[ParsT], Array]] = field(default_factory=dict)
-    hook_prior: Mapping[str, Callable[[ParsT], Array]] = field(default_factory=dict)
+    def unpack_params_from_arr(self, p_arr: Array) -> Params[Array]:
+        """Unpack parameters into a dictionary.
 
-    def __post_init__(self) -> None:
-        super().__post_init__()
-
-        # NOTE: don't need this in JAX
-        for name, model in self._models.items():
-            self.add_module(name=name, module=model)
-
-    # ===============================================================
-    # Statistics
-
-    def ln_likelihood(self, pars: ParsT, data: DataT, *args: Array) -> Array:
-        """Log likelihood.
-
-        Just the log-sum-exp of the individual log-likelihoods.
+        This function takes a parameter array and unpacks it into a dictionary
+        with the parameter names as keys.
 
         Parameters
         ----------
-        pars : ParsT
+        p_arr : Array
+            Parameter array.
+
+        Returns
+        -------
+        Params
+        """
+        pars = MutableParams[Array]()
+        for i, k in enumerate(self.param_names.flats):
+            pars[k] = p_arr[:, i].view(-1, 1)
+        return Params(pars)
+
+    def pack_params_to_arr(self, pars: Params[Array]) -> Array:
+        """Pack parameters into an array.
+
+        Parameters
+        ----------
+        pars : Params[Array]
+            Parameter dictionary.
+
+        Returns
+        -------
+        Array
+        """
+        return Model.pack_params_to_arr(self, pars)
+
+    # ========================================================================
+    # Statistics
+
+    @abstractmethod
+    def ln_likelihood_arr(
+        self, pars: Params[Array], data: DataT, *args: Array
+    ) -> Array:
+        """Log-likelihood of the model.
+
+        Parameters
+        ----------
+        pars : Params[Array]
             Parameters.
         data : DataT
-            Data.
-        args : Array
+            Data (phi1).
+        *args : Array
             Additional arguments.
 
         Returns
         -------
         Array
         """
-        # (n_models, n_dat, 1)
-        liks = []
-        for name, model in self.items():
-            # Get the parameters for this model, stripping the model name
-            mps = get_params_for_model(name, pars)
-            # Add the likelihood
-            lik = model.ln_likelihood(mps, data, *args)
-            liks.append(lik)
+        raise NotImplementedError
 
-        # Sum over the models, keeping the data dimension
-        return xp.logsumexp(xp.hstack(liks), dim=1)[:, None]
-
-    def ln_prior(self, pars: ParsT) -> Array:
+    @abstractmethod
+    def ln_prior_arr(self, pars: Params[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
-        pars : ParsT
+        pars : Params[Array]
             Parameters.
 
         Returns
         -------
         Array
         """
-        ps = []
-        for name, model in self._models.items():
-            # Get the parameters for this model, stripping the model name
-            mps = get_params_for_model(name, pars)
-            # Add the prior
-            ps.append(model.ln_prior(mps))
-
-        # Plugin for priors
-        for hook in self._hook_prior.values():
-            ps.append(hook(pars))
-
-        # Sum over the priors
-        return xp.hstack(ps).sum(dim=1)[:, None]
+        raise NotImplementedError
 
     # ========================================================================
     # ML
 
+    @abstractmethod
     def forward(self, *args: Array) -> Array:
         """Forward pass.
 
         Parameters
         ----------
         args : Array
-            Input. Only uses the first argument.
+            Input.
 
         Returns
         -------
         Array
             fraction, mean, sigma
         """
-        return xp.concat([model(*args) for model in self._models.values()], dim=1)
+        raise NotImplementedError

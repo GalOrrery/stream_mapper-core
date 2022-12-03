@@ -4,32 +4,44 @@ from __future__ import annotations
 
 # STDLIB
 import abc
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 # LOCAL
-from stream_ml.pytorch.base import Model
+from stream_ml.core.stream.base import StreamModel as CoreStreamModel
+from stream_ml.core.utils.params import Params
+from stream_ml.pytorch._typing import Array
+from stream_ml.pytorch.core import ModelBase
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.pytorch._typing import Array, DataT, ParsT
+    from stream_ml.pytorch._typing import DataT
 
 
 __all__: list[str] = []
 
 
-class StreamModel(Model):
+@dataclass(unsafe_hash=True)
+class StreamModel(ModelBase, CoreStreamModel[Array]):
     """Stream Model."""
 
+    # ========================================================================
+    # Statistics
+
     @abc.abstractmethod
-    def ln_likelihood(self, pars: ParsT, data: DataT) -> Array:
-        """Log-likelihood of the background.
+    def ln_likelihood_arr(
+        self, pars: Params[Array], data: DataT, *args: Array
+    ) -> Array:
+        """Log-likelihood of the stream.
 
         Parameters
         ----------
-        pars : ParsT
+        pars : Params
             Parameters.
         data : DataT
-            Data (phi1).
+            Data.
+        *args : Array
+            Additional arguments.
 
         Returns
         -------
@@ -38,12 +50,12 @@ class StreamModel(Model):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def ln_prior(self, pars: ParsT) -> Array:
+    def ln_prior_arr(self, pars: Params[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
-        pars : ParsT
+        pars : Params
             Parameters.
 
         Returns

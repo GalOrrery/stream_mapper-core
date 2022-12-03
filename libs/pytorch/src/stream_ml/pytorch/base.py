@@ -3,34 +3,67 @@
 from __future__ import annotations
 
 # STDLIB
-import abc
-from typing import TYPE_CHECKING, ClassVar
+from abc import abstractmethod
+from typing import TYPE_CHECKING, Any, Protocol
 
 # THIRD-PARTY
 import torch as xp
 import torch.nn as nn
 
 # LOCAL
-from stream_ml.core.base import ModelBase
+from stream_ml.core.base import Model as CoreModel
+from stream_ml.core.utils.params import Params
+from stream_ml.pytorch._typing import Array
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.pytorch._typing import Array, DataT, ParsT
+    from stream_ml.pytorch._typing import DataT, FlatParsT
 
 __all__: list[str] = []
 
 
-class Model(nn.Module, ModelBase[Array]):  # type: ignore[misc]
-    """Model base class."""
+class Model(CoreModel[Array], Protocol):
+    """Pytorch model base class.
 
-    _param_names: ClassVar[dict[str, int]]
+    Parameters
+    ----------
+    n_features : int
+        The number off features used by the NN.
 
-    @property
-    def param_names(self) -> dict[str, int]:
-        """Parameter names."""
-        return self._param_names
+    name : str or None, optional keyword-only
+        The (internal) name of the model, e.g. 'stream' or 'background'. Note
+        that this can be different from the name of the model when it is used in
+        a mixture model (see :class:`~stream_ml.core.core.MixtureModelBase`).
+    """
 
-    def unpack_pars(self, p_arr: Array) -> ParsT:
+    def __post_init__(self) -> None:
+        nn.Module.__init__(self)  # Needed for PyTorch
+        super().__post_init__()
+
+    # ========================================================================
+
+    @abstractmethod
+    def unpack_params(self, packed_pars: FlatParsT) -> Params[Array]:
+        """Unpack parameters into a dictionary.
+
+        This function takes a parameter array and unpacks it into a dictionary
+        with the parameter names as keys.
+
+        Parameters
+        ----------
+        packed_pars : Array
+            Flat dictionary of parameters.
+
+        Returns
+        -------
+        Params
+            Nested dictionary of parameters wth parameters grouped by coordinate
+            name.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def unpack_params_from_arr(self, p_arr: Array) -> Params[Array]:
         """Unpack parameters into a dictionary.
 
         This function takes a parameter array and unpacks it into a dictionary
@@ -45,42 +78,44 @@ class Model(nn.Module, ModelBase[Array]):  # type: ignore[misc]
         -------
         ParsT
         """
-        p_dict = {}
-        j: int = 0
-        for i, name in enumerate(self.param_names):
-            p_dict[name] = p_arr[:, j + i].view(-1, 1)
-        return p_dict
+        raise NotImplementedError
 
-    def pack_pars(self, p_dict: ParsT) -> Array:
+    def pack_params_to_arr(self, pars: Params[Array]) -> Array:
         """Pack parameters into an array.
 
         Parameters
         ----------
-        p_dict : ParsT
+        pars : ParsT
             Parameter dictionary.
 
         Returns
         -------
         Array
         """
-        p_arrs = []
-        for name in self.param_names:
-            p_arrs.append(xp.atleast_1d(p_dict[name]))
-        return xp.concatenate(p_arrs)
+        # TODO: check that structure of pars matches self.param_names
+        # ie, that if elt is a string, then pars[elt] is a 1D array
+        # and if elt is a tuple, then pars[elt] is a dict.
+        return xp.concatenate(
+            [xp.atleast_1d(pars[elt]) for elt in self.param_names.flats]
+        )
 
     # ========================================================================
     # Statistics
 
-    @abc.abstractmethod
-    def ln_likelihood(self, pars: ParsT, data: DataT) -> Array:
-        """Log-likelihood of the model.
+    @abstractmethod
+    def ln_likelihood_arr(
+        self, pars: Params[Array], data: DataT, *args: Array
+    ) -> Array:
+        """Elementwise log-likelihood of the model.
 
         Parameters
         ----------
-        pars : ParsT
+        pars : Params
             Parameters.
         data : DataT
             Data (phi1).
+        *args : Array
+            Additional arguments.
 
         Returns
         -------
@@ -88,13 +123,13 @@ class Model(nn.Module, ModelBase[Array]):  # type: ignore[misc]
         """
         raise NotImplementedError
 
-    @abc.abstractmethod
-    def ln_prior(self, pars: ParsT) -> Array:
-        """Log prior.
+    @abstractmethod
+    def ln_prior_arr(self, pars: Params[Array]) -> Array:
+        """Elementwise log prior.
 
         Parameters
         ----------
-        pars : ParsT
+        pars : Params
             Parameters.
 
         Returns
@@ -102,29 +137,11 @@ class Model(nn.Module, ModelBase[Array]):  # type: ignore[misc]
         Array
         """
         raise NotImplementedError
-
-    def ln_posterior(self, pars: ParsT, data: DataT, *args: Array) -> Array:
-        """Log posterior.
-
-        Parameters
-        ----------
-        pars : ParsT
-            Parameters.
-        data : DataT
-            Data.
-        args : Array
-            Arguments.
-
-        Returns
-        -------
-        Array
-        """
-        return self.ln_likelihood(pars, data, *args) + self.ln_prior(pars)
 
     # ========================================================================
     # ML
 
-    @abc.abstractmethod
+    @abstractmethod
     def forward(self, *args: Array) -> Array:
         """Forward pass.
 
@@ -139,3 +156,7 @@ class Model(nn.Module, ModelBase[Array]):  # type: ignore[misc]
             fraction, mean, sigma
         """
         raise NotImplementedError
+
+    def __call__(self, *args: Any, **kwds: Any) -> Array:
+        """Pytoch call method."""
+        ...

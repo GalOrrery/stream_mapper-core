@@ -3,35 +3,44 @@
 from __future__ import annotations
 
 # STDLIB
-import abc
+from abc import abstractmethod
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 # LOCAL
-from stream_ml.pytorch.base import Model
+from stream_ml.core.background.base import BackgroundModel as CoreBackgroundModel
+from stream_ml.core.utils.params import Params
+from stream_ml.pytorch._typing import Array
+from stream_ml.pytorch.core import ModelBase
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.pytorch._typing import Array, DataT, ParsT
+    from stream_ml.pytorch._typing import DataT
 
 __all__: list[str] = []
 
 
-class BackgroundModel(Model):
+@dataclass(unsafe_hash=True)
+class BackgroundModel(ModelBase, CoreBackgroundModel[Array]):
     """Background Model."""
 
     # ========================================================================
     # Statistics
 
-    @abc.abstractmethod
-    def ln_likelihood(self, pars: ParsT, data: DataT) -> Array:
+    @abstractmethod
+    def ln_likelihood_arr(
+        self, pars: Params[Array], data: DataT, *args: Array
+    ) -> Array:
         """Log-likelihood of the background.
 
         Parameters
         ----------
-        pars : ParsT
+        pars : Params[Array]
             Parameters.
         data : DataT
             Data (phi1).
+        *args : Array
+            Additional arguments.
 
         Returns
         -------
@@ -39,13 +48,13 @@ class BackgroundModel(Model):
         """
         raise NotImplementedError
 
-    @abc.abstractmethod
-    def ln_prior(self, pars: ParsT) -> Array:
+    @abstractmethod
+    def ln_prior_arr(self, pars: Params[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
-        pars : ParsT
+        pars : Params[Array]
             Parameters.
 
         Returns
@@ -57,7 +66,7 @@ class BackgroundModel(Model):
     # ========================================================================
     # ML
 
-    @abc.abstractmethod
+    @abstractmethod
     def forward(self, *args: Array) -> Array:
         """Forward pass.
 
