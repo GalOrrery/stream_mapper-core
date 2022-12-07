@@ -14,7 +14,7 @@ import torch.nn as nn
 from torch.distributions import MultivariateNormal as TorchMultivariateNormal
 
 # LOCAL
-from stream_ml.core.utils.params import Params
+from stream_ml.core.params import Params
 from stream_ml.pytorch.stream.base import StreamModel
 from stream_ml.pytorch.utils import within_bounds
 from stream_ml.pytorch.utils.sigmoid import ColumnarScaledSigmoid

@@ -12,7 +12,7 @@ import flax.linen as nn
 
 # LOCAL
 from stream_ml.core.core import ModelBase as CoreModelBase
-from stream_ml.core.utils.params import MutableParams, Params
+from stream_ml.core.params import MutableParams, Params
 from stream_ml.flax.base import Model
 from stream_ml.jax._typing import Array
 

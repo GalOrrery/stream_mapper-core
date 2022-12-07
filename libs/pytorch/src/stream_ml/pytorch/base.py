@@ -12,7 +12,7 @@ import torch.nn as nn
 
 # LOCAL
 from stream_ml.core.base import Model as CoreModel
-from stream_ml.core.utils.params import Params
+from stream_ml.core.params import Params
 from stream_ml.pytorch._typing import Array
 
 if TYPE_CHECKING:

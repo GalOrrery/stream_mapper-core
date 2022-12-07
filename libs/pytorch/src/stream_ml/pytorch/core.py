@@ -12,7 +12,7 @@ import torch.nn as nn
 
 # LOCAL
 from stream_ml.core.core import ModelBase as CoreModelBase
-from stream_ml.core.utils.params import MutableParams, Params
+from stream_ml.core.params import MutableParams, Params
 from stream_ml.pytorch._typing import Array
 from stream_ml.pytorch.base import Model
 

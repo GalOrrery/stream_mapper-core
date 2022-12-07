@@ -3,7 +3,14 @@
 from __future__ import annotations
 
 # STDLIB
-from collections.abc import Iterator, Mapping, MutableMapping
+from collections.abc import (
+    ItemsView,
+    Iterator,
+    KeysView,
+    Mapping,
+    MutableMapping,
+    ValuesView,
+)
 from typing import Any, TypeVar, cast, overload
 
 __all__: list[str] = []
@@ -56,6 +63,24 @@ class Params(Mapping[str, V | Mapping[str, V]]):
     def __len__(self) -> int:
         """Length."""
         return len(self._mapping)
+
+    def __repr__(self) -> str:
+        """String representation."""
+        return f"{type(self).__name__}({self._mapping!r})"
+
+    def keys(self) -> KeysView[str]:
+        """Keys."""
+        return self._mapping.keys()
+
+    def values(self) -> ValuesView[V | Mapping[str, V]]:
+        """Values."""
+        return self._mapping.values()
+
+    def items(self) -> ItemsView[str, V | Mapping[str, V]]:
+        """Items."""
+        return self._mapping.items()
+
+    # =========================================================================
 
     def get_prefixed(self, prefix: str) -> Params[V]:
         """Get the keys starting with the prefix, stripped of that prefix."""

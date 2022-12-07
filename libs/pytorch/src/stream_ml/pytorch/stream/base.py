@@ -8,8 +8,8 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 # LOCAL
+from stream_ml.core.params import Params
 from stream_ml.core.stream.base import StreamModel as CoreStreamModel
-from stream_ml.core.utils.params import Params
 from stream_ml.pytorch._typing import Array
 from stream_ml.pytorch.core import ModelBase
 

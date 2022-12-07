@@ -9,10 +9,10 @@ from typing import TYPE_CHECKING, Protocol
 
 # LOCAL
 from stream_ml.core._typing import Array
+from stream_ml.core.params.bounds import ParamBounds, ParamBoundsField
+from stream_ml.core.params.core import Params
+from stream_ml.core.params.names import ParamNamesField
 from stream_ml.core.utils.hashdict import FrozenDict, FrozenDictField
-from stream_ml.core.utils.params.bounds import ParamBounds, ParamBoundsField
-from stream_ml.core.utils.params.core import Params
-from stream_ml.core.utils.params.names import ParamNamesField
 
 if TYPE_CHECKING:
     # LOCAL

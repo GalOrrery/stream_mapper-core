@@ -12,8 +12,8 @@ import torch.nn as nn
 
 # LOCAL
 from stream_ml.core.mixture import MixtureModelBase
+from stream_ml.core.params import Params
 from stream_ml.core.utils.hashdict import FrozenDictField
-from stream_ml.core.utils.params import Params
 from stream_ml.pytorch._typing import Array
 from stream_ml.pytorch.base import Model
 

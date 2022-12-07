@@ -15,8 +15,8 @@ import torch.nn as nn
 from torch.distributions.normal import Normal as TorchNormal
 
 # LOCAL
+from stream_ml.core.params import ParamBounds, ParamNames, Params
 from stream_ml.core.utils.hashdict import FrozenDict
-from stream_ml.core.utils.params import ParamBounds, ParamNames, Params
 from stream_ml.pytorch.stream.base import StreamModel
 from stream_ml.pytorch.utils import within_bounds
 from stream_ml.pytorch.utils.sigmoid import ColumnarScaledSigmoid

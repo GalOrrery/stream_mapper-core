@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 # LOCAL
 from stream_ml.core.background.base import BackgroundModel as CoreBackgroundModel
-from stream_ml.core.utils.params import Params
+from stream_ml.core.params import Params
 from stream_ml.jax._typing import Array
 from stream_ml.jax.core import ModelBase
 

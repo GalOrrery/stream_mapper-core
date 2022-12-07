@@ -14,13 +14,8 @@ import jax.numpy as xp
 from jax.scipy.stats import norm
 
 # LOCAL
+from stream_ml.core.params import ParamBounds, ParamBoundsField, ParamNames, Params
 from stream_ml.core.utils.hashdict import FrozenDict, FrozenDictField
-from stream_ml.core.utils.params import (
-    ParamBounds,
-    ParamBoundsField,
-    ParamNames,
-    Params,
-)
 from stream_ml.jax.stream.base import StreamModel
 from stream_ml.jax.utils import within_bounds
 from stream_ml.jax.utils.sigmoid import ColumnarScaledSigmoid
@@ -66,7 +61,7 @@ class Normal(StreamModel):
         # Validate the param_names
         if self.param_names != ("mixparam", (self.coord_names[0], ("mu", "sigma"))):
             raise ValueError(
-                "param_names must be ('sigma', (<coordinate>, ('mu', 'sigma')))."
+                "param_names must be ('mixparam', (<coordinate>, ('mu', 'sigma')))."
             )
 
         # Validate the param_bounds

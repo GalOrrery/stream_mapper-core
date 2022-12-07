@@ -11,13 +11,39 @@ from stream_ml.core.utils.hashdict import FrozenDict
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.core.utils.params.names import ParamNames
+    from stream_ml.core.params.names import ParamNames
 
 __all__: list[str] = []
 
+
+#####################################################################
+# TYPING
+
 SubParamBounds: TypeAlias = FrozenDict[str, tuple[float, float]]
 
+
+#####################################################################
+# PARAMETERS
+
 inf = float("inf")
+
+
+#####################################################################
+
+# @dataclass(frozen=True)
+# class PriorBounds:
+#     """Prior bounds."""
+
+#     lower: float
+#     upper: float
+
+#     @classmethod
+#     def from_tuple(cls, t: tuple[float, float], /) -> PriorBounds:
+#         """Create from tuple."""
+#         return cls(*t)
+
+
+#####################################################################
 
 
 class ParamBounds(FrozenDict[str, tuple[float, float] | SubParamBounds]):
@@ -194,4 +220,5 @@ class ParamBoundsField:
 
     def __set__(self, obj: object, value: ParamBounds) -> None:
         dv = ParamBounds(self._default or {})  # Default value as a dict.
+        value = ParamBounds(value)
         object.__setattr__(obj, self._name, dv | value)

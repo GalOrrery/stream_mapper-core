@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 # LOCAL
 from stream_ml.core._typing import Array
 from stream_ml.core.core import ModelBase
-from stream_ml.core.utils.params import Params
+from stream_ml.core.params import Params
 
 if TYPE_CHECKING:
     # LOCAL

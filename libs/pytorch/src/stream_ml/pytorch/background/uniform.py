@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 import torch as xp
 
 # LOCAL
-from stream_ml.core.utils.params import ParamBoundsField, ParamNamesField, Params
+from stream_ml.core.params import ParamBoundsField, ParamNamesField, Params
 from stream_ml.pytorch.background.base import BackgroundModel
 
 if TYPE_CHECKING:

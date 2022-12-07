@@ -14,8 +14,8 @@ import numpy as np
 # LOCAL
 from stream_ml.core._typing import Array
 from stream_ml.core.base import Model
+from stream_ml.core.params import MutableParams, ParamBounds, ParamNames, Params
 from stream_ml.core.utils.hashdict import FrozenDict, FrozenDictField
-from stream_ml.core.utils.params import MutableParams, ParamBounds, ParamNames, Params
 
 if TYPE_CHECKING:
     # LOCAL

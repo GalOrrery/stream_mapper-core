@@ -12,8 +12,8 @@ import jax.numpy as xp
 
 # LOCAL
 from stream_ml.core.mixture import MixtureModelBase
+from stream_ml.core.params import Params
 from stream_ml.core.utils.hashdict import FrozenDictField
-from stream_ml.core.utils.params import Params
 from stream_ml.jax._typing import Array
 from stream_ml.jax.base import Model
 
