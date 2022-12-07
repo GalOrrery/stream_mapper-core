@@ -20,6 +20,7 @@ from stream_ml.core.utils.hashdict import FrozenDict, FrozenDictField
 if TYPE_CHECKING:
     # LOCAL
     from stream_ml.core._typing import DataT, FlatParsT
+    from stream_ml.core.prior.base import PriorBase
 
 __all__: list[str] = []
 
@@ -42,9 +43,7 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
     tied_params: FrozenDictField[
         str, Callable[[Params[Array]], Array]
     ] = FrozenDictField({})
-    hook_prior: FrozenDictField[
-        str, Callable[[Params[Array]], Array]
-    ] = FrozenDictField({})
+    priors: FrozenDictField[str, PriorBase[Array]] = FrozenDictField({})
 
     def __post_init__(self) -> None:
         # Add the coord_names

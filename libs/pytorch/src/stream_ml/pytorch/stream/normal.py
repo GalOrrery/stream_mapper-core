@@ -58,7 +58,7 @@ class Normal(StreamModel):
         # Validate the param_names
         if self.param_names != ("mixparam", (cn, ("mu", "sigma"))):
             raise ValueError(
-                "param_names must be ('sigma', (<coordinate>, ('mu', 'sigma')))."
+                "param_names must be ('mixparam', (<coordinate>, ('mu', 'sigma')))."
             )
 
         # Validate the param_bounds

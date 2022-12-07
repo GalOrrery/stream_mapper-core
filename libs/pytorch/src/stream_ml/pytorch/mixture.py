@@ -84,15 +84,12 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
         -------
         Array
         """
-        # (n_models, n_dat, 1)
-        liks = []
-        for name, model in self.items():
-            # Get the parameters for this model, stripping the model name
-            mps = pars.get_prefixed(name)
-            # Add the likelihood
-            lik = model.ln_likelihood_arr(mps, data, *args)
-            liks.append(lik)
-
+        # Get the parameters for each model, stripping the model name,
+        # and use that to evaluate the log likelihood for the model.
+        liks = tuple(
+            model.ln_likelihood_arr(pars.get_prefixed(name), data, *args)
+            for name, model in self.components.items()
+        )
         # Sum over the models, keeping the data dimension
         return xp.logsumexp(xp.hstack(liks), dim=1)[:, None]
 
@@ -101,26 +98,27 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
 
         Parameters
         ----------
-        pars : Params
+        pars : Params[Array]
             Parameters.
 
         Returns
         -------
         Array
         """
-        ps = []
-        for name, model in self.components.items():
-            # Get the parameters for this model, stripping the model name
-            mps = pars.get_prefixed(name)
-            # Add the prior
-            ps.append(model.ln_prior_arr(mps))
+        # Get the parameters for each model, stripping the model name,
+        # and use that to evaluate the log prior for the model.
+        lps = tuple(
+            model.ln_prior_arr(pars.get_prefixed(name))
+            for name, model in self.components.items()
+        )
+        lp = xp.hstack(lps).sum(dim=1)[:, None]
 
         # Plugin for priors
-        for hook in self._hook_prior.values():
-            ps.append(hook(pars))
+        for prior in self.priors.values():
+            lp += prior.logpdf(pars, lp)
 
         # Sum over the priors
-        return xp.hstack(ps).sum(dim=1)[:, None]
+        return lp
 
     # ========================================================================
     # ML
@@ -138,4 +136,10 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
         Array
             fraction, mean, sigma
         """
-        return xp.concat([model(*args) for model in self.components.values()], dim=1)
+        result = xp.concat([model(*args) for model in self.components.values()], dim=1)
+
+        # Call the prior to limite the range of the parameters
+        for prior in self.priors.values():
+            result = prior(result, self.param_names.flat)
+
+        return result
