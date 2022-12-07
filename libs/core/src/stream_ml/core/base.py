@@ -9,8 +9,10 @@ from typing import TYPE_CHECKING, Protocol
 
 # LOCAL
 from stream_ml.core._typing import Array
-from stream_ml.core.utils.hashdict import HashableMap
-from stream_ml.core.utils.params import ParamBoundsField, ParamNamesField, Params
+from stream_ml.core.utils.hashdict import FrozenDict, FrozenDictField
+from stream_ml.core.utils.params.bounds import ParamBounds, ParamBoundsField
+from stream_ml.core.utils.params.core import Params
+from stream_ml.core.utils.params.names import ParamNamesField
 
 if TYPE_CHECKING:
     # LOCAL
@@ -30,9 +32,10 @@ class Model(Protocol[Array]):
 
     # Bounds on the coordinates and parameters.
     # name: (lower, upper)
-    coord_bounds: HashableMap[str, tuple[float, float]]
-    param_bounds: ParamBoundsField = ParamBoundsField()
-    # defaults to (-inf, inf)
+    coord_bounds: FrozenDictField[str, tuple[float, float]] = FrozenDictField(
+        FrozenDict()
+    )
+    param_bounds: ParamBoundsField = ParamBoundsField(ParamBounds())
 
     def __post_init__(self) -> None:
 
@@ -40,8 +43,8 @@ class Model(Protocol[Array]):
         # Static type checkers will complain about mutable input, but this allows
         # for the run-time behavior to work regardless.
         for name, bounds in self.param_bounds.items():
-            if isinstance(bounds, Mapping) and not isinstance(bounds, HashableMap):
-                self.param_bounds._mapping[name] = HashableMap(bounds)  # type: ignore[unreachable] # noqa: E501
+            if isinstance(bounds, Mapping) and not isinstance(bounds, FrozenDict):
+                self.param_bounds._mapping[name] = FrozenDict(bounds)  # type: ignore[unreachable] # noqa: E501
 
         return None
 

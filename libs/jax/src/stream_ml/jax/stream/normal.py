@@ -14,7 +14,7 @@ import jax.numpy as xp
 from jax.scipy.stats import norm
 
 # LOCAL
-from stream_ml.core.utils.hashdict import HashableMap, HashableMapField
+from stream_ml.core.utils.hashdict import FrozenDict, FrozenDictField
 from stream_ml.core.utils.params import (
     ParamBounds,
     ParamBoundsField,
@@ -53,9 +53,8 @@ class Normal(StreamModel):
     n_layers: int = 3
     _: KW_ONLY
 
-    coord_bounds: HashableMapField[str, tuple[float, float]] = HashableMapField()  # type: ignore[assignment]  # noqa: E501
+    coord_bounds: FrozenDictField[str, tuple[float, float]] = FrozenDictField()
     param_bounds: ParamBoundsField = ParamBoundsField(ParamBounds())
-    # [("mixparam", (0.0, 1.0)), ("mu", (-xp.inf, xp.inf)), ("sigma", (0.0, 0.3))]
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -72,7 +71,8 @@ class Normal(StreamModel):
 
         # Validate the param_bounds
         for pn in self.param_names:
-            if pn not in self.param_bounds:
+            # "in X" ignores __contains__ & __getitem__ signatures
+            if not self.param_bounds.__contains__(pn):
                 raise ValueError(f"param_bounds must contain {pn}.")
             # TODO: recursively check for all sub-parameters
         # [("mixparam", (0.0, 1.0)), ("mu", (-xp.inf, xp.inf)), ("sigma", (0.0, 0.3))]
@@ -122,10 +122,10 @@ class Normal(StreamModel):
             n_layers=n_layers,
             coord_names=(coord_name,),
             param_names=ParamNames(("mixparam", (coord_name, ("mu", "sigma")))),  # type: ignore[arg-type] # noqa: E501
-            coord_bounds=HashableMap({coord_name: coord_bounds}),  # type: ignore[arg-type] # noqa: E501
-            param_bounds=HashableMap(  # type: ignore[arg-type]
+            coord_bounds=FrozenDict({coord_name: coord_bounds}),  # type: ignore[arg-type] # noqa: E501
+            param_bounds=FrozenDict(  # type: ignore[arg-type]
                 mixparam=mixparam_bounds,
-                coord_name=HashableMap(
+                coord_name=FrozenDict(
                     mu=mu_bounds,
                     sigma=sigma_bounds,
                 ),

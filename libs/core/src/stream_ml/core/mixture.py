@@ -14,7 +14,7 @@ import numpy as np
 # LOCAL
 from stream_ml.core._typing import Array
 from stream_ml.core.base import Model
-from stream_ml.core.utils.hashdict import HashableMap, HashableMapField
+from stream_ml.core.utils.hashdict import FrozenDict, FrozenDictField
 from stream_ml.core.utils.params import MutableParams, ParamBounds, ParamNames, Params
 
 if TYPE_CHECKING:
@@ -37,14 +37,14 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
         Additional Models.
     """
 
-    components: HashableMapField[str, Model[Array]] = HashableMapField()
+    components: FrozenDictField[str, Model[Array]] = FrozenDictField()
     _: KW_ONLY
-    tied_params: HashableMapField[
+    tied_params: FrozenDictField[
         str, Callable[[Params[Array]], Array]
-    ] = HashableMapField({})
-    hook_prior: HashableMapField[
+    ] = FrozenDictField({})
+    hook_prior: FrozenDictField[
         str, Callable[[Params[Array]], Array]
-    ] = HashableMapField({})
+    ] = FrozenDictField({})
 
     def __post_init__(self) -> None:
         # Add the coord_names
@@ -62,7 +62,7 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
 
         # Add the coord_bounds
         # TODO: make sure duplicates have the same bounds
-        cbs: HashableMap[str, tuple[float, float]] = HashableMap()
+        cbs: FrozenDict[str, tuple[float, float]] = FrozenDict()
         for m in self.components.values():
             cbs._mapping.update(m.coord_bounds)
         self._coord_bounds = cbs
@@ -95,8 +95,8 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
         """Set the parameter names."""
         raise AttributeError("cannot set param_names.")
 
-    @property  # TODO: cached
-    def coord_bounds(self) -> HashableMap[str, tuple[float, float]]:
+    @property  # type: ignore[override]
+    def coord_bounds(self) -> FrozenDict[str, tuple[float, float]]:
         """Coordinate names."""
         return self._coord_bounds
 
@@ -151,12 +151,13 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
             Nested dictionary of parameters wth parameters grouped by coordinate
             name.
         """
+        # FIXME! this doesn't work with the model components.
         pars = MutableParams[Array]()
 
         for k in packed_pars.keys():
-            # mixparam is a special case.  # TODO: unspecial case
-            if k == "mixparam":
-                pars["mixparam"] = packed_pars["mixparam"]
+            # Find the non-coordinate-specific parameters.
+            if k in self.param_bounds:
+                pars[k] = packed_pars[k]
                 continue
 
             # separate the coordinate and parameter names.

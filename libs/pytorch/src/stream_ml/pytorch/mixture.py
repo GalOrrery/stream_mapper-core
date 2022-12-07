@@ -12,7 +12,7 @@ import torch.nn as nn
 
 # LOCAL
 from stream_ml.core.mixture import MixtureModelBase
-from stream_ml.core.utils.hashdict import HashableMapField
+from stream_ml.core.utils.hashdict import FrozenDictField
 from stream_ml.core.utils.params import Params
 from stream_ml.pytorch._typing import Array
 from stream_ml.pytorch.base import Model
@@ -38,7 +38,7 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
     """
 
     # Need to override this because of the type hinting
-    components: HashableMapField[str, Model] = HashableMapField[str, Model]()  # type: ignore[assignment]  # noqa: E501
+    components: FrozenDictField[str, Model] = FrozenDictField[str, Model]()  # type: ignore[assignment]  # noqa: E501
 
     def __post_init__(self) -> None:
         super().__post_init__()

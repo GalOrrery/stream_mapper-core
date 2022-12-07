@@ -5,7 +5,7 @@ from __future__ import annotations
 # STDLIB
 import functools
 import operator
-from dataclasses import KW_ONLY, dataclass
+from dataclasses import dataclass
 from math import inf
 from typing import TYPE_CHECKING
 
@@ -15,13 +15,8 @@ import torch.nn as nn
 from torch.distributions.normal import Normal as TorchNormal
 
 # LOCAL
-from stream_ml.core.utils.hashdict import HashableMap, HashableMapField
-from stream_ml.core.utils.params import (
-    ParamBounds,
-    ParamBoundsField,
-    ParamNames,
-    Params,
-)
+from stream_ml.core.utils.hashdict import FrozenDict
+from stream_ml.core.utils.params import ParamBounds, ParamNames, Params
 from stream_ml.pytorch.stream.base import StreamModel
 from stream_ml.pytorch.utils import within_bounds
 from stream_ml.pytorch.utils.sigmoid import ColumnarScaledSigmoid
@@ -51,11 +46,6 @@ class Normal(StreamModel):
 
     n_features: int = 50
     n_layers: int = 3
-    _: KW_ONLY
-
-    coord_bounds: HashableMapField[str, tuple[float, float]] = HashableMapField()  # type: ignore[assignment]  # noqa: E501
-    param_bounds: ParamBoundsField = ParamBoundsField(ParamBounds())
-    # [("mixparam", (0.0, 1.0)), ("mu", (-xp.inf, xp.inf)), ("sigma", (0.0, 0.3))]
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -71,10 +61,10 @@ class Normal(StreamModel):
                 "param_names must be ('sigma', (<coordinate>, ('mu', 'sigma')))."
             )
 
-        # Validate the param_bounds # TODO!
-        # for pn in self.param_names:
-        #     if pn not in self.param_bounds:
-        #         raise ValueError(f"param_bounds must contain {pn}.")
+        # Validate the param_bounds
+        for pn in self.param_names.flats:
+            if not self.param_bounds.__contains__(pn):
+                raise ValueError(f"param_bounds must contain {pn} (unflattened).")
         # TODO: recursively check for all sub-parameters
         # [("mixparam", (0.0, 1.0)), ("mu", (-xp.inf, xp.inf)), ("sigma", (0.0, 0.3))]
 
@@ -93,10 +83,7 @@ class Normal(StreamModel):
             nn.Linear(self.n_features, 3),
             ColumnarScaledSigmoid(
                 (0, 2),
-                (
-                    self.param_bounds[("mixparam",)],
-                    self.param_bounds[cn, "sigma"],
-                ),
+                (self.param_bounds[("mixparam",)], self.param_bounds[cn, "sigma"]),
             ),
         )
 
@@ -123,11 +110,11 @@ class Normal(StreamModel):
             n_layers=n_layers,
             coord_names=(coord_name,),
             param_names=ParamNames(("mixparam", (coord_name, ("mu", "sigma")))),  # type: ignore[arg-type] # noqa: E501
-            coord_bounds=HashableMap({coord_name: coord_bounds}),  # type: ignore[arg-type] # noqa: E501
+            coord_bounds=FrozenDict({coord_name: coord_bounds}),  # type: ignore[arg-type] # noqa: E501
             param_bounds=ParamBounds(  # type: ignore[arg-type]
                 {
                     "mixparam": mixparam_bounds,
-                    coord_name: HashableMap(
+                    coord_name: FrozenDict(
                         mu=mu_bounds,
                         sigma=sigma_bounds,
                     ),
@@ -174,11 +161,7 @@ class Normal(StreamModel):
         -------
         Array
         """
-        lnp = xp.zeros_like(
-            pars[
-                "mixparam",
-            ]
-        )  # 100%
+        lnp = xp.zeros_like(pars[("mixparam",)])  # 100%
         # Bounds
         for names, bounds in self.param_bounds.flatitems():
             lnp[~within_bounds(pars[names], *bounds)] = -xp.inf

@@ -12,7 +12,7 @@ K = TypeVar("K")
 V = TypeVar("V")
 
 
-class HashableMap(Mapping[K, V]):
+class FrozenDict(Mapping[K, V]):
     """A frozen (hashable) dictionary."""
 
     __slots__ = ("_mapping",)
@@ -39,27 +39,27 @@ class HashableMap(Mapping[K, V]):
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self._mapping!r})"
 
-    def __or__(self, other: Mapping[K, V]) -> HashableMap[K, V]:
-        if not isinstance(other, HashableMap):
+    def __or__(self, other: Mapping[K, V]) -> FrozenDict[K, V]:
+        if not isinstance(other, FrozenDict):
             raise NotImplementedError
-        return HashableMap(self._mapping | dict(other))
+        return FrozenDict(self._mapping | dict(other))
 
 
-class HashableMapField(Generic[K, V]):
+class FrozenDictField(Generic[K, V]):
     """Dataclass descriptor for a frozen map."""
 
     def __init__(
         self, default: Mapping[K, V] | Sequence[tuple[K, V]] | None = None
     ) -> None:
-        self._default: HashableMap[K, V] | None
-        self._default = HashableMap(default) if default is not None else None
+        self._default: FrozenDict[K, V] | None
+        self._default = FrozenDict(default) if default is not None else None
 
     def __set_name__(self, owner: type, name: str) -> None:
         self._name = "_" + name
 
-    def __get__(self, obj: object | None, obj_cls: type | None) -> HashableMap[K, V]:
+    def __get__(self, obj: object | None, obj_cls: type | None) -> FrozenDict[K, V]:
         if obj is not None:
-            val: HashableMap[K, V] = getattr(obj, self._name)
+            val: FrozenDict[K, V] = getattr(obj, self._name)
             return val
 
         default = self._default
@@ -68,5 +68,5 @@ class HashableMapField(Generic[K, V]):
         return default
 
     def __set__(self, obj: object, value: Mapping[K, V]) -> None:
-        dv = HashableMap[K, V](self._default or {})  # Default value as a dict.
-        object.__setattr__(obj, self._name, dv | HashableMap(value))
+        dv = FrozenDict[K, V](self._default or {})  # Default value as a dict.
+        object.__setattr__(obj, self._name, dv | FrozenDict(value))

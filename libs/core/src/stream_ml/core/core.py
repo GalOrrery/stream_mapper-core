@@ -10,20 +10,22 @@ from typing import TYPE_CHECKING
 # LOCAL
 from stream_ml.core._typing import Array
 from stream_ml.core.base import Model
-from stream_ml.core.utils.hashdict import HashableMapField
+from stream_ml.core.utils.hashdict import FrozenDict, FrozenDictField
 from stream_ml.core.utils.params import (
     MutableParams,
     ParamBounds,
-    ParamBoundsField,
     ParamNamesField,
     Params,
 )
+from stream_ml.core.utils.params.bounds import ParamBoundsField
 
 if TYPE_CHECKING:
     # LOCAL
     from stream_ml.core._typing import DataT, FlatParsT
 
 __all__: list[str] = []
+
+inf = float("inf")
 
 
 @dataclass(unsafe_hash=True)
@@ -51,8 +53,10 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
 
     # Bounds on the coordinates and parameters.
     # name: (lower, upper)
-    coord_bounds: HashableMapField[str, tuple[float, float]] = HashableMapField()  # type: ignore[assignment] # noqa: E501
-    param_bounds: ParamBoundsField = ParamBoundsField()
+    coord_bounds: FrozenDictField[str, tuple[float, float]] = FrozenDictField(
+        FrozenDict()
+    )
+    param_bounds: ParamBoundsField = ParamBoundsField(ParamBounds())
 
     def __post_init__(self) -> None:
         """Post-init validation."""
@@ -73,11 +77,13 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
             raise ValueError("param_names must be specified.")
 
         # Make coord bounds if not provided
-        for c in self.coord_names:
-            if c not in self.coord_bounds:
-                raise ValueError(f"coord_bounds must be provided for {c}.")
+        crnt_cbs = self.coord_bounds._mapping
+        cbs = {n: crnt_cbs.pop(n, (-inf, inf)) for n in self.coord_names}
+        if crnt_cbs:
+            raise ValueError(f"coord_bounds contains invalid keys {crnt_cbs.keys()}.")
+        self.coord_bounds = FrozenDict(cbs)
 
-        # TODO: fill in -inf, inf bounds for missing parameters
+        # Make param bounds
         self.param_bounds = ParamBounds.from_names(self.param_names) | self.param_bounds
 
     # ========================================================================
@@ -101,10 +107,9 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
         pars = MutableParams[Array]()
 
         for k in packed_pars.keys():
-            # mixparam is a special case.
-            # TODO: make this more general by using the params_bounds dict
-            if k == "mixparam":
-                pars["mixparam"] = packed_pars["mixparam"]
+            # Find the non-coordinate-specific parameters.
+            if k in self.param_bounds:
+                pars[k] = packed_pars[k]
                 continue
 
             # separate the coordinate and parameter names.

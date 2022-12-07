@@ -12,7 +12,7 @@ import jax.numpy as xp
 
 # LOCAL
 from stream_ml.core.mixture import MixtureModelBase
-from stream_ml.core.utils.hashdict import HashableMapField
+from stream_ml.core.utils.hashdict import FrozenDictField
 from stream_ml.core.utils.params import Params
 from stream_ml.jax._typing import Array
 from stream_ml.jax.base import Model
@@ -38,7 +38,7 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
     """
 
     # Need to override this because of the type hinting
-    components: HashableMapField[str, Model] = HashableMapField()  # type: ignore[assignment]  # noqa: E501
+    components: FrozenDictField[str, Model] = FrozenDictField()  # type: ignore[assignment]  # noqa: E501
 
     def setup(self) -> None:
         """Setup ML."""
