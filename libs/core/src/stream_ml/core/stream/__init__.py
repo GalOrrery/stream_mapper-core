@@ -1,3 +1,6 @@
 """Stream Memberships Likelihood, with ML."""
 
-__all__: list[str] = []
+# LOCAL
+from stream_ml.core.stream.base import StreamModel
+
+__all__ = ["StreamModel"]

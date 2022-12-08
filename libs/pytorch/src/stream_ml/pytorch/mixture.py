@@ -137,9 +137,11 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
             fraction, mean, sigma
         """
         result = xp.concat([model(*args) for model in self.components.values()], dim=1)
+        # Everything has been passed through ColumnarScaledSigmoid
+        # (which can be the identity function).
 
-        # Call the prior to limite the range of the parameters
+        # Call the prior to limit the range of the parameters
         for prior in self.priors.values():
-            result = prior(result, self.param_names.flat)
+            result = prior(result, self.param_names.flats)
 
         return result

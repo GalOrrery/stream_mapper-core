@@ -81,10 +81,10 @@ class Normal(StreamModel):
                 ),
             ),
             nn.Linear(self.n_features, 3),
-            ColumnarScaledSigmoid(
-                (0, 2),
-                (self.param_bounds[("mixparam",)], self.param_bounds[cn, "sigma"]),
-            ),
+        )
+        self.output_scaling = ColumnarScaledSigmoid(
+            tuple(range(len(self.param_names.flat))),
+            tuple(self.param_bounds.flatvalues()),
         )
 
     @classmethod
@@ -94,12 +94,30 @@ class Normal(StreamModel):
         n_layers: int = 3,
         *,
         coord_name: str,
-        coord_bounds: tuple[float, float],
+        coord_bounds: tuple[float, float] = (-inf, inf),
         mixparam_bounds: tuple[float, float] = (0, 1),
         mu_bounds: tuple[float, float] = (-inf, inf),
         sigma_bounds: tuple[float, float] = (0, 0.3),
     ) -> Normal:
         """Create a Normal from a simpler set of inputs.
+
+        Parameters
+        ----------
+        n_features : int, optional
+            Number of features, by default 50.
+        n_layers : int, optional
+            Number of layers, by default 3.
+
+        coord_name : str, keyword-only
+            Coordinate name.
+        coord_bounds : tuple[float, float], optional keyword-only
+            Coordinate bounds.
+        mixparam_bounds : tuple[float, float], optional keyword-only
+            Bounds on the mixture parameter.
+        mu_bounds : tuple[float, float], optional keyword-only
+            Bounds on the mean.
+        sigma_bounds : tuple[float, float], optional keyword-only
+            Bounds on the standard deviation.
 
         Returns
         -------
@@ -165,7 +183,6 @@ class Normal(StreamModel):
         # Bounds
         for names, bounds in self.param_bounds.flatitems():
             lnp[~within_bounds(pars[names], *bounds)] = -xp.inf
-
         return lnp
 
     # ========================================================================
@@ -184,4 +201,4 @@ class Normal(StreamModel):
         Array
             fraction, mean, sigma
         """
-        return self.layers(args[0])
+        return self.output_scaling(self.layers(args[0]))

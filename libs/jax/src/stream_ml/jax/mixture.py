@@ -140,6 +140,6 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
 
         # Call the prior to limite the range of the parameters
         for prior in self.priors.values():
-            result = prior(result, self.param_names.flat)
+            result = prior(result, self.param_names.flats)
 
         return result

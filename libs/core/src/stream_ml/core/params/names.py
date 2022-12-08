@@ -4,12 +4,16 @@ from __future__ import annotations
 
 # STDLIB
 from collections.abc import Iterable
-from typing import Any, TypeVar
+from typing import Any, TypeAlias, TypeVar
 
 __all__: list[str] = []
 
 
 Self = TypeVar("Self", bound="ParamNames")
+
+
+FlatParamName: TypeAlias = tuple[str] | tuple[str, str]  # type: ignore[misc]
+FlatParamNames: TypeAlias = tuple[FlatParamName, ...]
 
 
 class ParamNames(tuple[str | tuple[str, tuple[str, ...]], ...]):
@@ -48,9 +52,9 @@ class ParamNames(tuple[str | tuple[str, tuple[str, ...]], ...]):
         return tuple(names)
 
     @property
-    def flats(self) -> tuple[tuple[str] | tuple[str, str], ...]:
+    def flats(self) -> FlatParamNames:
         """Flattened parameter names as tuples."""
-        names: list[tuple[str] | tuple[str, str]] = []
+        names: list[FlatParamName] = []
 
         for pn in self:
             if isinstance(pn, str):

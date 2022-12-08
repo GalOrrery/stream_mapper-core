@@ -22,14 +22,17 @@ class PriorBase(Generic[Array], metaclass=ABCMeta):
     """Prior."""
 
     _: KW_ONLY
+    inplace: bool = False  # whether to modify the params inplace
     name: str | None = None  # the name of the prior
 
     @abstractmethod
-    def logpdf(self, p: Params[Array], current_pdf: Array | None = None) -> Array:
+    def logpdf(self, lp: Params[Array], current_lnpdf: Array | None = None, /) -> Array:
         """Evaluate the logpdf."""
         ...
 
     @abstractmethod
-    def __call__(self, x: Array, param_names: tuple[str, ...]) -> Array:
+    def __call__(
+        self, x: Array, param_names: tuple[tuple[str] | tuple[str, str], ...], /
+    ) -> Array:
         """Evaluate the forward step in the prior."""
         ...

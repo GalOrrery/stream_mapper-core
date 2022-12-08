@@ -74,8 +74,6 @@ class Normal(StreamModel):
 
     def setup(self) -> None:
         """Setup."""
-        cn = self.coord_names[0]
-
         self.layers = nn.Sequential(
             nn.Dense(self.n_features),
             Tanh(),
@@ -84,14 +82,11 @@ class Normal(StreamModel):
                 ((nn.Dense(self.n_features), Tanh()) for _ in range(self.n_layers - 2)),
             ),
             nn.Dense(3),
-            ColumnarScaledSigmoid(
-                (0, 2),
-                (
-                    self.param_bounds[("mixparam",)],
-                    self.param_bounds[cn, "sigma"],
-                ),
-            ),
             name=self.name,
+        )
+        self.output_scaling = ColumnarScaledSigmoid(
+            tuple(range(len(self.param_names.flat))),
+            tuple(self.param_bounds.flatvalues()),
         )
 
     @classmethod
@@ -167,8 +162,8 @@ class Normal(StreamModel):
         """
         lnp = xp.zeros_like(pars[("mixparam",)])  # 100%
         # Bounds
-        for name, bounds in self.param_bounds.items():
-            lnp[~within_bounds(pars[name], *bounds)] = -xp.inf
+        for names, bounds in self.param_bounds.flatitems():
+            lnp[~within_bounds(pars[names], *bounds)] = -xp.inf
         return lnp
 
     # ========================================================================
@@ -187,5 +182,4 @@ class Normal(StreamModel):
         Array
             fraction, mean, sigma
         """
-        pred = self.layers(args[0])
-        return pred
+        return self.output_scaling(self.layers(args[0]))

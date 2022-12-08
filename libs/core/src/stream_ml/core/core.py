@@ -5,7 +5,7 @@ from __future__ import annotations
 # STDLIB
 from abc import ABCMeta, abstractmethod
 from dataclasses import KW_ONLY, dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 # LOCAL
 from stream_ml.core._typing import Array
@@ -52,6 +52,8 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
         FrozenDict()
     )
     param_bounds: ParamBoundsField = ParamBoundsField(ParamBounds())
+
+    DEFAULT_BOUNDS_CLS: ClassVar[type]  # TODO: [PriorBounds[Any]]
 
     def __post_init__(self) -> None:
         """Post-init validation."""

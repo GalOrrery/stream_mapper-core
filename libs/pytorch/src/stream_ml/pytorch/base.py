@@ -4,7 +4,7 @@ from __future__ import annotations
 
 # STDLIB
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol
 
 # THIRD-PARTY
 import torch as xp
@@ -14,6 +14,7 @@ import torch.nn as nn
 from stream_ml.core.base import Model as CoreModel
 from stream_ml.core.params import Params
 from stream_ml.pytorch._typing import Array
+from stream_ml.pytorch.prior.bounds import PriorBounds
 
 if TYPE_CHECKING:
     # LOCAL
@@ -35,6 +36,8 @@ class Model(CoreModel[Array], Protocol):
         that this can be different from the name of the model when it is used in
         a mixture model (see :class:`~stream_ml.core.core.MixtureModelBase`).
     """
+
+    DEFAULT_BOUNDS_CLS: ClassVar[type[PriorBounds]]
 
     def __post_init__(self) -> None:
         nn.Module.__init__(self)  # Needed for PyTorch

@@ -51,14 +51,26 @@ class MultivariateNormal(StreamModel):
         # Validate the param_names
         # TODO: this should be automatic
         expect = (
-            "mixparam",
+            ("mixparam",),
             *((c, p) for c in self.coord_names for p in ("mu", "sigma")),
         )
-        if self.param_names != expect:
-            raise ValueError(f"Expected param_names={expect}, got {self.param_names}")
+        if self.param_names.flats != expect:
+            raise ValueError(
+                f"Expected param_names.flats={expect}, got {self.param_names.flats}"
+            )
 
         # Validate the param_bounds
-        # TODO!
+        if self.param_bounds.flatkeys() != expect:
+            raise ValueError(
+                f"Expected param_bounds.flatkeys()={expect}, "
+                f"got {self.param_bounds.flatkeys()}"
+            )
+        for k, b in self.param_bounds.flatitems():
+            if isinstance(b, tuple) and len(b) == 2 and b[1] > b[0]:
+                continue
+            raise ValueError(
+                f"Expected param bound {k} to be a list of (min, max) tuples, not {b}."
+            )
 
         # Define the layers of the neural network:
         # Total: in (phi) -> out (fraction, *mean, *sigma)
@@ -75,13 +87,10 @@ class MultivariateNormal(StreamModel):
                 ),
             ),
             nn.Linear(self.n_features, 1 + 2 * ndim),
-            ColumnarScaledSigmoid(
-                (0, *range(ndim + 1, 2 * ndim + 1)),
-                (
-                    self.param_bounds[("mixparam",)],
-                    *(self.param_bounds[c, "sigma"] for c in self.coord_names),
-                ),
-            ),
+        )
+        self.output_scaling = ColumnarScaledSigmoid(
+            tuple(range(len(self.param_names.flat))),
+            tuple(self.param_bounds.flatvalues()),
         )
 
     # ========================================================================
@@ -146,8 +155,7 @@ class MultivariateNormal(StreamModel):
         Array
             fraction, mean, sigma
         """
-        pred = self.layers(args[0])
-        return pred
+        return self.output_scaling(self.layers(args[0]))
 
 
 ##############################################################################

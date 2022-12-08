@@ -33,20 +33,46 @@ class ArrayLike(Protocol):
     # ========================================================================
     # Dunder methods
 
-    def __add__(self: Self, other: ArrayLike) -> Self:
+    def __getitem__(self: Self, key: Any) -> Self:
+        """Indexing."""
+        ...
+
+    def __add__(self: Self, other: ArrayLike | int | float) -> Self:
         """Addition."""
         ...
 
-    def __radd__(self: Self, other: ArrayLike | int) -> Self:
+    def __radd__(self: Self, other: ArrayLike | int | float) -> Self:
         """Right addition."""
         ...
 
-    def __getitem__(self: Self, key: Any) -> Self:
-        """Getitem."""
+    def __mul__(self: Self, other: ArrayLike | int | float) -> Self:
+        """Multiplication."""
+        ...
+
+    def __sub__(self: Self, other: ArrayLike | int | float) -> Self:
+        """Subtraction."""
+        ...
+
+    def __rsub__(self: Self, other: ArrayLike | int | float) -> Self:
+        """Right subtraction."""
+        ...
+
+    def __truediv__(self: Self, other: ArrayLike) -> Self:
+        """True division."""
+        ...
+
+    def __div__(self: Self, other: ArrayLike) -> Self:
+        """Division."""
         ...
 
     # ========================================================================
     # Methods
+
+    def max(self: Self) -> Self:  # noqa: A003
+        ...
+
+    def min(self: Self) -> Self:  # noqa: A003
+        ...
 
     def sum(self: Self, axis: int | None = None) -> Self:  # noqa: A003
         """Sum."""
