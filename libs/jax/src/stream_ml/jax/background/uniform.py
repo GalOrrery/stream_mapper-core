@@ -10,12 +10,14 @@ from typing import TYPE_CHECKING
 import jax.numpy as xp
 
 # LOCAL
-from stream_ml.core.params import ParamBoundsField, ParamNamesField, Params
+from stream_ml.core.params import ParamBoundsField, ParamNames, ParamNamesField, Params
+from stream_ml.jax._typing import Array
 from stream_ml.jax.background.base import BackgroundModel
+from stream_ml.jax.prior.bounds import SigmoidBounds
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.jax._typing import Array, DataT
+    from stream_ml.jax._typing import DataT
 
 __all__: list[str] = []
 
@@ -26,8 +28,10 @@ class UniformBackgroundModel(BackgroundModel):
 
     n_features: int = 0
     _: KW_ONLY
-    param_names: ParamNamesField = ParamNamesField(("mixparam",))
-    param_bounds: ParamBoundsField = ParamBoundsField({"mixparam": (0.0, 1.0)})
+    param_names: ParamNamesField = ParamNamesField(ParamNames(("mixparam",)))
+    param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array](
+        {"mixparam": SigmoidBounds(0.0, 1.0)}
+    )
 
     def __post_init__(self) -> None:
         super().__post_init__()

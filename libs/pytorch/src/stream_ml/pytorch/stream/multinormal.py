@@ -16,7 +16,6 @@ from torch.distributions import MultivariateNormal as TorchMultivariateNormal
 # LOCAL
 from stream_ml.core.params import Params
 from stream_ml.pytorch.stream.base import StreamModel
-from stream_ml.pytorch.utils import within_bounds
 from stream_ml.pytorch.utils.sigmoid import ColumnarScaledSigmoid
 
 if TYPE_CHECKING:
@@ -90,7 +89,7 @@ class MultivariateNormal(StreamModel):
         )
         self.output_scaling = ColumnarScaledSigmoid(
             tuple(range(len(self.param_names.flat))),
-            tuple(self.param_bounds.flatvalues()),
+            tuple(v.as_tuple() for v in self.param_bounds.flatvalues()),
         )
 
     # ========================================================================
@@ -135,8 +134,8 @@ class MultivariateNormal(StreamModel):
         """
         lnp = xp.zeros_like(pars[("mixparam",)])  # 100%
         # Bounds
-        for names, bounds in self.param_bounds.flatitems():
-            lnp[~within_bounds(pars[names], *bounds)] = -xp.inf
+        for bounds in self.param_bounds.flatvalues():
+            lnp += bounds.logpdf(pars, lnp)
         return lnp
 
     # ========================================================================

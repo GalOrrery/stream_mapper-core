@@ -22,7 +22,6 @@ class PriorBase(Generic[Array], metaclass=ABCMeta):
     """Prior."""
 
     _: KW_ONLY
-    inplace: bool = False  # whether to modify the params inplace
     name: str | None = None  # the name of the prior
 
     @abstractmethod

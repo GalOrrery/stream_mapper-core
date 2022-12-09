@@ -4,12 +4,12 @@ from __future__ import annotations
 
 # STDLIB
 from abc import abstractmethod
-from collections.abc import Iterable
+from collections.abc import Iterator
 from dataclasses import KW_ONLY, dataclass
 from typing import TYPE_CHECKING, TypeVar
 
 # LOCAL
-from stream_ml.core._typing import Array
+from stream_ml.core._typing import Array, BoundsT
 from stream_ml.core.params.names import FlatParamName, FlatParamNames
 from stream_ml.core.prior.base import PriorBase
 
@@ -45,22 +45,26 @@ class PriorBounds(PriorBase[Array]):
     # =========================================================================
 
     @classmethod
-    def from_tuple(cls: type[Self], t: tuple[float, float], /) -> Self:
+    def from_tuple(
+        cls: type[Self],
+        t: BoundsT,
+        /,
+        param_name: FlatParamName | None = None,
+    ) -> Self:
         """Create from tuple."""
-        return cls(*t)
+        return cls(*t, param_name=param_name)
 
-    def as_tuple(self) -> tuple[float, float]:
+    def as_tuple(self) -> BoundsT:
         """Get as tuple."""
         return self.lower, self.upper
 
     @property
-    def bounds(self) -> tuple[float, float]:
+    def bounds(self) -> BoundsT:
         """Get the bounds."""
         return self.as_tuple()
 
     # =========================================================================
 
-    def __iter__(self) -> Iterable[float]:
+    def __iter__(self) -> Iterator[float]:
         """Iterate over the bounds."""
-        yield self.lower
-        yield self.upper
+        yield from self.bounds

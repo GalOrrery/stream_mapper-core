@@ -16,7 +16,7 @@ from stream_ml.core.utils.hashdict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.core._typing import DataT, FlatParsT
+    from stream_ml.core._typing import BoundsT, DataT, FlatParsT
 
 __all__: list[str] = []
 
@@ -32,12 +32,10 @@ class Model(Protocol[Array]):
 
     # Bounds on the coordinates and parameters.
     # name: (lower, upper)
-    coord_bounds: FrozenDictField[str, tuple[float, float]] = FrozenDictField(
-        FrozenDict()
-    )
-    param_bounds: ParamBoundsField = ParamBoundsField(ParamBounds())
+    coord_bounds: FrozenDictField[str, BoundsT] = FrozenDictField(FrozenDict())
+    param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array](ParamBounds())
 
-    DEFAULT_BOUNDS_CLS: ClassVar[type]  # TODO: PriorBounds[Any]
+    DEFAULT_BOUNDS: ClassVar  # TODO: PriorBounds[Any]
 
     def __post_init__(self) -> None:
 

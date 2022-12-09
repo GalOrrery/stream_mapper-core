@@ -11,11 +11,13 @@ import torch as xp
 
 # LOCAL
 from stream_ml.core.params import ParamBoundsField, ParamNamesField, Params
+from stream_ml.pytorch._typing import Array
 from stream_ml.pytorch.background.base import BackgroundModel
+from stream_ml.pytorch.prior.bounds import SigmoidBounds
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.pytorch._typing import Array, DataT
+    from stream_ml.pytorch._typing import DataT
 
 __all__: list[str] = []
 
@@ -27,7 +29,9 @@ class UniformBackgroundModel(BackgroundModel):
     n_features: int = 0
     _: KW_ONLY
     param_names: ParamNamesField = ParamNamesField(("mixparam",))
-    param_bounds: ParamBoundsField = ParamBoundsField({"mixparam": (0.0, 1.0)})
+    param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array](
+        {"mixparam": SigmoidBounds(0.0, 1.0)}
+    )
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -83,7 +87,12 @@ class UniformBackgroundModel(BackgroundModel):
         -------
         Array
         """
-        return xp.zeros_like(pars[("mixparam",)])
+        lp = xp.zeros_like(pars[("mixparam",)])
+
+        for bounds in self.param_bounds.flatvalues():
+            lp += bounds.logpdf(pars, lp)
+
+        return lp
 
     # ========================================================================
     # ML
@@ -101,4 +110,6 @@ class UniformBackgroundModel(BackgroundModel):
         Array
             fraction, mean, sigma
         """
+        # TODO: how to handle the forward pass of the Prior? This model has no
+        #  parameters.
         return xp.asarray([])

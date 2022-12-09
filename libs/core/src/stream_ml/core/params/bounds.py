@@ -4,9 +4,12 @@ from __future__ import annotations
 
 # STDLIB
 from collections.abc import ItemsView, Iterable, KeysView, Mapping, ValuesView
-from typing import TYPE_CHECKING, Any, TypeAlias, cast, overload
+from dataclasses import replace
+from typing import TYPE_CHECKING, Any, Generic, cast, overload
 
 # LOCAL
+from stream_ml.core._typing import Array
+from stream_ml.core.prior.bounds import PriorBounds
 from stream_ml.core.utils.hashdict import FrozenDict
 
 if TYPE_CHECKING:
@@ -14,13 +17,6 @@ if TYPE_CHECKING:
     from stream_ml.core.params.names import ParamNames
 
 __all__: list[str] = []
-
-
-#####################################################################
-# TYPING
-
-SubParamBounds: TypeAlias = FrozenDict[str, tuple[float, float]]
-
 
 #####################################################################
 # PARAMETERS
@@ -30,27 +26,15 @@ inf = float("inf")
 
 #####################################################################
 
-# @dataclass(frozen=True)
-# class PriorBounds:
-#     """Prior bounds."""
 
-#     lower: float
-#     upper: float
-
-#     @classmethod
-#     def from_tuple(cls, t: tuple[float, float], /) -> PriorBounds:
-#         """Create from tuple."""
-#         return cls(*t)
-
-
-#####################################################################
-
-
-class ParamBounds(FrozenDict[str, tuple[float, float] | SubParamBounds]):
+class ParamBounds(
+    FrozenDict[str, PriorBounds[Array] | FrozenDict[str, PriorBounds[Array]]]
+):
     """A frozen (hashable) dictionary of parameters."""
 
     def __init__(self, m: Any = (), /, **kwargs: Any) -> None:
         # Initialize, with processing, then validate
+        # TODO: not cast to dict if already a ParamBounds
         super().__init__(
             **{
                 k: FrozenDict(v) if isinstance(v, Mapping) else v
@@ -62,61 +46,75 @@ class ParamBounds(FrozenDict[str, tuple[float, float] | SubParamBounds]):
         for k, v in self.items():
             if not isinstance(k, str):
                 raise TypeError(f"Invalid key type: {type(k)}")
-            if isinstance(v, tuple):
-                if len(v) != 2 or not all(isinstance(e, (int, float)) for e in v):
-                    raise ValueError(f"Invalid value: {v}")
+            if isinstance(v, PriorBounds):
+                pass
             elif isinstance(v, FrozenDict):
                 for k2, v2 in v.items():
                     if not isinstance(k2, str):
                         raise TypeError(f"Invalid key type: {type(k2)}")
-                    elif (
-                        not isinstance(v2, tuple)
-                        or len(v2) != 2
-                        or not all(isinstance(e, (int, float)) for e in v2)
+                    elif not isinstance(v2, PriorBounds) or not all(
+                        isinstance(e, (int, float)) for e in v2
                     ):
                         raise ValueError(f"Invalid value: {k2} = {v2}")
             else:
                 raise TypeError(f"Invalid element type: {type(v)}")
 
     @classmethod
-    def from_names(cls, names: ParamNames) -> ParamBounds:
-        """Create a new ParamBounds instance."""
-        pbs = cls()
+    def from_names(
+        cls, names: ParamNames, default: PriorBounds[Array]
+    ) -> ParamBounds[Array]:
+        """Create a new ParamBounds instance.
+
+        Parameters
+        ----------
+        names : ParamNames, positional-only
+            The parameter names.
+        default : PriorBounds
+            The default prior bounds.
+
+        Returns
+        -------
+        ParamBounds
+        """
+        m: dict[str, PriorBounds[Array] | FrozenDict[str, PriorBounds[Array]]] = {}
         for pn in names:
             if isinstance(pn, str):  # e.g. "mixparam"
-                pbs._mapping[pn] = (-inf, inf)
+                m[pn] = replace(default, param_name=(pn,))
             else:  # e.g. ("phi2", ("mu", "sigma"))
-                pbs._mapping[pn[0]] = FrozenDict[str, tuple[float, float]](
-                    {k: (-inf, inf) for k in pn[1]}
+                m[pn[0]] = FrozenDict(
+                    {k: replace(default, param_name=(pn[0], k)) for k in pn[1]}
                 )
 
-        return cls(pbs)
+        return cls(m)
 
     # =========================================================================
+    # Mapping
 
     @overload
-    def __getitem__(self, key: str) -> tuple[float, float] | SubParamBounds:
+    def __getitem__(
+        self, key: str
+    ) -> PriorBounds[Array] | FrozenDict[str, PriorBounds[Array]]:
         ...
 
     @overload
-    def __getitem__(self, key: tuple[str]) -> tuple[float, float]:
+    def __getitem__(self, key: tuple[str]) -> PriorBounds[Array]:  # Flat key
         ...
 
     @overload
-    def __getitem__(self, key: tuple[str, str]) -> tuple[float, float]:
+    def __getitem__(self, key: tuple[str, str]) -> PriorBounds[Array]:  # Flat key
         ...
 
     def __getitem__(
         self, key: str | tuple[str] | tuple[str, str]
-    ) -> tuple[float, float] | SubParamBounds:
-        if isinstance(key, str):
+    ) -> PriorBounds[Array] | FrozenDict[str, PriorBounds[Array]]:
+        if isinstance(key, str):  # e.g. "mixparam"
             return super().__getitem__(key)
-        elif len(key) == 1:
+        elif len(key) == 1:  # e.g. ("mixparam",)
             v = super().__getitem__(key[0])
-            if not isinstance(v, tuple):
+            if not isinstance(v, PriorBounds):
                 raise KeyError(key)
             return v
-        else:
+        else:  # e.g. ("phi2", "mu")
             key = cast("tuple[str, str]", key)  # TODO: remove cast
             v = super().__getitem__(key[0])
             if not isinstance(v, FrozenDict):
@@ -127,17 +125,19 @@ class ParamBounds(FrozenDict[str, tuple[float, float] | SubParamBounds]):
         """Parameter bounds keys."""
         return self._mapping.keys()
 
-    def values(self) -> ValuesView[tuple[float, float] | SubParamBounds]:
+    def values(
+        self,
+    ) -> ValuesView[PriorBounds[Array] | FrozenDict[str, PriorBounds[Array]]]:
         """Parameter bounds values."""
         return self._mapping.values()
 
-    def items(self) -> ItemsView[str, tuple[float, float] | SubParamBounds]:
+    def items(
+        self,
+    ) -> ItemsView[str, PriorBounds[Array] | FrozenDict[str, PriorBounds[Array]]]:
         """Parameter bounds items."""
         return self._mapping.items()
 
-    # =========================================================================
-
-    def __or__(self, other: Any) -> ParamBounds:
+    def __or__(self, other: Any) -> ParamBounds[Array]:
         """Combine two ParamBounds instances."""
         if not isinstance(other, ParamBounds):
             raise NotImplementedError
@@ -145,10 +145,10 @@ class ParamBounds(FrozenDict[str, tuple[float, float] | SubParamBounds]):
         pbs = type(self)(**self._mapping)
 
         for k, v in other.items():
-            if k not in pbs or isinstance(v, tuple):
+            if k not in pbs or isinstance(v, PriorBounds):
                 pbs._mapping[k] = v
                 continue
-            elif isinstance((sv := pbs._mapping[k]), tuple):
+            elif isinstance((sv := pbs._mapping[k]), PriorBounds):
                 raise ValueError(f"mixing tuple and FrozenDict is not allowed: {k}")
             else:
                 pbs._mapping[k] = sv | v
@@ -171,13 +171,14 @@ class ParamBounds(FrozenDict[str, tuple[float, float] | SubParamBounds]):
         return super().__contains__(o)
 
     # =========================================================================
+    # Flat
 
     def flatitems(
         self,
-    ) -> Iterable[tuple[tuple[str] | tuple[str, str], tuple[float, float]]]:
+    ) -> Iterable[tuple[tuple[str] | tuple[str, str], PriorBounds[Array]]]:
         """Flattened items."""
         for name, bounds in self.items():
-            if isinstance(bounds, tuple):
+            if isinstance(bounds, PriorBounds):
                 yield (name,), bounds
             else:
                 for subname, subbounds in bounds.items():
@@ -187,29 +188,43 @@ class ParamBounds(FrozenDict[str, tuple[float, float] | SubParamBounds]):
         """Flattened keys."""
         return tuple(k for k, _ in self.flatitems())
 
-    def flatvalues(self) -> tuple[tuple[float, float], ...]:
+    def flatvalues(self) -> tuple[PriorBounds[Array], ...]:
         """Flattened values."""
         return tuple(v for _, v in self.flatitems())
 
 
-class ParamBoundsField:
-    """Dataclass descriptor for parameter bounds."""
+class ParamBoundsField(Generic[Array]):
+    """Dataclass descriptor for parameter bounds.
+
+    Parameters
+    ----------
+    default : ParamBounds or Mapping or None, optional
+        The default parameter bounds, by default `None`. If `None`, there are no
+        default bounds and the parameter bounds must be specified in the Model
+        constructor. If not a `ParamBounds` instance, it will be converted to
+        one.
+
+    Notes
+    -----
+    See https://docs.python.org/3/library/dataclasses.html for more information
+    on descriptor-typed fields for dataclasses.
+    """
 
     def __init__(
         self,
-        default: ParamBounds
-        | Mapping[str, tuple[float, float] | Mapping[str, tuple[float, float]]]
+        default: ParamBounds[Array]
+        | Mapping[str, PriorBounds[Array] | Mapping[str, PriorBounds[Array]]]
         | None = None,
     ) -> None:
-        self._default: ParamBounds | None
+        self._default: ParamBounds[Array] | None
         self._default = ParamBounds(default) if default is not None else None
 
     def __set_name__(self, _: type, name: str) -> None:
         self._name = "_" + name
 
-    def __get__(self, obj: object | None, _: type | None) -> ParamBounds:
+    def __get__(self, obj: object | None, _: type | None) -> ParamBounds[Array]:
         if obj is not None:
-            val: ParamBounds = getattr(obj, self._name)
+            val: ParamBounds[Array] = getattr(obj, self._name)
             return val
 
         default = self._default
@@ -218,7 +233,7 @@ class ParamBoundsField:
         else:
             raise AttributeError(f"no default value for {self._name}")
 
-    def __set__(self, obj: object, value: ParamBounds) -> None:
-        dv = ParamBounds(self._default or {})  # Default value as a dict.
+    def __set__(self, obj: object, value: ParamBounds[Array]) -> None:
+        dv: ParamBounds[Array] = ParamBounds(self._default or {})
         value = ParamBounds(value)
         object.__setattr__(obj, self._name, dv | value)

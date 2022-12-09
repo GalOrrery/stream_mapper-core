@@ -14,8 +14,10 @@ import jax.numpy as xp
 from jax.scipy.stats import norm
 
 # LOCAL
+from stream_ml.core._typing import BoundsT
 from stream_ml.core.params import ParamBounds, ParamBoundsField, ParamNames, Params
 from stream_ml.core.utils.hashdict import FrozenDict, FrozenDictField
+from stream_ml.jax.prior.bounds import PriorBounds
 from stream_ml.jax.stream.base import StreamModel
 from stream_ml.jax.utils import within_bounds
 from stream_ml.jax.utils.sigmoid import ColumnarScaledSigmoid
@@ -48,8 +50,8 @@ class Normal(StreamModel):
     n_layers: int = 3
     _: KW_ONLY
 
-    coord_bounds: FrozenDictField[str, tuple[float, float]] = FrozenDictField()
-    param_bounds: ParamBoundsField = ParamBoundsField(ParamBounds())
+    coord_bounds: FrozenDictField[str, BoundsT] = FrozenDictField()
+    param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array](ParamBounds())
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -86,7 +88,7 @@ class Normal(StreamModel):
         )
         self.output_scaling = ColumnarScaledSigmoid(
             tuple(range(len(self.param_names.flat))),
-            tuple(self.param_bounds.flatvalues()),
+            tuple(tuple(pbs) for pbs in self.param_bounds.flatvalues()),
         )
 
     @classmethod
@@ -96,12 +98,30 @@ class Normal(StreamModel):
         n_layers: int = 3,
         *,
         coord_name: str,
-        coord_bounds: tuple[float, float],
-        mixparam_bounds: tuple[float, float] = (0, 1),
-        mu_bounds: tuple[float, float] = (-xp.inf, xp.inf),
-        sigma_bounds: tuple[float, float] = (0, 0.3),
+        coord_bounds: PriorBounds | BoundsT,
+        mixparam_bounds: PriorBounds | BoundsT = (0, 1),
+        mu_bounds: PriorBounds | BoundsT = (-xp.inf, xp.inf),
+        sigma_bounds: PriorBounds | BoundsT = (0, 0.3),
     ) -> Normal:
         """Create a Normal from a simpler set of inputs.
+
+        Parameters
+        ----------
+        n_features : int, optional
+            Number of features, by default 50.
+        n_layers : int, optional
+            Number of hidden layers, by default 3.
+
+        coord_name : str, keyword-only
+            Coordinate name.
+        coord_bounds : BoundsT, keyword-only
+            Coordinate bounds.
+        mixparam_bounds : PriorBounds | BoundsT, keyword-only
+            Mixparam bounds, by default (0, 1).
+        mu_bounds : PriorBounds | BoundsT, keyword-only
+            Mu bounds, by default (-xp.inf, xp.inf).
+        sigma_bounds : PriorBounds | BoundsT, keyword-only
+            Sigma bounds, by default (0, 0.3).
 
         Returns
         -------
@@ -113,12 +133,14 @@ class Normal(StreamModel):
             coord_names=(coord_name,),
             param_names=ParamNames(("mixparam", (coord_name, ("mu", "sigma")))),  # type: ignore[arg-type] # noqa: E501
             coord_bounds=FrozenDict({coord_name: coord_bounds}),  # type: ignore[arg-type] # noqa: E501
-            param_bounds=FrozenDict(  # type: ignore[arg-type]
-                mixparam=mixparam_bounds,
-                coord_name=FrozenDict(
-                    mu=mu_bounds,
-                    sigma=sigma_bounds,
-                ),
+            param_bounds=ParamBounds(  # type: ignore[arg-type]
+                {
+                    "mixparam": cls._make_bounds(mixparam_bounds, ("mixparam",)),
+                    coord_name: FrozenDict(
+                        mu=cls._make_bounds(mu_bounds, (coord_name, "mu")),
+                        sigma=cls._make_bounds(sigma_bounds, (coord_name, "sigma")),
+                    ),
+                }
             ),
         )
 

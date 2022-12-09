@@ -6,7 +6,6 @@ from __future__ import annotations
 import functools
 import operator
 from dataclasses import dataclass
-from math import inf
 from typing import TYPE_CHECKING
 
 # THIRD-PARTY
@@ -17,12 +16,13 @@ from torch.distributions.normal import Normal as TorchNormal
 # LOCAL
 from stream_ml.core.params import ParamBounds, ParamNames, Params
 from stream_ml.core.utils.hashdict import FrozenDict
+from stream_ml.pytorch.prior.bounds import NoBounds, PriorBounds, SigmoidBounds
 from stream_ml.pytorch.stream.base import StreamModel
-from stream_ml.pytorch.utils import within_bounds
 from stream_ml.pytorch.utils.sigmoid import ColumnarScaledSigmoid
 
 if TYPE_CHECKING:
     # LOCAL
+    from stream_ml.core._typing import BoundsT
     from stream_ml.pytorch._typing import Array, DataT
 
 __all__: list[str] = []
@@ -89,7 +89,7 @@ class DoubleGaussian(StreamModel):
         )
         self.output_scaling = ColumnarScaledSigmoid(
             tuple(range(len(self.param_names.flat))),
-            tuple(self.param_bounds.flatvalues()),
+            tuple(v.as_tuple() for v in self.param_bounds.flatvalues()),
         )
 
     @classmethod
@@ -99,12 +99,12 @@ class DoubleGaussian(StreamModel):
         n_layers: int = 3,
         *,
         coord_name: str,
-        coord_bounds: tuple[float, float],
-        mixparam1_bounds: tuple[float, float] = (0, 0.45),
-        mixparam2_bounds: tuple[float, float] = (0, 0.2),
-        mu_bounds: tuple[float, float] = (-inf, inf),
-        sigma1_bounds: tuple[float, float] = (0, 0.3),
-        sigma2_bounds: tuple[float, float] = (0, 0.3),
+        coord_bounds: BoundsT,
+        mixparam1_bounds: PriorBounds | BoundsT = SigmoidBounds(0, 0.45),  # noqa: B008
+        mixparam2_bounds: PriorBounds | BoundsT = SigmoidBounds(0, 0.2),  # noqa: B008
+        mu_bounds: PriorBounds | BoundsT = NoBounds(),  # noqa: B008
+        sigma1_bounds: PriorBounds | BoundsT = SigmoidBounds(0, 0.3),  # noqa: B008
+        sigma2_bounds: PriorBounds | BoundsT = SigmoidBounds(0, 0.3),  # noqa: B008
     ) -> DoubleGaussian:
         """Create a DoubleGaussian from a simpler set of inputs.
 
@@ -128,12 +128,12 @@ class DoubleGaussian(StreamModel):
             ),
             param_bounds=ParamBounds(  # type: ignore[arg-type]
                 {
-                    "mixparam1": mixparam1_bounds,
-                    "mixparam2": mixparam2_bounds,
+                    "mixparam1": cls._make_bounds(mixparam1_bounds, ("mixparam1",)),
+                    "mixparam2": cls._make_bounds(mixparam2_bounds, ("mixparam2",)),
                     coord_name: FrozenDict(
-                        mu=mu_bounds,
-                        sigma1=sigma1_bounds,
-                        sigma2=sigma2_bounds,
+                        mu=cls._make_bounds(mu_bounds, (coord_name, "mu")),
+                        sigma1=cls._make_bounds(sigma1_bounds, (coord_name, "sigma1")),
+                        sigma2=cls._make_bounds(sigma2_bounds, (coord_name, "sigma2")),
                     ),
                 }
             ),
@@ -187,9 +187,10 @@ class DoubleGaussian(StreamModel):
         """
         lnp = xp.zeros_like(pars[("mixparam1",)])  # 100%
         # Bounds
-        for names, bounds in self.param_bounds.flatitems():
-            lnp[~within_bounds(pars[names], *bounds)] = -xp.inf
+        for bound in self.param_bounds.flatvalues():
+            lnp += bound.logpdf(pars, lnp)
 
+        # TODO! as embedded Priors
         # sigma2 > sigma1 & mixparam1 < fraction_1
         c = self.coord_names[0]
         lnp[pars[c, "sigma2"] < pars[c, "sigma1"]] = -xp.inf

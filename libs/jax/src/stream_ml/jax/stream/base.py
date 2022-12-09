@@ -55,7 +55,7 @@ class StreamModel(ModelBase, CoreStreamModel[Array]):
 
         Parameters
         ----------
-        pars : ParsT
+        pars : Params[Array]
             Parameters.
 
         Returns

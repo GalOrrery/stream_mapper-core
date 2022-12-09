@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Callable
 import numpy as np
 
 # LOCAL
-from stream_ml.core._typing import Array
+from stream_ml.core._typing import Array, BoundsT
 from stream_ml.core.base import Model
 from stream_ml.core.params import MutableParams, ParamBounds, ParamNames, Params
 from stream_ml.core.utils.hashdict import FrozenDict, FrozenDictField
@@ -61,13 +61,13 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
 
         # Add the coord_bounds
         # TODO: make sure duplicates have the same bounds
-        cbs: FrozenDict[str, tuple[float, float]] = FrozenDict()
+        cbs: FrozenDict[str, BoundsT] = FrozenDict()
         for m in self.components.values():
             cbs._mapping.update(m.coord_bounds)
         self._coord_bounds = cbs
 
         # Add the param_bounds
-        cps = ParamBounds()
+        cps: ParamBounds[Array] = ParamBounds()
         for n, m in self.components.items():
             cps._mapping.update({f"{n}_{k}": v for k, v in m.param_bounds.items()})
         self._param_bounds = cps
@@ -95,7 +95,7 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
         raise AttributeError("cannot set param_names.")
 
     @property  # type: ignore[override]
-    def coord_bounds(self) -> FrozenDict[str, tuple[float, float]]:
+    def coord_bounds(self) -> FrozenDict[str, BoundsT]:
         """Coordinate names."""
         return self._coord_bounds
 
@@ -105,7 +105,7 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
         raise AttributeError("cannot set coord_bounds.")
 
     @property  # type: ignore[override]
-    def param_bounds(self) -> ParamBounds:
+    def param_bounds(self) -> ParamBounds[Array]:
         """Coordinate names."""
         return self._param_bounds
 

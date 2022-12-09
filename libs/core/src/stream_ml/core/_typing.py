@@ -4,7 +4,7 @@ from __future__ import annotations
 
 # STDLIB
 from collections.abc import Mapping, MutableMapping
-from typing import Any, Protocol, TypeVar
+from typing import Any, Protocol, TypeAlias, TypeVar
 
 __all__ = [
     "Array",
@@ -59,10 +59,6 @@ class ArrayLike(Protocol):
         """True division."""
         ...
 
-    def __div__(self: Self, other: ArrayLike) -> Self:
-        """Division."""
-        ...
-
     # ========================================================================
     # Methods
 
@@ -86,3 +82,5 @@ MutableFlatParsT = MutableMapping[str, Array]
 
 DataT = Mapping[str, Array]
 MutableDataT = MutableMapping[str, Array]
+
+BoundsT: TypeAlias = tuple[float, float]

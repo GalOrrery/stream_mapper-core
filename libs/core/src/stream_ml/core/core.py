@@ -4,14 +4,16 @@ from __future__ import annotations
 
 # STDLIB
 from abc import ABCMeta, abstractmethod
-from dataclasses import KW_ONLY, dataclass
+from dataclasses import KW_ONLY, dataclass, replace
 from typing import TYPE_CHECKING, ClassVar
 
 # LOCAL
-from stream_ml.core._typing import Array
+from stream_ml.core._typing import Array, BoundsT
 from stream_ml.core.base import Model
 from stream_ml.core.params import MutableParams, ParamBounds, ParamNamesField, Params
 from stream_ml.core.params.bounds import ParamBoundsField
+from stream_ml.core.params.names import FlatParamName
+from stream_ml.core.prior.bounds import PriorBounds
 from stream_ml.core.utils.hashdict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
@@ -48,26 +50,24 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
 
     # Bounds on the coordinates and parameters.
     # name: (lower, upper)
-    coord_bounds: FrozenDictField[str, tuple[float, float]] = FrozenDictField(
-        FrozenDict()
-    )
-    param_bounds: ParamBoundsField = ParamBoundsField(ParamBounds())
+    coord_bounds: FrozenDictField[str, BoundsT] = FrozenDictField(FrozenDict())
+    param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array](ParamBounds())
 
-    DEFAULT_BOUNDS_CLS: ClassVar[type]  # TODO: [PriorBounds[Any]]
+    DEFAULT_BOUNDS: ClassVar  # TODO: [PriorBounds[Any]]
 
     def __post_init__(self) -> None:
         """Post-init validation."""
         super().__post_init__()
 
-        # Shapes attribute
-        self.shapes: dict[str, int | dict[str, int]]
-        shapes: dict[str, int | dict[str, int]] = {}
-        for pn in self.param_names:
-            if isinstance(pn, str):  # e.g. "mixparam"
-                shapes[pn] = self.n_features
-            else:  # e.g. ("phi2", ("mu", "sigma"))
-                shapes[pn[0]] = {p: self.n_features for p in pn[1]}
-        object.__setattr__(self, "shapes", shapes)
+        # # Shapes attribute
+        # self.shapes: dict[str, int | dict[str, int]]
+        # shapes: dict[str, int | dict[str, int]] = {}
+        # for pn in self.param_names:
+        #     if isinstance(pn, str):  # e.g. "mixparam"
+        #         shapes[pn] = self.n_features
+        #     else:  # e.g. ("phi2", ("mu", "sigma"))
+        #         shapes[pn[0]] = {p: self.n_features for p in pn[1]}
+        # object.__setattr__(self, "shapes", shapes)
 
         # Validate the param_names
         if not self.param_names:
@@ -81,7 +81,11 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
         self.coord_bounds = FrozenDict(cbs)
 
         # Make param bounds
-        self.param_bounds = ParamBounds.from_names(self.param_names) | self.param_bounds
+        param_bounds: ParamBounds[Array] = (
+            ParamBounds.from_names(self.param_names, default=self.DEFAULT_BOUNDS)
+            | self.param_bounds
+        )
+        self.param_bounds = param_bounds
 
     # ========================================================================
 
@@ -187,3 +191,22 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
         Array
         """
         raise NotImplementedError
+
+    # ========================================================================
+    # Misc
+
+    @classmethod
+    def _make_bounds(
+        cls, bounds: PriorBounds[Array] | BoundsT, param_name: FlatParamName
+    ) -> PriorBounds[Array]:
+        """Make bounds."""
+        return (
+            bounds
+            if isinstance(bounds, PriorBounds)
+            else replace(
+                cls.DEFAULT_BOUNDS,
+                lower=bounds[0],
+                upper=bounds[1],
+                param_name=param_name,
+            )
+        )

@@ -15,10 +15,11 @@ import torch.nn as nn
 from torch.distributions.normal import Normal as TorchNormal
 
 # LOCAL
+from stream_ml.core._typing import BoundsT
 from stream_ml.core.params import ParamBounds, ParamNames, Params
 from stream_ml.core.utils.hashdict import FrozenDict
+from stream_ml.pytorch.prior.bounds import NoBounds, PriorBounds, SigmoidBounds
 from stream_ml.pytorch.stream.base import StreamModel
-from stream_ml.pytorch.utils import within_bounds
 from stream_ml.pytorch.utils.sigmoid import ColumnarScaledSigmoid
 
 if TYPE_CHECKING:
@@ -84,7 +85,7 @@ class Normal(StreamModel):
         )
         self.output_scaling = ColumnarScaledSigmoid(
             tuple(range(len(self.param_names.flat))),
-            tuple(self.param_bounds.flatvalues()),
+            tuple(v.as_tuple() for v in self.param_bounds.flatvalues()),
         )
 
     @classmethod
@@ -94,10 +95,10 @@ class Normal(StreamModel):
         n_layers: int = 3,
         *,
         coord_name: str,
-        coord_bounds: tuple[float, float] = (-inf, inf),
-        mixparam_bounds: tuple[float, float] = (0, 1),
-        mu_bounds: tuple[float, float] = (-inf, inf),
-        sigma_bounds: tuple[float, float] = (0, 0.3),
+        coord_bounds: BoundsT = (-inf, inf),
+        mixparam_bounds: PriorBounds | BoundsT = SigmoidBounds(0, 1),  # noqa: B008
+        mu_bounds: PriorBounds | BoundsT = NoBounds(),  # noqa: B008
+        sigma_bounds: PriorBounds | BoundsT = SigmoidBounds(0, 0.3),  # noqa: B008
     ) -> Normal:
         """Create a Normal from a simpler set of inputs.
 
@@ -110,13 +111,13 @@ class Normal(StreamModel):
 
         coord_name : str, keyword-only
             Coordinate name.
-        coord_bounds : tuple[float, float], optional keyword-only
+        coord_bounds : BoundsT, optional keyword-only
             Coordinate bounds.
-        mixparam_bounds : tuple[float, float], optional keyword-only
+        mixparam_bounds : PriorBounds | BoundsT, optional keyword-only
             Bounds on the mixture parameter.
-        mu_bounds : tuple[float, float], optional keyword-only
+        mu_bounds : PriorBounds | BoundsT, optional keyword-only
             Bounds on the mean.
-        sigma_bounds : tuple[float, float], optional keyword-only
+        sigma_bounds : PriorBounds | BoundsT, optional keyword-only
             Bounds on the standard deviation.
 
         Returns
@@ -131,10 +132,10 @@ class Normal(StreamModel):
             coord_bounds=FrozenDict({coord_name: coord_bounds}),  # type: ignore[arg-type] # noqa: E501
             param_bounds=ParamBounds(  # type: ignore[arg-type]
                 {
-                    "mixparam": mixparam_bounds,
+                    "mixparam": cls._make_bounds(mixparam_bounds, ("mixparam",)),
                     coord_name: FrozenDict(
-                        mu=mu_bounds,
-                        sigma=sigma_bounds,
+                        mu=cls._make_bounds(mu_bounds, (coord_name, "mu")),
+                        sigma=cls._make_bounds(sigma_bounds, (coord_name, "sigma")),
                     ),
                 }
             ),
@@ -181,8 +182,8 @@ class Normal(StreamModel):
         """
         lnp = xp.zeros_like(pars[("mixparam",)])  # 100%
         # Bounds
-        for names, bounds in self.param_bounds.flatitems():
-            lnp[~within_bounds(pars[names], *bounds)] = -xp.inf
+        for bound in self.param_bounds.flatvalues():
+            lnp += bound.logpdf(pars, lnp)
         return lnp
 
     # ========================================================================
