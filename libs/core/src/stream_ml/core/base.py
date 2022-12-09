@@ -66,7 +66,7 @@ class Model(Protocol[Array]):
 
         Returns
         -------
-        ParsT
+        Params[Array]
             Nested dictionary of parameters wth parameters grouped by coordinate
             name.
         """

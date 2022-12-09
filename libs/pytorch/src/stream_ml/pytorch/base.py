@@ -79,7 +79,7 @@ class Model(CoreModel[Array], Protocol):
 
         Returns
         -------
-        ParsT
+        Params[Array]
         """
         raise NotImplementedError
 
@@ -88,7 +88,7 @@ class Model(CoreModel[Array], Protocol):
 
         Parameters
         ----------
-        pars : ParsT
+        pars : Params[Array]
             Parameter dictionary.
 
         Returns

@@ -126,7 +126,7 @@ class MultivariateNormal(StreamModel):
 
         Parameters
         ----------
-        pars : ParsT
+        pars : Params[Array]
             Parameters.
 
         Returns

@@ -179,7 +179,7 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
 
         Returns
         -------
-        ParsT
+        Params[Array]
         """
         # Unpack the parameters
         pars = Params[Array]()
