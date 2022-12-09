@@ -12,7 +12,6 @@ __all__ = [
     "FlatParsT",
     "MutableFlatParsT",
     "ParsT",
-    "MutableParsT",
     # Data
     "DataT",
     "MutableDataT",
@@ -88,7 +87,6 @@ MutableFlatParsT = MutableMapping[str, Array]
 
 
 ParsT = Mapping[str, Array | Mapping[str, Array]]
-MutableParsT = MutableMapping[str, Array | MutableMapping[str, Array]]
 
 DataT = Mapping[str, Array]
 MutableDataT = MutableMapping[str, Array]
