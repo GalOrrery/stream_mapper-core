@@ -3,13 +3,26 @@
 from __future__ import annotations
 
 # STDLIB
-from collections.abc import Iterator, Mapping, Sequence
-from typing import Any, Generic, TypeVar
+from collections.abc import Iterable, Iterator, Mapping, Sequence
+from typing import Generic, Protocol, TypeVar
 
 __all__: list[str] = []
 
 K = TypeVar("K")
 V = TypeVar("V")
+_VT_co = TypeVar("_VT_co", covariant=True)
+
+
+class SupportsKeysAndGetItem(Protocol[K, _VT_co]):
+    """Protocol that supports keys and getitem."""
+
+    def keys(self) -> Iterable[K]:
+        """Return keys."""
+        ...
+
+    def __getitem__(self, __key: K) -> _VT_co:
+        """Get item."""
+        ...
 
 
 class FrozenDict(Mapping[K, V]):
@@ -17,12 +30,17 @@ class FrozenDict(Mapping[K, V]):
 
     __slots__ = ("_mapping",)
 
-    def __init__(self, m: Any = (), /, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        m: SupportsKeysAndGetItem[K, V] | Iterable[tuple[K, V]] = (),
+        /,
+        **kwargs: V,
+    ) -> None:
         # Please do not mutate this dictionary.
         self._mapping: dict[K, V] = dict(m, **kwargs)
         # Make sure that the dictionary is hashable.
         hash(self)
-        return None
+        return
 
     def __iter__(self) -> Iterator[K]:
         return iter(self._mapping)

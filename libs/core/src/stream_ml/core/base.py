@@ -31,7 +31,6 @@ class Model(Protocol[Array]):
     param_names: ParamNamesField = ParamNamesField()
 
     # Bounds on the coordinates and parameters.
-    # name: (lower, upper)
     coord_bounds: FrozenDictField[str, BoundsT] = FrozenDictField(FrozenDict())
     param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array](ParamBounds())
 
@@ -46,7 +45,7 @@ class Model(Protocol[Array]):
             if isinstance(bounds, Mapping) and not isinstance(bounds, FrozenDict):
                 self.param_bounds._mapping[name] = FrozenDict(bounds)  # type: ignore[unreachable] # noqa: E501
 
-        return None
+        return
 
     # ========================================================================
 
@@ -169,7 +168,6 @@ class Model(Protocol[Array]):
         return post_arr
 
     # ------------------------------------------------------------------------
-    # Statistics: summmed
 
     def ln_likelihood(
         self, pars: Params[Array], data: DataT[Array], *args: Array

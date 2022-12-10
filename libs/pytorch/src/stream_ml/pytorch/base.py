@@ -161,6 +161,6 @@ class Model(CoreModel[Array], Protocol):
         """
         raise NotImplementedError
 
-    def __call__(self, *args: Any, **kwds: Any) -> Array:
+    def __call__(self, *args: Any, **kwargs: Any) -> Array:
         """Pytoch call method."""
         ...

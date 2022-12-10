@@ -81,11 +81,7 @@ class ColumnarScaledSigmoid(nn.Module):  # type: ignore[misc]
         if not self.inplace:
             arr = arr.clone()
 
-        for col, (lower, upper) in zip(self.columns, self.bounds):
+        for col, (lower, upper) in zip(self.columns, self.bounds, strict=True):
             arr[:, col] = scaled_sigmoid(arr[:, col], lower=lower, upper=upper)
 
         return arr
-
-    # def extra_repr(self) -> str:
-    #     inplace_str = "inplace=True" if self.inplace else ""
-    #     return inplace_str

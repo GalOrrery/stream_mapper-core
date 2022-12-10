@@ -49,7 +49,6 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
     param_names: ParamNamesField = ParamNamesField()
 
     # Bounds on the coordinates and parameters.
-    # name: (lower, upper)
     coord_bounds: FrozenDictField[str, BoundsT] = FrozenDictField(FrozenDict())
     param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array](ParamBounds())
 
@@ -60,14 +59,9 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
         super().__post_init__()
 
         # # Shapes attribute
-        # self.shapes: dict[str, int | dict[str, int]]
-        # shapes: dict[str, int | dict[str, int]] = {}
         # for pn in self.param_names:
         #     if isinstance(pn, str):  # e.g. "mixparam"
-        #         shapes[pn] = self.n_features
         #     else:  # e.g. ("phi2", ("mu", "sigma"))
-        #         shapes[pn[0]] = {p: self.n_features for p in pn[1]}
-        # object.__setattr__(self, "shapes", shapes)
 
         # Validate the param_names
         if not self.param_names:
@@ -85,6 +79,7 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
             ParamBounds.from_names(self.param_names, default=self.DEFAULT_BOUNDS)
             | self.param_bounds
         )
+        param_bounds._fixup_param_names()
         self.param_bounds = param_bounds
 
     # ========================================================================

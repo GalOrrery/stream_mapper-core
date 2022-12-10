@@ -28,9 +28,6 @@ __all__: list[str] = []
 class PriorBounds(CorePriorBounds[Array]):
     """Base class for prior bounds."""
 
-    # inplace: bool = False  # whether to modify the params inplace
-    # # TODO: move this into a pytorch-specific base class
-
     def logpdf(self, lp: Params[Array], current_lnpdf: Array | None = None, /) -> Array:
         """Evaluate the logpdf."""
         if self.param_name is None:
@@ -76,7 +73,6 @@ class SigmoidBounds(PriorBounds):
     def __call__(self, x: Array, param_names: FlatParamNames, /) -> Array:
         """Evaluate the forward step in the prior."""
         # if not self.inplace:
-        #     x = x.clone()
         x = x.clone()
 
         col = param_names.index(self.param_name)

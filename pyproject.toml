@@ -66,5 +66,34 @@
 
 [tool.ruff]
 line-length = 88
-select = ["E", "F", "D", "U", "N", "S", "C", "B", "A", "T", "Q", "YTT", "RUF"]
-ignore = ["D105", "D107", "D203", "D213"]
+select = [
+  "A",
+  "ANN",
+  "ARG",
+  "B",
+  "BLE",
+  "C",
+  "D",
+  "E",
+  "ERA",
+  "F",
+  "FBT",
+  "ICN",
+  "N",
+  "PGH",
+  "PLC",
+  "Q",
+  "RUF",
+  "S",
+  "T",
+  "TID",
+  "UP",
+  "W",
+  "YTT"
+]
+ignore = [
+  "ANN101", "ANN102", "ANN401",
+  "ARG001", "ARG002",
+  "D105", "D107", "D203", "D213",
+  "FBT003",
+]

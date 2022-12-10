@@ -30,7 +30,7 @@ class UniformBackgroundModel(BackgroundModel):
     _: KW_ONLY
     param_names: ParamNamesField = ParamNamesField(("mixparam",))
     param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array](
-        {"mixparam": SigmoidBounds(0.0, 1.0)}
+        {"mixparam": SigmoidBounds(0.0, 1.0, param_name=("mixparam",))}
     )
 
     def __post_init__(self) -> None:

@@ -72,7 +72,6 @@ class Normal(StreamModel):
             if not self.param_bounds.__contains__(pn):
                 raise ValueError(f"param_bounds must contain {pn}.")
             # TODO: recursively check for all sub-parameters
-        # [("mixparam", (0.0, 1.0)), ("mu", (-xp.inf, xp.inf)), ("sigma", (0.0, 0.3))]
 
     def setup(self) -> None:
         """Setup."""

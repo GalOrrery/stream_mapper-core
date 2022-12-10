@@ -45,16 +45,18 @@ class Params(Mapping[str, V | Mapping[str, V]]):
         self, key: str | tuple[str] | tuple[str, str]
     ) -> V | Mapping[str, V]:
         if isinstance(key, str):
-            return self._mapping[key]
+            value = self._mapping[key]
         elif len(key) == 1:
-            return self._mapping[key[0]]
+            value = self._mapping[key[0]]
         elif len(key) == 2:
             key = cast("tuple[str, str]", key)  # TODO: remove cast
             cm = self._mapping[key[0]]
             if not isinstance(cm, Mapping):
                 raise KeyError(str(key))
-            return cm[key[1]]
-        raise KeyError(str(key))
+            value = cm[key[1]]
+        else:
+            raise KeyError(str(key))
+        return value
 
     def __iter__(self) -> Iterator[str]:
         """Iterate over the keys."""
@@ -90,7 +92,7 @@ class Params(Mapping[str, V | Mapping[str, V]]):
             {k[lp:]: v for k, v in self._mapping.items() if k.startswith(prefix)}
         )
 
-    def add_prefix(self, prefix: str, inplace: bool = False) -> Params[V]:
+    def add_prefix(self, prefix: str, *, inplace: bool = False) -> Params[V]:
         """Add the prefix to the keys."""
         if inplace:
             for k in tuple(self._mapping.keys()):
