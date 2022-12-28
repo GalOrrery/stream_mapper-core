@@ -57,12 +57,12 @@ class PriorBase(Generic[Array], metaclass=ABCMeta):
         ...
 
     @abstractmethod
-    def __call__(self, x: Array, model: Model[Array], /) -> Array:
+    def __call__(self, nn: Array, model: Model[Array], /) -> Array:
         """Evaluate the forward step in the prior.
 
         Parameters
         ----------
-        x : Array, position-only
+        nn : Array, position-only
             The input to evaluate the prior at.
         model : `~stream_ml.core.Model`, position-only
             The model to evaluate the prior at.

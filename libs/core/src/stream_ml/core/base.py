@@ -40,7 +40,7 @@ class Model(Protocol[Array]):
         # checkers will complain about mutable input, but this allows for the
         # run-time behavior to work regardless.
         self.param_bounds._freeze()
-        return None
+        return
 
     # ========================================================================
 

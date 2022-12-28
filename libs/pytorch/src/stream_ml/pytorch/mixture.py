@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 
 # THIRD-PARTY
 import torch as xp
-import torch.nn as nn
+from torch import nn
 
 # LOCAL
 from stream_ml.core.mixture import MixtureModelBase

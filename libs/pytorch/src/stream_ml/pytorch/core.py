@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 # THIRD-PARTY
-import torch.nn as nn
+from torch import nn
 
 # LOCAL
 from stream_ml.core.core import ModelBase as CoreModelBase

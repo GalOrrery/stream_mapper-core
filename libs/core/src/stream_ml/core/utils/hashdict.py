@@ -108,7 +108,8 @@ class FrozenDictField(Generic[K, V]):
 
         default = self._default
         if default is MISSING:
-            raise AttributeError(f"no default value for {self._name}")
+            msg = f"no default value for {self._name}"
+            raise AttributeError(msg)
         return default
 
     def __set__(self, obj: object, value: Mapping[K, V]) -> None:

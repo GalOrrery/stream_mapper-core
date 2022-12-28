@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 
 # THIRD-PARTY
 import torch as xp
-import torch.nn as nn
+from torch import nn
 from torch.distributions import MultivariateNormal as TorchMultivariateNormal
 
 # LOCAL
@@ -55,16 +55,16 @@ class MultivariateNormal(StreamModel):
             *((c, p) for c in self.coord_names for p in ("mu", "sigma")),
         )
         if self.param_names.flats != expect:
-            raise ValueError(
-                f"Expected param_names.flats={expect}, got {self.param_names.flats}"
-            )
+            msg = f"Expected param_names.flats={expect}, got {self.param_names.flats}"
+            raise ValueError(msg)
 
         # Validate the param_bounds
         if self.param_bounds.flatkeys() != expect:
-            raise ValueError(
+            msg = (
                 f"Expected param_bounds.flatkeys()={expect}, "
                 f"got {self.param_bounds.flatkeys()}"
             )
+            raise ValueError(msg)
 
         # Define the layers of the neural network:
         # Total: in (phi) -> out (fraction, *mean, *sigma)
@@ -200,7 +200,7 @@ class MultivariateMissingNormal(MultivariateNormal):  # (MultivariateNormal)
         cov = mask * sigma**2  # (N, 4) positive definite  # TODO: add eps
         det = (cov + (1 - mask)).prod(dim=1, keepdims=True)  # (N, 1)
 
-        ln_stream_lik = xp.log(xp.clip(pars[("weight",)], min=eps)) - 0.5 * (
+        return xp.log(xp.clip(pars[("weight",)], min=eps)) - 0.5 * (
             dimensionality * _log2pi  # dim of data
             + xp.log(det)
             + (  # TODO: speed up
@@ -209,4 +209,3 @@ class MultivariateMissingNormal(MultivariateNormal):  # (MultivariateNormal)
                 @ dmm[:, :, None]  # (N, 4, 1)
             )[:, :, 0]
         )  # (N, 1)
-        return ln_stream_lik

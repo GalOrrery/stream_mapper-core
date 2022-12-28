@@ -38,7 +38,8 @@ class PriorBounds(CorePriorBounds[Array]):
     ) -> Array | float:
         """Evaluate the logpdf."""
         if self.param_name is None:
-            raise ValueError("need to set param_name")
+            msg = "need to set param_name"
+            raise ValueError(msg)
 
         bp = xp.zeros_like(pars[self.param_name])
         bp[~within_bounds(pars[self.param_name], self.lower, self.upper)] = -xp.inf

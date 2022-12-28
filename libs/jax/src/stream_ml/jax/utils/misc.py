@@ -49,4 +49,4 @@ def within_bounds(
         sel = value <= upper_bound if upper_inclusive else value < upper_bound
         inbounds = inbounds.at[sel].set(False)
 
-    return inbounds
+    return inbounds  # noqa: RET504

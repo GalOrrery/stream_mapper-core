@@ -16,6 +16,7 @@ from jax.scipy.stats import norm
 # LOCAL
 from stream_ml.core._typing import BoundsT
 from stream_ml.core.params import ParamBounds, ParamBoundsField, ParamNames, Params
+from stream_ml.core.params.names import ParamNamesField
 from stream_ml.core.utils.hashdict import FrozenDict, FrozenDictField
 from stream_ml.jax.prior.bounds import PriorBounds
 from stream_ml.jax.stream.base import StreamModel
@@ -48,6 +49,7 @@ class Normal(StreamModel):
     n_layers: int = 3
     _: KW_ONLY
     coord_bounds: FrozenDictField[str, BoundsT] = FrozenDictField()
+    param_names: ParamNamesField = ParamNamesField(("weight", (..., ("mu", "sigma"))))
     param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array](ParamBounds())
 
     def __post_init__(self) -> None:
@@ -55,19 +57,25 @@ class Normal(StreamModel):
 
         # Validate the coord_names
         if len(self.coord_names) != 1:
-            raise ValueError("Only one coordinate is supported, e.g ('phi2',).")
+            msg = "Only one coordinate is supported, e.g ('phi2',)"
+            raise ValueError(msg)
+
+        cn = self.coord_names[0]
 
         # Validate the param_names
-        if self.param_names != ("weight", (self.coord_names[0], ("mu", "sigma"))):
-            raise ValueError(
-                "param_names must be ('weight', (<coordinate>, ('mu', 'sigma')))."
+        if self.param_names != ("weight", (cn, ("mu", "sigma"))):
+            msg = (
+                f"param_names must be ('weight', ({cn}, ('mu', 'sigma'))),"
+                f" gott {self.param_names}"
             )
+            raise ValueError(msg)
 
         # Validate the param_bounds
         for pn in self.param_names:
             # "in X" ignores __contains__ & __getitem__ signatures
             if not self.param_bounds.__contains__(pn):
-                raise ValueError(f"param_bounds must contain {pn}.")
+                msg = f"param_bounds must contain {pn}."
+                raise ValueError(msg)
             # TODO: recursively check for all sub-parameters
 
     def setup(self) -> None:

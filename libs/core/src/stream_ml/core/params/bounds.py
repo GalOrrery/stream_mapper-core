@@ -39,7 +39,8 @@ class ParamBounds(
         pb: dict[str, PriorBounds[Array] | FrozenDict[str, PriorBounds[Array]]] = {}
         for k, v in dict(m, **kwargs).items():
             if not isinstance(k, str):
-                raise TypeError(f"Invalid key type: {type(k)}")
+                msg = f"Invalid key type: {type(k)}"
+                raise TypeError(msg)
 
             if isinstance(v, PriorBounds):
                 pb[k] = v
@@ -54,7 +55,8 @@ class ParamBounds(
                     }
                 )
             else:
-                raise TypeError(f"Invalid element type: {type(v)}")
+                msg = f"Invalid element type: {type(v)}"
+                raise TypeError(msg)
 
         super().__init__(pb)
 
@@ -117,7 +119,7 @@ class ParamBounds(
             if not isinstance(v, FrozenDict):
                 raise KeyError(key)
             value = v[key[1]]
-        return value
+        return value  # noqa: RET504
 
     def keys(self) -> KeysView[str]:
         """Parameter bounds keys."""
@@ -147,7 +149,8 @@ class ParamBounds(
                 pbs._mapping[k] = v
                 continue
             elif isinstance((sv := pbs._mapping[k]), PriorBounds):
-                raise ValueError(f"mixing tuple and FrozenDict is not allowed: {k}")
+                msg = f"mixing tuple and FrozenDict is not allowed: {k}"
+                raise ValueError(msg)
             else:
                 pbs._mapping[k] = sv | v
 
@@ -210,18 +213,22 @@ class ParamBounds(
             v = self._mapping[k0]
             if len(key) == 1:
                 if not isinstance(v, PriorBounds):
-                    raise ValueError(f"cannot set param_name for {k0}")
+                    msg = f"cannot set param_name for {key}"
+                    raise ValueError(msg)
                 self._mapping[k0] = replace(bound, param_name=key)
             elif len(key) == 2:
                 k1 = key[1]  # type: ignore[misc]
                 if not isinstance(v, FrozenDict):
-                    raise ValueError(f"cannot set param_name for {key}")
+                    msg = f"cannot set param_name for {key}"
+                    raise ValueError(msg)
                 vv = v._mapping[k1]
                 if not isinstance(vv, PriorBounds):
-                    raise ValueError(f"cannot set param_name for {key}")
+                    msg = f"cannot set param_name for {key}"  # type: ignore[unreachable]  # noqa: E501
+                    raise ValueError(msg)
                 v._mapping[k1] = replace(bound, param_name=key)
             else:
-                raise ValueError("somehow this key has more than 2 elements")
+                msg = "somehow this key has more than 2 elements"
+                raise ValueError(msg)
 
 
 class ParamBoundsField(Generic[Array]):
@@ -262,7 +269,8 @@ class ParamBoundsField(Generic[Array]):
 
         default = self._default
         if default is MISSING:
-            raise AttributeError(f"no default value for {self._name}")
+            msg = f"no default value for {self._name}"
+            raise AttributeError(msg)
         return default
 
     def __set__(self, obj: object, value: ParamBounds[Array]) -> None:

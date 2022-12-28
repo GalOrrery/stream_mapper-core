@@ -90,7 +90,8 @@ class NoBounds(PriorBounds[Any]):
     def __post_init__(self, /) -> None:
         """Post-init."""
         if self.lower != -float("inf") or self.upper != float("inf"):
-            raise ValueError("lower and upper must be -inf and inf")
+            msg = "lower and upper must be -inf and inf"
+            raise ValueError(msg)
 
     def logpdf(
         self,
@@ -101,7 +102,8 @@ class NoBounds(PriorBounds[Any]):
     ) -> Array | float:
         """Evaluate the logpdf."""
         if self.param_name is None:
-            raise ValueError("need to set param_name")
+            msg = "need to set param_name"
+            raise ValueError(msg)
         return 0
 
     def __call__(self, x: Array, model: Model[Array], /) -> Array:

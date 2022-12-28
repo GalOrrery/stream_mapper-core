@@ -37,7 +37,8 @@ class PriorBounds(CorePriorBounds[Array]):
     ) -> Array:
         """Evaluate the logpdf."""
         if self.param_name is None:
-            raise ValueError("locator is None")
+            msg = "locator is None"
+            raise ValueError(msg)
 
         bp = xp.zeros_like(pars[self.param_name])
         bp[~within_bounds(pars[self.param_name], self.lower, self.upper)] = -xp.inf
@@ -56,7 +57,6 @@ class SigmoidBounds(PriorBounds):
     def __call__(self, x: Array, model: Model[Array], /) -> Array:
         """Evaluate the forward step in the prior."""
         col = model.param_names.flats.index(self.param_name)
-        x = x.at[:, col].set(
+        return x.at[:, col].set(
             scaled_sigmoid(x[:, col], lower=self.lower, upper=self.upper)
         )
-        return x

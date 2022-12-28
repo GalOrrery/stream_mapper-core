@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 
 # THIRD-PARTY
 import torch as xp
-import torch.nn as nn
+from torch import nn
 from torch.distributions.normal import Normal as TorchNormal
 
 # LOCAL
@@ -56,22 +56,25 @@ class Normal(StreamModel):
 
         # Validate the coord_names
         if len(self.coord_names) != 1:
-            raise ValueError("Only one coordinate is supported, e.g ('phi2',).")
+            msg = "Only one coordinate is supported, e.g ('phi2',)"
+            raise ValueError(msg)
         cn = self.coord_names[0]
 
         # Validate the param_names
         # If the param_names are an IncompleteParamNames, then this will
         # complete them.
         if self.param_names != ("weight", (cn, ("mu", "sigma"))):
-            raise ValueError(
+            msg = (
                 f"param_names must be ('weight', ({cn}, ('mu', 'sigma'))),"
                 f"got {self.param_names}"
             )
+            raise ValueError(msg)
 
         # Validate the param_bounds
         for pn in self.param_names.flats:
             if not self.param_bounds.__contains__(pn):
-                raise ValueError(f"param_bounds must contain {pn} (unflattened).")
+                msg = f"param_bounds must contain {pn} (unflattened)."
+                raise ValueError(msg)
         # TODO: recursively check for all sub-parameters
 
         # Define the layers of the neural network:

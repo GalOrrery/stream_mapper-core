@@ -100,7 +100,8 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
     @coord_names.setter  # hack to match the Protocol
     def coord_names(self, value: Any) -> None:
         """Set the coordinate names."""
-        raise AttributeError("cannot set coord_names.")
+        msg = "cannot set coord_names"
+        raise AttributeError(msg)
 
     @property  # type: ignore[override]
     def param_names(self) -> ParamNames:
@@ -110,7 +111,8 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
     @param_names.setter  # hack to match the Protocol
     def param_names(self, value: Any) -> None:
         """Set the parameter names."""
-        raise AttributeError("cannot set param_names.")
+        msg = "cannot set param_names"
+        raise AttributeError(msg)
 
     @property  # type: ignore[override]
     def coord_bounds(self) -> FrozenDict[str, BoundsT]:
@@ -120,7 +122,8 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
     @coord_bounds.setter  # hack to match the Protocol
     def coord_bounds(self, value: Any) -> None:
         """Set the coordinate bounds."""
-        raise AttributeError("cannot set coord_bounds.")
+        msg = "cannot set coord_bounds"
+        raise AttributeError(msg)
 
     @property  # type: ignore[override]
     def param_bounds(self) -> ParamBounds[Array]:
@@ -130,7 +133,8 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
     @param_bounds.setter  # hack to match the Protocol
     def param_bounds(self, value: Any) -> None:
         """Set the parameter bounds."""
-        raise AttributeError("cannot set param_bounds.")
+        msg = "cannot set param_bounds"
+        raise AttributeError(msg)
 
     # ===============================================================
     # Mapping
@@ -171,7 +175,7 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
         # FIXME! this doesn't work with the model components.
         pars = MutableParams[Array]()
 
-        for k in packed_pars.keys():
+        for k in packed_pars:
             # Find the non-coordinate-specific parameters.
             if k in self.param_bounds:
                 pars[k] = packed_pars[k]

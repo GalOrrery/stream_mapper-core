@@ -85,15 +85,20 @@ class ParamNames(ParamNamesBase[str]):
             if isinstance(elt, str):
                 continue
             elif not isinstance(elt, tuple):
-                raise TypeError(f"Invalid element type: {type(elt)}")
+                msg = f"Invalid element type: {type(elt)}"  # type: ignore[unreachable] # noqa: E501
+                raise TypeError(msg)
             elif len(elt) != 2:
-                raise ValueError(f"Invalid element length: {len(elt)}")
+                msg = f"Invalid element length: {len(elt)}"
+                raise ValueError(msg)
             elif not isinstance(elt[0], str):
-                raise TypeError(f"Invalid element type: {type(elt[0])}")
+                msg = f"Invalid element type: {type(elt[0])}"  # type: ignore[unreachable] # noqa: E501
+                raise TypeError(msg)
             elif not isinstance(elt[1], tuple):
-                raise TypeError(f"Invalid element type: {type(elt[1])}")
+                msg = f"Invalid element type: {type(elt[1])}"  # type: ignore[unreachable] # noqa: E501
+                raise TypeError(msg)
             elif not all(isinstance(e, str) for e in elt[1]):
-                raise TypeError(f"Invalid element type: {type(elt[1])}")
+                msg = f"Invalid element type: {type(elt[1])}"
+                raise TypeError(msg)
 
 
 @final
@@ -109,15 +114,20 @@ class IncompleteParamNames(ParamNamesBase[EllipsisType]):
             if isinstance(elt, str):
                 continue
             elif not isinstance(elt, tuple):
-                raise TypeError(f"Invalid element type: {type(elt)}")
+                msg = f"Invalid element type: {type(elt)}"  # type: ignore[unreachable]
+                raise TypeError(msg)
             elif len(elt) != 2:
-                raise ValueError(f"Invalid element length: {len(elt)}")
+                msg = f"Invalid element length: {len(elt)}"
+                raise ValueError(msg)
             elif not isinstance(elt[0], (str, EllipsisType)):
-                raise TypeError(f"Invalid element type: {type(elt[0])}")
+                msg = f"Invalid element type: {type(elt[0])}"  # type: ignore[unreachable] # noqa: E501
+                raise TypeError(msg)
             elif not isinstance(elt[1], tuple):
-                raise TypeError(f"Invalid element type: {type(elt[1])}")
+                msg = f"Invalid element type: {type(elt[1])}"  # type: ignore[unreachable] # noqa: E501
+                raise TypeError(msg)
             elif not all(isinstance(e, str) for e in elt[1]):
-                raise TypeError(f"Invalid element type: {type(elt[1])}")
+                msg = f"Invalid element type: {type(elt[1])}"
+                raise TypeError(msg)
 
     @property
     def is_complete(self) -> TypeGuard[tuple[ParamNameGroupT, ...]]:
@@ -215,7 +225,8 @@ class ParamNamesField:
         if default is not MISSING:
             return default
         else:
-            raise AttributeError(f"no default value for {self._name}")
+            msg = f"no default value for {self._name}"
+            raise AttributeError(msg)
 
     def __set__(
         self, obj: SupportsCoordNames, value: ParamNames | IncompleteParamNames

@@ -38,13 +38,13 @@ class Uniform(BackgroundModel):
 
         # Validate the n_features
         if self.n_features != 0:
-            raise ValueError("n_features must be 0 for the uniform background.")
+            msg = "n_features must be 0 for the uniform background"
+            raise ValueError(msg)
 
         # Validate the param_names
         if self.param_names != ("weight",):
-            raise ValueError(
-                "param_names must be ('weight',) for the uniform background."
-            )
+            msg = "param_names must be ('weight',) for the uniform background"
+            raise ValueError(msg)
 
         # Pre-compute the log-difference
         self._logdiffs = xp.asarray(

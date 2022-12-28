@@ -46,7 +46,8 @@ class ColumnarScaledSigmoid(nn.Module):  # type: ignore[misc]
     def setup(self) -> None:
         """Setup."""
         if len(self.columns) != len(self.bounds):
-            raise ValueError("columns and bounds must be the same length")
+            msg = "columns and bounds must be the same length"
+            raise ValueError(msg)
 
     def __call__(self, arr: Array) -> Array:
         """Call."""

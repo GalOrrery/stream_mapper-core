@@ -76,13 +76,15 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
 
         # Validate the param_names
         if not self.param_names:
-            raise ValueError("param_names must be specified.")
+            msg = "param_names must be specified"
+            raise ValueError(msg)
 
         # Make coord bounds if not provided
         crnt_cbs = self.coord_bounds._mapping
         cbs = {n: crnt_cbs.pop(n, (-inf, inf)) for n in self.coord_names}
         if crnt_cbs:  # Error if there are extra keys
-            raise ValueError(f"coord_bounds contains invalid keys {crnt_cbs.keys()}.")
+            msg = f"coord_bounds contains invalid keys {crnt_cbs.keys()}."
+            raise ValueError(msg)
         self.coord_bounds = FrozenDict(cbs)
 
         # Make parameter bounds
@@ -116,7 +118,7 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
         """
         pars = MutableParams[Array]()
 
-        for k in packed_pars.keys():
+        for k in packed_pars:
             # Find the non-coordinate-specific parameters.
             if k in self.param_bounds:
                 pars[k] = packed_pars[k]

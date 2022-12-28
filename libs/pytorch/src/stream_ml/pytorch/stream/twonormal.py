@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 
 # THIRD-PARTY
 import torch as xp
-import torch.nn as nn
+from torch import nn
 from torch.distributions.normal import Normal as TorchNormal
 
 # LOCAL
@@ -51,26 +51,25 @@ class DoubleGaussian(StreamModel):
 
         # Validate the coord_names
         if len(self.coord_names) != 1:
-            raise ValueError("Only one coordinate is supported, e.g ('phi2',).")
+            msg = "Only one coordinate is supported, e.g ('phi2',)."
+            raise ValueError(msg)
         cn = self.coord_names[0]
 
         # Set the param names  # TODO:
 
         # Validate the param_names
-        if self.param_names != (
-            "weight1",
-            "weight2",
-            (cn, ("mu", "sigma1", "sigma2")),
-        ):
-            raise ValueError(
-                "param_names must be ('weight1', 'weight2', (<coordinate>, "
-                "('mu', 'sigma1', 'sigma2')))."
+        if self.param_names != ("weight1", "weight2", (cn, ("mu", "sigma1", "sigma2"))):
+            msg = (
+                "param_names must be ('weight1', 'weight2', "
+                f"({cn}, ('mu', 'sigma1', 'sigma2')))."
             )
+            raise ValueError(msg)
 
         # Validate the param_bounds
         for pn in self.param_names.flats:
             if not self.param_bounds.__contains__(pn):
-                raise ValueError(f"param_bounds must contain {pn} (unflattened).")
+                msg = f"param_bounds must contain {pn} (unflattened)."
+                raise ValueError(msg)
         # TODO: recursively check for all sub-parameters
 
         # Define the layers of the neural network:

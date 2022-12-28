@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 # THIRD-PARTY
 import torch as xp
-import torch.nn as nn
+from torch import nn
 
 if TYPE_CHECKING:
     # LOCAL
@@ -74,7 +74,8 @@ class ColumnarScaledSigmoid(nn.Module):  # type: ignore[misc]
         self.inplace = inplace
 
         if len(columns) != len(bounds):
-            raise ValueError("columns and bounds must be the same length")
+            msg = "columns and bounds must be the same length"
+            raise ValueError(msg)
 
     def forward(self, arr: Array) -> Array:
         """Forward pass."""
