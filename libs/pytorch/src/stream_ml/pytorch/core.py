@@ -68,7 +68,7 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
 
     @abstractmethod
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT, *args: Array
+        self, pars: Params[Array], data: DataT, **kwargs: Array
     ) -> Array:
         """Log-likelihood of the model.
 
@@ -78,7 +78,7 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
             Parameters.
         data : DataT
             Data (phi1).
-        *args : Array
+        **kwargs : Array
             Additional arguments.
 
         Returns

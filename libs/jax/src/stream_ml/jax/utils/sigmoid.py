@@ -50,7 +50,7 @@ class ColumnarScaledSigmoid(nn.Module):  # type: ignore[misc]
 
     def __call__(self, arr: Array) -> Array:
         """Call."""
-        for col, (lower, upper) in zip(self.columns, self.bounds):
+        for col, (lower, upper) in zip(self.columns, self.bounds, strict=True):
             arr = arr.at[:, col].set(
                 scaled_sigmoid(arr[:, col], lower=lower, upper=upper)
             )

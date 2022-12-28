@@ -23,14 +23,14 @@ __all__: list[str] = []
 
 
 @dataclass(unsafe_hash=True)
-class UniformBackgroundModel(BackgroundModel):
+class Uniform(BackgroundModel):
     """Uniform background model."""
 
     n_features: int = 0
     _: KW_ONLY
-    param_names: ParamNamesField = ParamNamesField(("mixparam",))
+    param_names: ParamNamesField = ParamNamesField(("weight",))
     param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array](
-        {"mixparam": SigmoidBounds(0.0, 1.0, param_name=("mixparam",))}
+        {"weight": SigmoidBounds(0.0, 1.0, param_name=("weight",))}
     )
 
     def __post_init__(self) -> None:
@@ -41,21 +41,26 @@ class UniformBackgroundModel(BackgroundModel):
             raise ValueError("n_features must be 0 for the uniform background.")
 
         # Validate the param_names
-        if self.param_names != ("mixparam",):
+        if self.param_names != ("weight",):
             raise ValueError(
-                "param_names must be ('mixparam',) for the uniform background."
+                "param_names must be ('weight',) for the uniform background."
             )
 
         # Pre-compute the log-difference
-        self._logdiff = xp.asarray(
+        self._ln_diffs = xp.asarray(
             [xp.log(xp.asarray([b - a])) for a, b in self.coord_bounds.values()]
-        ).sum()
+        )[None, :]
 
     # ========================================================================
     # Statistics
 
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT, *args: Array
+        self,
+        pars: Params[Array],
+        data: DataT,
+        *,
+        mask: Array | None = None,
+        **kwargs: Array,
     ) -> Array:
         """Log-likelihood of the background.
 
@@ -65,15 +70,23 @@ class UniformBackgroundModel(BackgroundModel):
             Parameters.
         data : DataT
             Data (phi1).
-        *args : Array
+
+        mask : (N, 1) Array[bool], keyword-only
+            Data availability. True if data is available, False if not.
+        **kwargs : Array
             Additional arguments.
 
         Returns
         -------
         Array
         """
-        # Need to protect the fraction if < 0
-        return xp.log(xp.clip(pars[("mixparam",)], 0)) - self._logdiff
+        f = pars[("weight",)]
+        eps = xp.finfo(f.dtype).eps  # TOOD: or tiny?
+
+        indicator = xp.ones_like(self._ln_diffs) if mask is None else mask.int()
+        return xp.log(xp.clip(f, eps)) - (indicator * self._ln_diffs).sum(
+            dim=1, keepdim=True
+        )
 
     def ln_prior_arr(self, pars: Params[Array]) -> Array:
         """Log prior.
@@ -87,12 +100,10 @@ class UniformBackgroundModel(BackgroundModel):
         -------
         Array
         """
-        lp = xp.zeros_like(pars[("mixparam",)])
-
+        lnp = xp.zeros_like(pars[("weight",)])
         for bounds in self.param_bounds.flatvalues():
-            lp += bounds.logpdf(pars, lp)
-
-        return lp
+            lnp += bounds.logpdf(pars, self, lnp)
+        return lnp
 
     # ========================================================================
     # ML

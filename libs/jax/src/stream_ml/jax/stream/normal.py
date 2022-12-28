@@ -19,8 +19,6 @@ from stream_ml.core.params import ParamBounds, ParamBoundsField, ParamNames, Par
 from stream_ml.core.utils.hashdict import FrozenDict, FrozenDictField
 from stream_ml.jax.prior.bounds import PriorBounds
 from stream_ml.jax.stream.base import StreamModel
-from stream_ml.jax.utils import within_bounds
-from stream_ml.jax.utils.sigmoid import ColumnarScaledSigmoid
 from stream_ml.jax.utils.tanh import Tanh
 
 if TYPE_CHECKING:
@@ -49,7 +47,6 @@ class Normal(StreamModel):
     n_features: int = 50
     n_layers: int = 3
     _: KW_ONLY
-
     coord_bounds: FrozenDictField[str, BoundsT] = FrozenDictField()
     param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array](ParamBounds())
 
@@ -61,9 +58,9 @@ class Normal(StreamModel):
             raise ValueError("Only one coordinate is supported, e.g ('phi2',).")
 
         # Validate the param_names
-        if self.param_names != ("mixparam", (self.coord_names[0], ("mu", "sigma"))):
+        if self.param_names != ("weight", (self.coord_names[0], ("mu", "sigma"))):
             raise ValueError(
-                "param_names must be ('mixparam', (<coordinate>, ('mu', 'sigma')))."
+                "param_names must be ('weight', (<coordinate>, ('mu', 'sigma')))."
             )
 
         # Validate the param_bounds
@@ -85,10 +82,6 @@ class Normal(StreamModel):
             nn.Dense(3),
             name=self.name,
         )
-        self.output_scaling = ColumnarScaledSigmoid(
-            tuple(range(len(self.param_names.flat))),
-            tuple(tuple(pbs) for pbs in self.param_bounds.flatvalues()),
-        )
 
     @classmethod
     def from_simpler_inputs(
@@ -98,7 +91,7 @@ class Normal(StreamModel):
         *,
         coord_name: str,
         coord_bounds: PriorBounds | BoundsT,
-        mixparam_bounds: PriorBounds | BoundsT = (0, 1),
+        weight_bounds: PriorBounds | BoundsT = (0, 1),
         mu_bounds: PriorBounds | BoundsT = (-xp.inf, xp.inf),
         sigma_bounds: PriorBounds | BoundsT = (0, 0.3),
     ) -> Normal:
@@ -115,7 +108,7 @@ class Normal(StreamModel):
             Coordinate name.
         coord_bounds : BoundsT, keyword-only
             Coordinate bounds.
-        mixparam_bounds : PriorBounds | BoundsT, keyword-only
+        weight_bounds : PriorBounds | BoundsT, keyword-only
             Mixparam bounds, by default (0, 1).
         mu_bounds : PriorBounds | BoundsT, keyword-only
             Mu bounds, by default (-xp.inf, xp.inf).
@@ -130,11 +123,11 @@ class Normal(StreamModel):
             n_features=n_features,
             n_layers=n_layers,
             coord_names=(coord_name,),
-            param_names=ParamNames(("mixparam", (coord_name, ("mu", "sigma")))),  # type: ignore[arg-type] # noqa: E501
+            param_names=ParamNames(("weight", (coord_name, ("mu", "sigma")))),  # type: ignore[arg-type] # noqa: E501
             coord_bounds=FrozenDict({coord_name: coord_bounds}),  # type: ignore[arg-type] # noqa: E501
             param_bounds=ParamBounds(  # type: ignore[arg-type]
                 {
-                    "mixparam": cls._make_bounds(mixparam_bounds, ("mixparam",)),
+                    "weight": cls._make_bounds(weight_bounds, ("weight",)),
                     coord_name: FrozenDict(
                         mu=cls._make_bounds(mu_bounds, (coord_name, "mu")),
                         sigma=cls._make_bounds(sigma_bounds, (coord_name, "sigma")),
@@ -147,7 +140,7 @@ class Normal(StreamModel):
     # Statistics
 
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT, *args: Array
+        self, pars: Params[Array], data: DataT, **kwargs: Array
     ) -> Array:
         """Log-likelihood of the stream.
 
@@ -157,7 +150,7 @@ class Normal(StreamModel):
             Parameters.
         data : DataT
             Data (phi1, phi2).
-        *args : Array
+        **kwargs : Array
             Additional arguments.
 
         Returns
@@ -165,8 +158,10 @@ class Normal(StreamModel):
         Array
         """
         c = self.coord_names[0]
-        return xp.log(xp.clip(pars[("mixparam",)], 0)) + norm.logpdf(
-            data[c], pars[(c, "mu")], xp.clip(pars[(c, "sigma")], min=1e-10)
+        min_ = xp.finfo(pars[("weight",)].dtype).eps  # TOOD: or tiny?
+
+        return xp.log(xp.clip(pars[("weight",)], min_)) + norm.logpdf(
+            data[c], pars[(c, "mu")], xp.clip(pars[(c, "sigma")], a_min=min_)
         )
 
     def ln_prior_arr(self, pars: Params[Array]) -> Array:
@@ -181,10 +176,9 @@ class Normal(StreamModel):
         -------
         Array
         """
-        lnp = xp.zeros_like(pars[("mixparam",)])  # 100%
-        # Bounds
-        for names, bounds in self.param_bounds.flatitems():
-            lnp[~within_bounds(pars[names], *bounds)] = -xp.inf
+        lnp = xp.zeros_like(pars[("weight",)])  # 100%
+        for bounds in self.param_bounds.flatvalues():
+            lnp += bounds.logpdf(pars, self, lnp)
         return lnp
 
     # ========================================================================
@@ -203,4 +197,4 @@ class Normal(StreamModel):
         Array
             fraction, mean, sigma
         """
-        return self.output_scaling(self.layers(args[0]))
+        return self._forward_prior(self.layers(args[0]))

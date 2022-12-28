@@ -30,7 +30,7 @@ class StreamModel(ModelBase, CoreStreamModel[Array]):
 
     @abc.abstractmethod
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT, *args: Array
+        self, pars: Params[Array], data: DataT, **kwargs: Array
     ) -> Array:
         """Log-likelihood of the stream.
 
@@ -40,7 +40,7 @@ class StreamModel(ModelBase, CoreStreamModel[Array]):
             Parameters.
         data : DataT
             Data.
-        *args : Array
+        **kwargs : Array
             Additional arguments.
 
         Returns

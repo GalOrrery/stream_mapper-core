@@ -104,7 +104,7 @@ class Model(CoreModel[Array], Protocol):
 
     @abstractmethod
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT, *args: Array
+        self, pars: Params[Array], data: DataT, **kwargs: Array
     ) -> Array:
         """Elementwise log-likelihood of the model.
 
@@ -114,7 +114,7 @@ class Model(CoreModel[Array], Protocol):
             Parameters.
         data : DataT
             Data (phi1).
-        *args : Array
+        **kwargs : Array
             Additional arguments.
 
         Returns
@@ -141,6 +141,6 @@ class Model(CoreModel[Array], Protocol):
     # ========================================================================
     # ML
 
-    def __call__(self, *args: Any, **kwds: Any) -> Array:
+    def __call__(self, *args: Array, **kwds: Any) -> Array:
         """Pytoch call method."""
         ...

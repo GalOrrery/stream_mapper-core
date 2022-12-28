@@ -6,10 +6,7 @@ from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from collections.abc import Iterator, Mapping
 from dataclasses import KW_ONLY, dataclass
-from typing import TYPE_CHECKING, Any, Callable
-
-# THIRD-PARTY
-import numpy as np
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, TypeVar
 
 # LOCAL
 from stream_ml.core._typing import Array, BoundsT
@@ -25,6 +22,9 @@ if TYPE_CHECKING:
 __all__: list[str] = []
 
 
+V = TypeVar("V")
+
+
 @dataclass
 class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMeta):
     """Full Model.
@@ -34,16 +34,34 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
     components : Mapping[str, Model], optional postional-only
         Mapping of Models. This allows for strict ordering of the Models and
         control over the type of the models attribute.
-    **morecomponents : Model
-        Additional Models.
+
+    name : str or None, optional keyword-only
+        The (internal) name of the model, e.g. 'stream' or 'background'. Note
+        that this can be different from the name of the model when it is used in
+        a mixture model (see :class:`~stream_ml.core.core.MixtureModelBase`).
+
+    tied_params : Mapping[str, Callable[[Params], Array]], optional keyword-only
+        Mapping of parameter names to functions that take the parameters of the
+        model and return the value of the tied parameter. This is useful for
+        tying parameters across models, e.g. the background and stream models
+        in a mixture model.
+
+    priors : tuple[PriorBase, ...], optional keyword-only
+        Mapping of parameter names to priors. This is useful for setting priors
+        on parameters across models, e.g. the background and stream models in a
+        mixture model.
     """
 
     components: FrozenDictField[str, Model[Array]] = FrozenDictField()
+
     _: KW_ONLY
+    name: str | None = None  # the name of the model
     tied_params: FrozenDictField[
         str, Callable[[Params[Array]], Array]
     ] = FrozenDictField({})
-    priors: FrozenDictField[str, PriorBase[Array]] = FrozenDictField({})
+    priors: tuple[PriorBase[Array], ...] = ()
+
+    DEFAULT_BOUNDS: ClassVar = None
 
     def __post_init__(self) -> None:
         # Add the coord_names
@@ -183,20 +201,14 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
         """
         # Unpack the parameters
         pars = Params[Array]()
-        for j, (n, m) in enumerate(self.components.items()):  # iter thru models
+        j = 0
+        for n, m in self.components.items():  # iter thru models
             # Get relevant parameters by index
-            # tied parameters are not included.
-            # TODO: use nested param_names and also in tied_params
-            param_inds = np.array(
-                tuple(
-                    i
-                    for i, p in enumerate(m.param_names.flat)
-                    if f"{n}_{p}" not in self.tied_params
-                )
-            )
-            mp_arr = p_arr[:, j + param_inds]
+            mp_arr = p_arr[:, slice(j, j + len(m.param_names.flat))]
 
-            # Skip empty
+            # TODO: what to do about tied parameters?
+
+            # Skip empty (and incrementing the index)
             if mp_arr.shape[1] == 0:
                 continue
 
@@ -204,6 +216,9 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
             pars._mapping.update(
                 m.unpack_params_from_arr(mp_arr).add_prefix(n + "_", inplace=True)
             )
+
+            # Increment the index
+            j += len(m.param_names.flat)
 
         # Add the dependent parameters
         for name, tie in self.tied_params.items():
@@ -226,12 +241,31 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
         """
         raise NotImplementedError
 
+    @staticmethod
+    def _get_prefixed_kwargs(prefix: str, kwargs: dict[str, V]) -> dict[str, V]:
+        """Get the kwargs with a given prefix.
+
+        Parameters
+        ----------
+        prefix : str
+            Prefix.
+        kwargs : dict[str, V]
+            Keyword arguments.
+
+        Returns
+        -------
+        dict[str, V]
+        """
+        prefix = prefix + "_" if not prefix.endswith("_") else prefix
+        lp = len(prefix)
+        return {k[lp:]: v for k, v in kwargs.items() if k.startswith(prefix)}
+
     # ===============================================================
     # Statistics
 
     @abstractmethod
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT[Array], *args: Array
+        self, pars: Params[Array], data: DataT[Array], **kwargs: Array
     ) -> Array:
         """Log likelihood.
 
@@ -243,7 +277,7 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
             Parameters.
         data : DataT
             Data.
-        args : Array
+        **kwargs : Array
             Additional arguments.
 
         Returns

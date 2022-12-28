@@ -1,5 +1,7 @@
 """Stream Memberships Likelihood, with ML."""
 
+from __future__ import annotations
+
 # STDLIB
 from typing import overload
 

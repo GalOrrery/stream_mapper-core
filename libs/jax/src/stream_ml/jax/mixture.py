@@ -63,7 +63,7 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
     # Statistics
 
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT, *args: Array
+        self, pars: Params[Array], data: DataT, **kwargs: Array
     ) -> Array:
         """Log likelihood.
 
@@ -75,7 +75,7 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
             Parameters.
         data : DataT
             Data.
-        args : Array
+        **kwargs : Array
             Additional arguments.
 
         Returns
@@ -85,7 +85,7 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
         # Get the parameters for each model, stripping the model name,
         # and use that to evaluate the log likelihood for the model.
         liks = tuple(
-            model.ln_likelihood_arr(pars.get_prefixed(name), data, *args)
+            model.ln_likelihood_arr(pars.get_prefixed(name), data, **kwargs)
             for name, model in self.components.items()
         )
         # Sum over the models, keeping the data dimension
@@ -112,8 +112,8 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
         lp = xp.hstack(lps).sum(dim=1)[:, None]
 
         # Plugin for priors
-        for prior in self.priors.values():
-            lp += prior.logpdf(pars, lp)
+        for prior in self.priors:
+            lp += prior.logpdf(pars, self, lp)
 
         # Sum over the priors
         return lp
@@ -139,7 +139,7 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
         )
 
         # Call the prior to limite the range of the parameters
-        for prior in self.priors.values():
-            result = prior(result, self.param_names.flats)
+        for prior in self.priors:
+            result = prior(result, self)
 
         return result

@@ -5,6 +5,7 @@ from __future__ import annotations
 # STDLIB
 from collections.abc import (
     ItemsView,
+    Iterable,
     Iterator,
     KeysView,
     Mapping,
@@ -81,6 +82,28 @@ class Params(Mapping[str, V | Mapping[str, V]]):
     def items(self) -> ItemsView[str, V | Mapping[str, V]]:
         """Items."""
         return self._mapping.items()
+
+    # =========================================================================
+    # Flat
+
+    def flatitems(self) -> Iterable[tuple[str, V]]:
+        """Flat items."""
+        for k, v in self._mapping.items():
+            if not isinstance(v, Mapping):
+                yield k, v
+            else:
+                for k2, v2 in v.items():
+                    yield f"{k}_{k2}", v2
+
+    def flatkeys(self) -> Iterable[str]:
+        """Flat keys."""
+        for k, _ in self.flatitems():
+            yield k
+
+    def flatvalues(self) -> Iterable[V]:
+        """Flat values."""
+        for _, v in self.flatitems():
+            yield v
 
     # =========================================================================
 

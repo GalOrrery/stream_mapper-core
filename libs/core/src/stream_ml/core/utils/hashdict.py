@@ -3,8 +3,19 @@
 from __future__ import annotations
 
 # STDLIB
-from collections.abc import Iterable, Iterator, Mapping, Sequence
-from typing import Generic, Protocol, TypeVar
+from collections.abc import (
+    ItemsView,
+    Iterable,
+    Iterator,
+    KeysView,
+    Mapping,
+    Sequence,
+    ValuesView,
+)
+from typing import Generic, Literal, Protocol, TypeVar
+
+# LOCAL
+from stream_ml.core.utils.sentinel import MISSING, Sentinel
 
 __all__: list[str] = []
 
@@ -62,15 +73,30 @@ class FrozenDict(Mapping[K, V]):
             raise NotImplementedError
         return FrozenDict(self._mapping | dict(other))
 
+    def keys(self) -> KeysView[K]:
+        """Return keys view."""
+        return self._mapping.keys()
+
+    def values(self) -> ValuesView[V]:
+        """Return values view."""
+        return self._mapping.values()
+
+    def items(self) -> ItemsView[K, V]:
+        """Return items view."""
+        return self._mapping.items()
+
 
 class FrozenDictField(Generic[K, V]):
     """Dataclass descriptor for a frozen map."""
 
     def __init__(
-        self, default: Mapping[K, V] | Sequence[tuple[K, V]] | None = None
+        self,
+        default: Mapping[K, V]
+        | Sequence[tuple[K, V]]
+        | Literal[Sentinel.MISSING] = MISSING,
     ) -> None:
-        self._default: FrozenDict[K, V] | None
-        self._default = FrozenDict(default) if default is not None else None
+        self._default: FrozenDict[K, V] | Literal[Sentinel.MISSING]
+        self._default = FrozenDict(default) if default is not MISSING else MISSING
 
     def __set_name__(self, owner: type, name: str) -> None:
         self._name = "_" + name
@@ -81,10 +107,12 @@ class FrozenDictField(Generic[K, V]):
             return val
 
         default = self._default
-        if default is None:
+        if default is MISSING:
             raise AttributeError(f"no default value for {self._name}")
         return default
 
     def __set__(self, obj: object, value: Mapping[K, V]) -> None:
-        dv = FrozenDict[K, V](self._default or {})  # Default value as a dict.
+        # Default value as a dict.
+        dv = FrozenDict[K, V](self._default if self._default is not MISSING else {})
+        # Set the value. This is only called once by the dataclass.
         object.__setattr__(obj, self._name, dv | FrozenDict(value))

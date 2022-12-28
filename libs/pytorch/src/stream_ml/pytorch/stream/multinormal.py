@@ -16,13 +16,15 @@ from torch.distributions import MultivariateNormal as TorchMultivariateNormal
 # LOCAL
 from stream_ml.core.params import Params
 from stream_ml.pytorch.stream.base import StreamModel
-from stream_ml.pytorch.utils.sigmoid import ColumnarScaledSigmoid
 
 if TYPE_CHECKING:
     # LOCAL
     from stream_ml.pytorch._typing import Array, DataT
 
 __all__: list[str] = []
+
+
+_log2pi = xp.log(xp.asarray(2 * xp.pi))
 
 
 @dataclass(unsafe_hash=True)
@@ -48,9 +50,8 @@ class MultivariateNormal(StreamModel):
         super().__post_init__()
 
         # Validate the param_names
-        # TODO: this should be automatic
         expect = (
-            ("mixparam",),
+            ("weight",),
             *((c, p) for c in self.coord_names for p in ("mu", "sigma")),
         )
         if self.param_names.flats != expect:
@@ -63,12 +64,6 @@ class MultivariateNormal(StreamModel):
             raise ValueError(
                 f"Expected param_bounds.flatkeys()={expect}, "
                 f"got {self.param_bounds.flatkeys()}"
-            )
-        for k, b in self.param_bounds.flatitems():
-            if isinstance(b, tuple) and len(b) == 2 and b[1] > b[0]:
-                continue
-            raise ValueError(
-                f"Expected param bound {k} to be a list of (min, max) tuples, not {b}."
             )
 
         # Define the layers of the neural network:
@@ -87,16 +82,12 @@ class MultivariateNormal(StreamModel):
             ),
             nn.Linear(self.n_features, 1 + 2 * ndim),
         )
-        self.output_scaling = ColumnarScaledSigmoid(
-            tuple(range(len(self.param_names.flat))),
-            tuple(v.as_tuple() for v in self.param_bounds.flatvalues()),
-        )
 
     # ========================================================================
     # Statistics
 
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT, *args: Array
+        self, pars: Params[Array], data: DataT, **kwargs: Array
     ) -> Array:
         """Log-likelihood of the stream.
 
@@ -106,19 +97,22 @@ class MultivariateNormal(StreamModel):
             Parameters.
         data : DataT
             Data (phi1, phi2, ...).
-        *args : Array
+        **kwargs : Array
             Additional arguments.
 
         Returns
         -------
         Array
         """
+        eps = xp.finfo(pars[("weight",)].dtype).eps  # TODO: or tiny?
+        datav = xp.hstack([data[c] for c in self.coord_names])
+
         lik = TorchMultivariateNormal(
             xp.hstack([pars[c, "mu"] for c in self.coord_names]),
             xp.diag_embed(xp.hstack([pars[c, "sigma"] for c in self.coord_names]) ** 2),
-        ).log_prob(xp.hstack(list(data.values()))[:, 1:])
+        ).log_prob(datav)
 
-        return xp.log(xp.clip(pars[("mixparam",)], 0)) + lik[:, None]
+        return xp.log(xp.clip(pars[("weight",)], eps)) + lik[:, None]
 
     def ln_prior_arr(self, pars: Params[Array]) -> Array:
         """Log prior.
@@ -132,10 +126,10 @@ class MultivariateNormal(StreamModel):
         -------
         Array
         """
-        lnp = xp.zeros_like(pars[("mixparam",)])  # 100%
+        lnp = xp.zeros_like(pars[("weight",)])  # 100%
         # Bounds
         for bounds in self.param_bounds.flatvalues():
-            lnp += bounds.logpdf(pars, lnp)
+            lnp += bounds.logpdf(pars, self, lnp)
         return lnp
 
     # ========================================================================
@@ -154,53 +148,65 @@ class MultivariateNormal(StreamModel):
         Array
             fraction, mean, sigma
         """
-        return self.output_scaling(self.layers(args[0]))
+        return self._forward_prior(self.layers(args[0]))
 
 
 ##############################################################################
 
 
 @dataclass(unsafe_hash=True)
-class MultivariateMissingNormal(MultivariateNormal):
+class MultivariateMissingNormal(MultivariateNormal):  # (MultivariateNormal)
     """Multivariate Normal with missing data."""
 
+    n_features: int = 36
+    n_layers: int = 4
+
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT, *args: Array
+        self,
+        pars: Params[Array],
+        data: DataT,
+        *,
+        mask: Array | None = None,
+        **kwargs: Array,
     ) -> Array:
-        """Log-likelihood of the stream.
+        """Negative log-likelihood.
 
         Parameters
         ----------
-        pars : Params
+        pars : Params[Array]
             Parameters.
         data : DataT
-            Data (phi1, phi2, ...).
-        *args : Array
+            Data.
+        mask : Array
+            Mask.
+        **kwargs : Array
             Additional arguments.
-
-        Returns
-        -------
-        Array
         """
-        datav = xp.hstack(list(data.values()))[:, 1:]
-
+        datav = xp.hstack([data[c] for c in self.coord_names])
         mu = xp.hstack([pars[c, "mu"] for c in self.coord_names])
-        cov = xp.diag_embed(
-            xp.hstack([pars[c, "sigma"] for c in self.coord_names]) ** 2
-        )
-        inv_cov_total = xp.inverse(cov)  # nstar x 5 x 5
-        cov_avail = args[0]  # TODO: as a kwarg
-        # nstar x 5 x 5: diagonal matrix of zeros and infs for each star.
-        # Infs where there is no data.
+        sigma = xp.hstack([pars[c, "sigma"] for c in self.coord_names])
 
-        data_minus_model = datav - mu  # n_star x 5
-        right_product = xp.einsum("ijk,ik->ij", inv_cov_total, data_minus_model)
-        right_product[~cov_avail] = xp.tensor([0.0]).float()
-        exp_arg = -0.5 * xp.sum(data_minus_model * right_product, dim=1)  # n_star
-        det_arr = xp.zeros(len(cov))
-        for i in range(len(det_arr)):
-            det_arr[i] = xp.prod(cov[i, cov_avail[i, :], cov_avail[i, :]])
+        if mask is None:
+            mask = xp.ones_like(datav)
 
-        pref = xp.sqrt(((2.0 * xp.pi) ** datav.shape[1]) * det_arr)  # n_star
+        # misc
+        eps = xp.finfo(datav.dtype).eps  # TODO: or tiny?
+        dimensionality = mask.sum(dim=1, keepdim=True)  # (N, 1)
 
-        return xp.log(xp.clip(pars[("mixparam",)], 0)) + exp_arg - xp.log(pref)
+        # Data - model
+        dmm = mask * (datav - mu)  # (N, 4)
+
+        # Covariance related
+        cov = mask * sigma**2  # (N, 4) positive definite  # TODO: add eps
+        det = (cov + (1 - mask)).prod(dim=1, keepdims=True)  # (N, 1)
+
+        ln_stream_lik = xp.log(xp.clip(pars[("weight",)], min=eps)) - 0.5 * (
+            dimensionality * _log2pi  # dim of data
+            + xp.log(det)
+            + (  # TODO: speed up
+                dmm[:, None, :]  # (N, 1, 4)
+                @ xp.linalg.pinv(xp.diag_embed(cov))  # (N, 4, 4)
+                @ dmm[:, :, None]  # (N, 4, 1)
+            )[:, :, 0]
+        )  # (N, 1)
+        return ln_stream_lik

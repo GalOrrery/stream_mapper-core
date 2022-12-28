@@ -30,7 +30,7 @@ class StreamModel(ModelBase, CoreStreamModel[Array]):
 
     @abc.abstractmethod
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT, *args: Array
+        self, pars: Params[Array], data: DataT, **kwargs: Array
     ) -> Array:
         """Log-likelihood of the stream.
 
@@ -40,7 +40,7 @@ class StreamModel(ModelBase, CoreStreamModel[Array]):
             Parameters.
         data : DataT
             Data.
-        *args : Array
+        **kwargs : Array
             Additional arguments.
 
         Returns
@@ -66,6 +66,24 @@ class StreamModel(ModelBase, CoreStreamModel[Array]):
 
     # ========================================================================
     # ML
+
+    # TODO: keep moving up the hierarchy!
+    def _forward_prior(self, out: Array) -> Array:
+        """Forward pass.
+
+        Parameters
+        ----------
+        out : Array
+            Input.
+
+        Returns
+        -------
+        Array
+            Same as input.
+        """
+        for bnd in self.param_bounds.flatvalues():
+            out = bnd(out, self)
+        return out
 
     @abc.abstractmethod
     def forward(self, *args: Array) -> Array:

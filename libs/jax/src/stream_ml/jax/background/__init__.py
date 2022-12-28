@@ -2,6 +2,6 @@
 
 # LOCAL
 from .base import BackgroundModel
-from .uniform import UniformBackgroundModel
+from .uniform import Uniform
 
-__all__ = ["BackgroundModel", "UniformBackgroundModel"]
+__all__ = ["BackgroundModel", "Uniform"]

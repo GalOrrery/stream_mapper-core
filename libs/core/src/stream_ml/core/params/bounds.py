@@ -5,12 +5,13 @@ from __future__ import annotations
 # STDLIB
 from collections.abc import ItemsView, Iterable, KeysView, Mapping, ValuesView
 from dataclasses import replace
-from typing import TYPE_CHECKING, Any, Generic, cast, overload
+from typing import TYPE_CHECKING, Any, Generic, Literal, cast, overload
 
 # LOCAL
 from stream_ml.core._typing import Array
-from stream_ml.core.prior.bounds import PriorBounds
+from stream_ml.core.prior.bounds import NoBounds, PriorBounds
 from stream_ml.core.utils.hashdict import FrozenDict
+from stream_ml.core.utils.sentinel import MISSING, Sentinel
 
 if TYPE_CHECKING:
     # LOCAL
@@ -33,31 +34,29 @@ class ParamBounds(
     """A frozen (hashable) dictionary of parameters."""
 
     def __init__(self, m: Any = (), /, **kwargs: Any) -> None:
-        # Initialize, with processing, then validate
+        # Initialize, with validation.
         # TODO: not cast to dict if already a ParamBounds
-        super().__init__(
-            **{
-                k: FrozenDict(v) if isinstance(v, Mapping) else v
-                for k, v in dict(m, **kwargs).items()
-            },
-        )
-
-        # Validate structure
-        for k, v in self.items():
+        pb: dict[str, PriorBounds[Array] | FrozenDict[str, PriorBounds[Array]]] = {}
+        for k, v in dict(m, **kwargs).items():
             if not isinstance(k, str):
                 raise TypeError(f"Invalid key type: {type(k)}")
+
             if isinstance(v, PriorBounds):
-                pass
-            elif isinstance(v, FrozenDict):
-                for k2, v2 in v.items():
-                    if not isinstance(k2, str):
-                        raise TypeError(f"Invalid key type: {type(k2)}")
-                    elif not isinstance(v2, PriorBounds) or not all(
-                        isinstance(e, (int, float)) for e in v2
-                    ):
-                        raise ValueError(f"Invalid value: {k2} = {v2}")
+                pb[k] = v
+            elif v is None:
+                pb[k] = NoBounds()
+            elif isinstance(v, Mapping):
+                # TODO: not cast to dict if already a FrozenDict
+                pb[k] = FrozenDict(
+                    {
+                        kk: (vv if isinstance(vv, PriorBounds) else NoBounds())
+                        for kk, vv in v.items()
+                    }
+                )
             else:
                 raise TypeError(f"Invalid element type: {type(v)}")
+
+        super().__init__(pb)
 
     @classmethod
     def from_names(
@@ -78,7 +77,7 @@ class ParamBounds(
         """
         m: dict[str, PriorBounds[Array] | FrozenDict[str, PriorBounds[Array]]] = {}
         for pn in names:
-            if isinstance(pn, str):  # e.g. "mixparam"
+            if isinstance(pn, str):  # e.g. "weight"
                 m[pn] = replace(default, param_name=(pn,))
             else:  # e.g. ("phi2", ("mu", "sigma"))
                 m[pn[0]] = FrozenDict(
@@ -106,9 +105,9 @@ class ParamBounds(
     def __getitem__(
         self, key: str | tuple[str] | tuple[str, str]
     ) -> PriorBounds[Array] | FrozenDict[str, PriorBounds[Array]]:
-        if isinstance(key, str):  # e.g. "mixparam"
+        if isinstance(key, str):  # e.g. "weight"
             value = super().__getitem__(key)
-        elif len(key) == 1:  # e.g. ("mixparam",)
+        elif len(key) == 1:  # e.g. ("weight",)
             value = super().__getitem__(key[0])
             if not isinstance(value, PriorBounds):
                 raise KeyError(key)
@@ -194,6 +193,16 @@ class ParamBounds(
     # =========================================================================
     # Misc
 
+    def _freeze(self) -> None:
+        """Freeze the bounds.
+
+        At runtime, it is hard to enforce that the Mapping containers are
+        FrozenDict. This method will clean this up.
+        """
+        for name, bounds in self.items():
+            if isinstance(bounds, Mapping) and not isinstance(bounds, FrozenDict):
+                self._mapping[name] = FrozenDict(bounds)  # type: ignore[unreachable]
+
     def _fixup_param_names(self) -> None:
         """Set the parameter name in the prior bounds."""
         for key, bound in self.flatitems():
@@ -235,11 +244,13 @@ class ParamBoundsField(Generic[Array]):
     def __init__(
         self,
         default: ParamBounds[Array]
-        | Mapping[str, PriorBounds[Array] | Mapping[str, PriorBounds[Array]]]
-        | None = None,
+        | Mapping[
+            str, PriorBounds[Array] | None | Mapping[str, PriorBounds[Array] | None]
+        ]
+        | Literal[Sentinel.MISSING] = MISSING,
     ) -> None:
-        self._default: ParamBounds[Array] | None
-        self._default = ParamBounds(default) if default is not None else None
+        self._default: ParamBounds[Array] | Literal[Sentinel.MISSING]
+        self._default = ParamBounds(default) if default is not MISSING else MISSING
 
     def __set_name__(self, _: type, name: str) -> None:
         self._name = "_" + name
@@ -250,11 +261,13 @@ class ParamBoundsField(Generic[Array]):
             return val
 
         default = self._default
-        if default is None:
+        if default is MISSING:
             raise AttributeError(f"no default value for {self._name}")
         return default
 
     def __set__(self, obj: object, value: ParamBounds[Array]) -> None:
-        dv: ParamBounds[Array] = ParamBounds(self._default or {})
+        dv: ParamBounds[Array] = ParamBounds(
+            self._default if self._default is not MISSING else {}
+        )
         value = ParamBounds(value)
         object.__setattr__(obj, self._name, dv | value)

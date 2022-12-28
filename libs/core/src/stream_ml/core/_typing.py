@@ -3,17 +3,15 @@
 from __future__ import annotations
 
 # STDLIB
-from collections.abc import Mapping, MutableMapping
+from collections.abc import Mapping
 from typing import Any, Protocol, TypeAlias, TypeVar
 
 __all__ = [
     "Array",
     # Parameters
     "FlatParsT",
-    "MutableFlatParsT",
     # Data
     "DataT",
-    "MutableDataT",
 ]
 
 
@@ -22,6 +20,9 @@ Self = TypeVar("Self", bound="ArrayLike")
 
 class ArrayLike(Protocol):
     """Protocol for array addition."""
+
+    # ========================================================================
+    # Properties
 
     @property
     def shape(self) -> tuple[int, ...]:
@@ -34,6 +35,9 @@ class ArrayLike(Protocol):
     def __getitem__(self: Self, key: Any) -> Self:
         """Indexing."""
         ...
+
+    # ========================================================================
+    # Math
 
     def __add__(self: Self, other: ArrayLike | int | float) -> Self:
         """Addition."""
@@ -60,7 +64,7 @@ class ArrayLike(Protocol):
         ...
 
     # ========================================================================
-    # Methods
+    # Math Methods
 
     def max(self: Self) -> Self:  # noqa: A003
         ...
@@ -78,9 +82,7 @@ Array_co = TypeVar("Array_co", bound="ArrayLike", covariant=True)
 
 
 FlatParsT = Mapping[str, Array]
-MutableFlatParsT = MutableMapping[str, Array]
 
 DataT = Mapping[str, Array]
-MutableDataT = MutableMapping[str, Array]
 
 BoundsT: TypeAlias = tuple[float, float]

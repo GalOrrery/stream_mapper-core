@@ -17,10 +17,11 @@ from torch.distributions.normal import Normal as TorchNormal
 # LOCAL
 from stream_ml.core._typing import BoundsT
 from stream_ml.core.params import ParamBounds, ParamNames, Params
+from stream_ml.core.params.names import ParamNamesField
+from stream_ml.core.prior.bounds import NoBounds
 from stream_ml.core.utils.hashdict import FrozenDict
-from stream_ml.pytorch.prior.bounds import NoBounds, PriorBounds, SigmoidBounds
+from stream_ml.pytorch.prior.bounds import PriorBounds, SigmoidBounds
 from stream_ml.pytorch.stream.base import StreamModel
-from stream_ml.pytorch.utils.sigmoid import ColumnarScaledSigmoid
 
 if TYPE_CHECKING:
     # LOCAL
@@ -48,6 +49,8 @@ class Normal(StreamModel):
     n_features: int = 50
     n_layers: int = 3
 
+    param_names: ParamNamesField = ParamNamesField(("weight", (..., ("mu", "sigma"))))
+
     def __post_init__(self) -> None:
         super().__post_init__()
 
@@ -57,9 +60,12 @@ class Normal(StreamModel):
         cn = self.coord_names[0]
 
         # Validate the param_names
-        if self.param_names != ("mixparam", (cn, ("mu", "sigma"))):
+        # If the param_names are an IncompleteParamNames, then this will
+        # complete them.
+        if self.param_names != ("weight", (cn, ("mu", "sigma"))):
             raise ValueError(
-                "param_names must be ('mixparam', (<coordinate>, ('mu', 'sigma')))."
+                f"param_names must be ('weight', ({cn}, ('mu', 'sigma'))),"
+                f"got {self.param_names}"
             )
 
         # Validate the param_bounds
@@ -82,10 +88,6 @@ class Normal(StreamModel):
             ),
             nn.Linear(self.n_features, 3),
         )
-        self.output_scaling = ColumnarScaledSigmoid(
-            tuple(range(len(self.param_names.flat))),
-            tuple(v.as_tuple() for v in self.param_bounds.flatvalues()),
-        )
 
     @classmethod
     def from_simpler_inputs(
@@ -95,8 +97,8 @@ class Normal(StreamModel):
         *,
         coord_name: str,
         coord_bounds: BoundsT = (-inf, inf),
-        mixparam_bounds: PriorBounds | BoundsT = SigmoidBounds(0, 1),  # noqa: B008
-        mu_bounds: PriorBounds | BoundsT = NoBounds(),  # noqa: B008
+        weight_bounds: PriorBounds | BoundsT = SigmoidBounds(0, 1),  # noqa: B008
+        mu_bounds: PriorBounds | BoundsT | None | NoBounds = None,
         sigma_bounds: PriorBounds | BoundsT = SigmoidBounds(0, 0.3),  # noqa: B008
     ) -> Normal:
         """Create a Normal from a simpler set of inputs.
@@ -112,7 +114,7 @@ class Normal(StreamModel):
             Coordinate name.
         coord_bounds : BoundsT, optional keyword-only
             Coordinate bounds.
-        mixparam_bounds : PriorBounds | BoundsT, optional keyword-only
+        weight_bounds : PriorBounds | BoundsT, optional keyword-only
             Bounds on the mixture parameter.
         mu_bounds : PriorBounds | BoundsT, optional keyword-only
             Bounds on the mean.
@@ -127,11 +129,11 @@ class Normal(StreamModel):
             n_features=n_features,
             n_layers=n_layers,
             coord_names=(coord_name,),
-            param_names=ParamNames(("mixparam", (coord_name, ("mu", "sigma")))),  # type: ignore[arg-type] # noqa: E501
+            param_names=ParamNames(("weight", (coord_name, ("mu", "sigma")))),  # type: ignore[arg-type] # noqa: E501
             coord_bounds=FrozenDict({coord_name: coord_bounds}),  # type: ignore[arg-type] # noqa: E501
             param_bounds=ParamBounds(  # type: ignore[arg-type]
                 {
-                    "mixparam": cls._make_bounds(mixparam_bounds, ("mixparam",)),
+                    "weight": cls._make_bounds(weight_bounds, ("weight",)),
                     coord_name: FrozenDict(
                         mu=cls._make_bounds(mu_bounds, (coord_name, "mu")),
                         sigma=cls._make_bounds(sigma_bounds, (coord_name, "sigma")),
@@ -144,7 +146,7 @@ class Normal(StreamModel):
     # Statistics
 
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT, *args: Array
+        self, pars: Params[Array], data: DataT, **kwargs: Array
     ) -> Array:
         """Log-likelihood of the stream.
 
@@ -154,7 +156,7 @@ class Normal(StreamModel):
             Parameters.
         data : DataT
             Data (phi1, phi2).
-        *args : Array
+        **kwargs : Array
             Additional arguments.
 
         Returns
@@ -162,10 +164,11 @@ class Normal(StreamModel):
         Array
         """
         c = self.coord_names[0]
-        lik = TorchNormal(pars[c, "mu"], xp.clip(pars[c, "sigma"], min=1e-10)).log_prob(
+        eps = xp.finfo(pars[("weight",)].dtype).eps  # TOOD: or tiny?
+        lik = TorchNormal(pars[c, "mu"], xp.clip(pars[c, "sigma"], min=eps)).log_prob(
             data[c]
         )
-        return xp.log(xp.clip(pars[("mixparam",)], min=1e-10)) + lik
+        return xp.log(xp.clip(pars[("weight",)], min=eps)) + lik
 
     def ln_prior_arr(self, pars: Params[Array]) -> Array:
         """Log prior.
@@ -179,10 +182,10 @@ class Normal(StreamModel):
         -------
         Array
         """
-        lnp = xp.zeros_like(pars[("mixparam",)])  # 100%
+        lnp = xp.zeros_like(pars[("weight",)])  # 100%
         # Bounds
         for bound in self.param_bounds.flatvalues():
-            lnp += bound.logpdf(pars, lnp)
+            lnp += bound.logpdf(pars, self, lnp)
         return lnp
 
     # ========================================================================
@@ -201,4 +204,4 @@ class Normal(StreamModel):
         Array
             fraction, mean, sigma
         """
-        return self.output_scaling(self.layers(args[0]))
+        return self._forward_prior(self.layers(args[0]))

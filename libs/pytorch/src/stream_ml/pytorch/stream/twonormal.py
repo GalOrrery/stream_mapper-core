@@ -16,9 +16,8 @@ from torch.distributions.normal import Normal as TorchNormal
 # LOCAL
 from stream_ml.core.params import ParamBounds, ParamNames, Params
 from stream_ml.core.utils.hashdict import FrozenDict
-from stream_ml.pytorch.prior.bounds import NoBounds, PriorBounds, SigmoidBounds
+from stream_ml.pytorch.prior.bounds import PriorBounds, SigmoidBounds
 from stream_ml.pytorch.stream.base import StreamModel
-from stream_ml.pytorch.utils.sigmoid import ColumnarScaledSigmoid
 
 if TYPE_CHECKING:
     # LOCAL
@@ -55,14 +54,16 @@ class DoubleGaussian(StreamModel):
             raise ValueError("Only one coordinate is supported, e.g ('phi2',).")
         cn = self.coord_names[0]
 
+        # Set the param names  # TODO:
+
         # Validate the param_names
         if self.param_names != (
-            "mixparam1",
-            "mixparam2",
+            "weight1",
+            "weight2",
             (cn, ("mu", "sigma1", "sigma2")),
         ):
             raise ValueError(
-                "param_names must be ('mixparam1', 'mixparam2', (<coordinate>, "
+                "param_names must be ('weight1', 'weight2', (<coordinate>, "
                 "('mu', 'sigma1', 'sigma2')))."
             )
 
@@ -86,10 +87,6 @@ class DoubleGaussian(StreamModel):
             ),
             nn.Linear(self.n_features, 5),
         )
-        self.output_scaling = ColumnarScaledSigmoid(
-            tuple(range(len(self.param_names.flat))),
-            tuple(v.as_tuple() for v in self.param_bounds.flatvalues()),
-        )
 
     @classmethod
     def from_simpler_inputs(
@@ -99,9 +96,9 @@ class DoubleGaussian(StreamModel):
         *,
         coord_name: str,
         coord_bounds: BoundsT,
-        mixparam1_bounds: PriorBounds | BoundsT = SigmoidBounds(0, 0.45),  # noqa: B008
-        mixparam2_bounds: PriorBounds | BoundsT = SigmoidBounds(0, 0.2),  # noqa: B008
-        mu_bounds: PriorBounds | BoundsT = NoBounds(),  # noqa: B008
+        weight1_bounds: PriorBounds | BoundsT = SigmoidBounds(0, 0.45),  # noqa: B008
+        weight2_bounds: PriorBounds | BoundsT = SigmoidBounds(0, 0.2),  # noqa: B008
+        mu_bounds: PriorBounds | BoundsT | None = None,
         sigma1_bounds: PriorBounds | BoundsT = SigmoidBounds(0, 0.3),  # noqa: B008
         sigma2_bounds: PriorBounds | BoundsT = SigmoidBounds(0, 0.3),  # noqa: B008
     ) -> DoubleGaussian:
@@ -117,8 +114,8 @@ class DoubleGaussian(StreamModel):
             coord_names=(coord_name,),
             param_names=ParamNames(  # type: ignore[arg-type]
                 (
-                    "mixparam1",
-                    "mixparam2",
+                    "weight1",
+                    "weight2",
                     (coord_name, ("mu_1", "sigma1", "mu_2", "sigma2")),
                 )
             ),
@@ -127,8 +124,8 @@ class DoubleGaussian(StreamModel):
             ),
             param_bounds=ParamBounds(  # type: ignore[arg-type]
                 {
-                    "mixparam1": cls._make_bounds(mixparam1_bounds, ("mixparam1",)),
-                    "mixparam2": cls._make_bounds(mixparam2_bounds, ("mixparam2",)),
+                    "weight1": cls._make_bounds(weight1_bounds, ("weight1",)),
+                    "weight2": cls._make_bounds(weight2_bounds, ("weight2",)),
                     coord_name: FrozenDict(
                         mu=cls._make_bounds(mu_bounds, (coord_name, "mu")),
                         sigma1=cls._make_bounds(sigma1_bounds, (coord_name, "sigma1")),
@@ -142,7 +139,7 @@ class DoubleGaussian(StreamModel):
     # Statistics
 
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT, *args: Array
+        self, pars: Params[Array], data: DataT, **kwargs: Array
     ) -> Array:
         """Log-likelihood of the stream.
 
@@ -152,7 +149,7 @@ class DoubleGaussian(StreamModel):
             Parameters.
         data : DataT
             Data (phi1, phi2).
-        *args : Array
+        **kwargs : Array
             Additional arguments.
 
         Returns
@@ -160,16 +157,17 @@ class DoubleGaussian(StreamModel):
         Array
         """
         c = self.coord_names[0]
+        eps = xp.finfo(pars[("weight",)].dtype).eps  # TOOD: or tiny?
 
-        pre1 = xp.log(xp.clip(pars[("mixparam1",)], min=1e-10))
-        lik1 = TorchNormal(
-            pars[c, "mu"], xp.clip(pars[c, "sigma1"], min=1e-10)
-        ).log_prob(data[c])
+        pre1 = xp.log(xp.clip(pars[("weight1",)], min=eps))
+        lik1 = TorchNormal(pars[c, "mu"], xp.clip(pars[c, "sigma1"], min=eps)).log_prob(
+            data[c]
+        )
 
-        pre2 = xp.log(xp.clip(pars[("mixparam2",)], min=1e-10))
-        lik2 = TorchNormal(
-            pars[c, "mu"], xp.clip(pars[c, "sigma2"], min=1e-10)
-        ).log_prob(data[c])
+        pre2 = xp.log(xp.clip(pars[("weight2",)], min=eps))
+        lik2 = TorchNormal(pars[c, "mu"], xp.clip(pars[c, "sigma2"], min=eps)).log_prob(
+            data[c]
+        )
         return xp.logaddexp(pre1 + lik1, pre2 + lik2)
 
     def ln_prior_arr(self, pars: Params[Array]) -> Array:
@@ -184,19 +182,19 @@ class DoubleGaussian(StreamModel):
         -------
         Array
         """
-        lnp = xp.zeros_like(pars[("mixparam1",)])  # 100%
+        lnp = xp.zeros_like(pars[("weight1",)])  # 100%
         # Bounds
         for bound in self.param_bounds.flatvalues():
-            lnp += bound.logpdf(pars, lnp)
+            lnp += bound.logpdf(pars, self, lnp)
 
         # TODO! as embedded Priors
-        # sigma2 > sigma1 & mixparam1 < fraction_1
+        # sigma2 > sigma1 & weight1 < fraction_1
         c = self.coord_names[0]
         lnp[pars[c, "sigma2"] < pars[c, "sigma1"]] = -xp.inf
-        lnp[pars[("mixparam1",)] < pars[("mixparam2",)]] = -xp.inf
+        lnp[pars[("weight1",)] < pars[("weight2",)]] = -xp.inf
 
         # Fractions sum to less than 1
-        lnp[(pars[("mixparam1",)] + pars[("mixparam2",)]) > 1] = -xp.inf
+        lnp[(pars[("weight1",)] + pars[("weight2",)]) > 1] = -xp.inf
 
         return lnp
 
@@ -226,15 +224,15 @@ class DoubleGaussian(StreamModel):
         # squashes values to 0. But it's not a big deal, since the other value
         # can still be very negative.
 
-        # Ensure mixparam1 > mixparam2
-        im1, im2 = pns.index("mixparam1"), pns.index("mixparam2")
-        out[:, im1] = res[:, im2] + xp.relu(res[:, im1])  # mixparam1: [mixparam2, inf)
+        # Ensure weight1 > weight2
+        im1, im2 = pns.index("weight1"), pns.index("weight2")
+        out[:, im1] = res[:, im2] + xp.relu(res[:, im1])  # weight1: [weight2, inf)
 
-        # TODO: ensure mixparam1 + mixparam2 < 1
+        # TODO: ensure weight1 + weight2 < 1
 
         # Ensure sigma2 > sigma1\
         is1, is2 = pns.index(f"{c}_sigma1"), pns.index(f"{c}_sigma2")
         out[:, is2] = res[:, is1] + xp.relu(res[:, is2])  # sigma2: [sigma1, inf)
 
         # use scaled sigmoid to ensure things are in bounds.
-        return self.output_scaling(out)
+        return self._forward_prior(out)

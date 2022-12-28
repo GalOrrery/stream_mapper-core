@@ -63,7 +63,7 @@ class BackgroundModel(ModelBase[Array]):
 
     @abstractmethod
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT[Array], *args: Array
+        self, pars: Params[Array], data: DataT[Array], **kwargs: Array
     ) -> Array:
         """Log-likelihood of the background.
 
@@ -73,7 +73,7 @@ class BackgroundModel(ModelBase[Array]):
             Parameters.
         data : DataT
             Data (phi1).
-        *args : Array
+        **kwargs : Array
             Additional arguments.
 
         Returns

@@ -13,7 +13,7 @@ from stream_ml.core.base import Model
 from stream_ml.core.params import MutableParams, ParamBounds, ParamNamesField, Params
 from stream_ml.core.params.bounds import ParamBoundsField
 from stream_ml.core.params.names import FlatParamName
-from stream_ml.core.prior.bounds import PriorBounds
+from stream_ml.core.prior.bounds import NoBounds, PriorBounds
 from stream_ml.core.utils.hashdict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
@@ -38,6 +38,22 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
         The (internal) name of the model, e.g. 'stream' or 'background'. Note
         that this can be different from the name of the model when it is used in
         a mixture model (see :class:`~stream_ml.core.core.MixtureModelBase`).
+
+    coord_names : tuple[str, ...], keyword-only
+        The names of the coordinates, not including the 'independent' variable.
+        E.g. for independent variable 'phi1' this might be ('phi2', 'prlx',
+        ...).
+    param_names : `~stream_ml.core.params.ParamNames`, keyword-only
+        The names of the parameters. Parameters dependent on the coordinates are
+        grouped by the coordinate name.
+        E.g. ('weight', ('phi1', ('mu', 'sigma'))).
+
+    coord_bounds : Mapping[str, tuple[float, float]], keyword-only
+        The bounds on the coordinates. If not provided, the bounds are
+        (-inf, inf) for all coordinates.
+
+    param_bounds : `~stream_ml.core.params.ParamBounds`, keyword-only
+        The bounds on the parameters.
     """
 
     n_features: int
@@ -58,11 +74,6 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
         """Post-init validation."""
         super().__post_init__()
 
-        # # Shapes attribute
-        # for pn in self.param_names:
-        #     if isinstance(pn, str):  # e.g. "mixparam"
-        #     else:  # e.g. ("phi2", ("mu", "sigma"))
-
         # Validate the param_names
         if not self.param_names:
             raise ValueError("param_names must be specified.")
@@ -70,16 +81,19 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
         # Make coord bounds if not provided
         crnt_cbs = self.coord_bounds._mapping
         cbs = {n: crnt_cbs.pop(n, (-inf, inf)) for n in self.coord_names}
-        if crnt_cbs:
+        if crnt_cbs:  # Error if there are extra keys
             raise ValueError(f"coord_bounds contains invalid keys {crnt_cbs.keys()}.")
         self.coord_bounds = FrozenDict(cbs)
 
-        # Make param bounds
+        # Make parameter bounds
+        # 1) Make the default bounds for all parameters.
+        # 2) Update from the user-specified bounds.
+        # 3) Fix up the names so each bound references its parameter.
         param_bounds: ParamBounds[Array] = (
             ParamBounds.from_names(self.param_names, default=self.DEFAULT_BOUNDS)
             | self.param_bounds
         )
-        param_bounds._fixup_param_names()
+        param_bounds._fixup_param_names()  # TODO: better method name
         self.param_bounds = param_bounds
 
     # ========================================================================
@@ -153,7 +167,7 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
 
     @abstractmethod
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT[Array], *args: Array
+        self, pars: Params[Array], data: DataT[Array], **kwargs: Array
     ) -> Array:
         """Elementwise log-likelihood of the model.
 
@@ -163,7 +177,7 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
             Parameters.
         data : DataT
             Data (phi1).
-        *args : Array
+        **kwargs : Array
             Additional arguments.
 
         Returns
@@ -192,16 +206,17 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
 
     @classmethod
     def _make_bounds(
-        cls, bounds: PriorBounds[Array] | BoundsT, param_name: FlatParamName
+        cls, bounds: PriorBounds[Array] | BoundsT | None, param_name: FlatParamName
     ) -> PriorBounds[Array]:
         """Make bounds."""
-        return (
-            bounds
-            if isinstance(bounds, PriorBounds)
-            else replace(
+        if isinstance(bounds, PriorBounds):
+            return bounds
+        elif bounds is None:
+            return NoBounds()
+        else:
+            return replace(
                 cls.DEFAULT_BOUNDS,
                 lower=bounds[0],
                 upper=bounds[1],
                 param_name=param_name,
             )
-        )
