@@ -128,13 +128,15 @@ class Model(CoreModel[Array], Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def ln_prior_arr(self, pars: Params[Array]) -> Array:
+    def ln_prior_arr(self, pars: Params[Array], data: DataT) -> Array:
         """Elementwise log prior.
 
         Parameters
         ----------
         pars : Params
             Parameters.
+        data : DataT
+            Data (phi1).
 
         Returns
         -------

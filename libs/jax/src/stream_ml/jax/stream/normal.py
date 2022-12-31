@@ -172,13 +172,15 @@ class Normal(StreamModel):
             data[c], pars[(c, "mu")], xp.clip(pars[(c, "sigma")], a_min=min_)
         )
 
-    def ln_prior_arr(self, pars: Params[Array]) -> Array:
+    def ln_prior_arr(self, pars: Params[Array], data: DataT) -> Array:
         """Log prior.
 
         Parameters
         ----------
         pars : Params[Array]
             Parameters.
+        data : DataT
+            Data (phi1, phi2).
 
         Returns
         -------
@@ -186,7 +188,7 @@ class Normal(StreamModel):
         """
         lnp = xp.zeros_like(pars[("weight",)])  # 100%
         for bounds in self.param_bounds.flatvalues():
-            lnp += bounds.logpdf(pars, self, lnp)
+            lnp += bounds.logpdf(pars, data, self, lnp)
         return lnp
 
     # ========================================================================
@@ -205,4 +207,4 @@ class Normal(StreamModel):
         Array
             fraction, mean, sigma
         """
-        return self._forward_prior(self.layers(args[0]))
+        return self._forward_prior(self.layers(args[0]), args[0])

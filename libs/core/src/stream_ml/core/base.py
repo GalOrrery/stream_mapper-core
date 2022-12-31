@@ -122,13 +122,15 @@ class Model(Protocol[Array]):
         raise NotImplementedError
 
     @abstractmethod
-    def ln_prior_arr(self, pars: Params[Array]) -> Array:
+    def ln_prior_arr(self, pars: Params[Array], data: DataT[Array]) -> Array:
         """Elementwise log prior.
 
         Parameters
         ----------
         pars : Params[Array]
             Parameters.
+        data : DataT
+            Data.
 
         Returns
         -------
@@ -158,7 +160,7 @@ class Model(Protocol[Array]):
         # fmt: off
         post_arr: Array = (
             self.ln_likelihood_arr(pars, data, **kwargs)
-            + self.ln_prior_arr(pars)
+            + self.ln_prior_arr(pars, data)
         )
         # fmt: on
         return post_arr
@@ -188,20 +190,22 @@ class Model(Protocol[Array]):
         # TODO! move to ModelBase
         return self.ln_likelihood_arr(pars, data, **kwargs).sum()
 
-    def ln_prior(self, pars: Params[Array]) -> Array:
+    def ln_prior(self, pars: Params[Array], data: DataT[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
         pars : Params[Array]
             Parameters.
+        data : DataT
+            Data.
 
         Returns
         -------
         Array
         """
         # TODO! move to ModelBase
-        return self.ln_prior_arr(pars).sum()
+        return self.ln_prior_arr(pars, data).sum()
 
     def ln_posterior(
         self, pars: Params[Array], data: DataT[Array], **kwargs: Array
@@ -222,5 +226,7 @@ class Model(Protocol[Array]):
         Array
         """
         # TODO! move to ModelBase
-        ln_post: Array = self.ln_likelihood(pars, data, **kwargs) + self.ln_prior(pars)
+        ln_post: Array = self.ln_likelihood(pars, data, **kwargs) + self.ln_prior(
+            pars, data
+        )
         return ln_post

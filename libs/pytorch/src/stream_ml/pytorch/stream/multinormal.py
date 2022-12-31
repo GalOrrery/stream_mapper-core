@@ -114,13 +114,15 @@ class MultivariateNormal(StreamModel):
 
         return xp.log(xp.clip(pars[("weight",)], eps)) + lik[:, None]
 
-    def ln_prior_arr(self, pars: Params[Array]) -> Array:
+    def ln_prior_arr(self, pars: Params[Array], data: DataT) -> Array:
         """Log prior.
 
         Parameters
         ----------
         pars : Params[Array]
             Parameters.
+        data : DataT
+            Data.
 
         Returns
         -------
@@ -129,7 +131,7 @@ class MultivariateNormal(StreamModel):
         lnp = xp.zeros_like(pars[("weight",)])  # 100%
         # Bounds
         for bounds in self.param_bounds.flatvalues():
-            lnp += bounds.logpdf(pars, self, lnp)
+            lnp += bounds.logpdf(pars, data, self, lnp)
         return lnp
 
     # ========================================================================
@@ -148,7 +150,7 @@ class MultivariateNormal(StreamModel):
         Array
             fraction, mean, sigma
         """
-        return self._forward_prior(self.layers(args[0]))
+        return self._forward_prior(self.layers(args[0]), args[0])
 
 
 ##############################################################################

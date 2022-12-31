@@ -169,13 +169,15 @@ class DoubleGaussian(StreamModel):
         )
         return xp.logaddexp(pre1 + lik1, pre2 + lik2)
 
-    def ln_prior_arr(self, pars: Params[Array]) -> Array:
+    def ln_prior_arr(self, pars: Params[Array], data: DataT) -> Array:
         """Log prior.
 
         Parameters
         ----------
         pars : Params
             Parameters.
+        data : DataT
+            Data.
 
         Returns
         -------
@@ -184,7 +186,7 @@ class DoubleGaussian(StreamModel):
         lnp = xp.zeros_like(pars[("weight1",)])  # 100%
         # Bounds
         for bound in self.param_bounds.flatvalues():
-            lnp += bound.logpdf(pars, self, lnp)
+            lnp += bound.logpdf(pars, data, self, lnp)
 
         # TODO! as embedded Priors
         # sigma2 > sigma1 & weight1 < fraction_1
@@ -234,4 +236,4 @@ class DoubleGaussian(StreamModel):
         out[:, is2] = res[:, is1] + xp.relu(res[:, is2])  # sigma2: [sigma1, inf)
 
         # use scaled sigmoid to ensure things are in bounds.
-        return self._forward_prior(out)
+        return self._forward_prior(out, args[0])

@@ -90,13 +90,15 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
         raise NotImplementedError
 
     @abstractmethod
-    def ln_prior_arr(self, pars: Params[Array]) -> Array:
+    def ln_prior_arr(self, pars: Params[Array], data: DataT) -> Array:
         """Log prior.
 
         Parameters
         ----------
         pars : Params[Array]
             Parameters.
+        data : DataT
+            Data (phi1).
 
         Returns
         -------

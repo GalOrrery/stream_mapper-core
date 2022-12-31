@@ -189,13 +189,15 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def ln_prior_arr(self, pars: Params[Array]) -> Array:
+    def ln_prior_arr(self, pars: Params[Array], data: DataT[Array]) -> Array:
         """Elementwise log prior.
 
         Parameters
         ----------
         pars : Params[Array]
             Parameters.
+        data : DataT
+            Data (phi1).
 
         Returns
         -------

@@ -76,13 +76,15 @@ class Uniform(BackgroundModel):
         eps = xp.finfo(pars[("weight",)].dtype).eps  # TOOD: or tiny?
         return xp.log(xp.clip(pars[("weight",)], eps)) - self._logdiffs.sum()
 
-    def ln_prior_arr(self, pars: Params[Array]) -> Array:
+    def ln_prior_arr(self, pars: Params[Array], data: DataT) -> Array:
         """Log prior.
 
         Parameters
         ----------
         pars : Params[Array]
             Parameters.
+        data: DataT
+            Data (phi1).
 
         Returns
         -------

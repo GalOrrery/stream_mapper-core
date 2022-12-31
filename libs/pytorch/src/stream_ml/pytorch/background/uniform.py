@@ -88,13 +88,15 @@ class Uniform(BackgroundModel):
             dim=1, keepdim=True
         )
 
-    def ln_prior_arr(self, pars: Params[Array]) -> Array:
+    def ln_prior_arr(self, pars: Params[Array], data: DataT) -> Array:
         """Log prior.
 
         Parameters
         ----------
         pars : Params
             Parameters.
+        data : DataT
+            Data.
 
         Returns
         -------
@@ -102,7 +104,7 @@ class Uniform(BackgroundModel):
         """
         lnp = xp.zeros_like(pars[("weight",)])
         for bounds in self.param_bounds.flatvalues():
-            lnp += bounds.logpdf(pars, self, lnp)
+            lnp += bounds.logpdf(pars, data, self, lnp)
         return lnp
 
     # ========================================================================

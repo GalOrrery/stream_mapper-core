@@ -95,13 +95,15 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
         # Sum over the models, keeping the data dimension
         return xp.logsumexp(xp.hstack(liks), dim=1, keepdim=True)
 
-    def ln_prior_arr(self, pars: Params[Array]) -> Array:
+    def ln_prior_arr(self, pars: Params[Array], data: DataT) -> Array:
         """Log prior.
 
         Parameters
         ----------
         pars : Params[Array]
             Parameters.
+        data : DataT
+            Data (phi1).
 
         Returns
         -------
@@ -110,14 +112,14 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
         # Get the parameters for each model, stripping the model name,
         # and use that to evaluate the log prior for the model.
         lps = tuple(
-            model.ln_prior_arr(pars.get_prefixed(name))
+            model.ln_prior_arr(pars.get_prefixed(name), data)
             for name, model in self.components.items()
         )
         lp = xp.hstack(lps).sum(dim=1)[:, None]
 
         # Plugin for priors
         for prior in self.priors:
-            lp += prior.logpdf(pars, self, lp)
+            lp += prior.logpdf(pars, data, self, lp)
 
         # Sum over the priors
         return lp
@@ -141,8 +143,9 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
         result = xp.concat([model(*args) for model in self.components.values()], dim=1)
 
         # Call the prior to limit the range of the parameters
-        # TODO: a better way to do this.
+        # TODO: a better way to do the order of the priors.
+        # TODO: full data, not just args[0]
         for prior in self.priors:
-            result = prior(result, self)
+            result = prior(result, args[0], self)
 
         return result

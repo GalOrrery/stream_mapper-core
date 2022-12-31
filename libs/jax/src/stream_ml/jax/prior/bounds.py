@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     # LOCAL
     from stream_ml.core.base import Model
     from stream_ml.core.params.core import Params
+    from stream_ml.jax._typing import DataT
 
 __all__: list[str] = []
 
@@ -31,6 +32,7 @@ class PriorBounds(CorePriorBounds[Array]):
     def logpdf(
         self,
         pars: Params[Array],
+        data: DataT,
         model: Model[Array],
         current_lnpdf: Array | None = None,
         /,
@@ -45,7 +47,7 @@ class PriorBounds(CorePriorBounds[Array]):
         return bp
 
     @abstractmethod
-    def __call__(self, x: Array, model: Model[Array], /) -> Array:
+    def __call__(self, nn: Array, data: Array, model: Model[Array], /) -> Array:
         """Evaluate the forward step in the prior."""
         ...
 
@@ -54,9 +56,9 @@ class PriorBounds(CorePriorBounds[Array]):
 class SigmoidBounds(PriorBounds):
     """Base class for prior bounds."""
 
-    def __call__(self, x: Array, model: Model[Array], /) -> Array:
+    def __call__(self, nn: Array, data: Array, model: Model[Array], /) -> Array:
         """Evaluate the forward step in the prior."""
         col = model.param_names.flats.index(self.param_name)
-        return x.at[:, col].set(
-            scaled_sigmoid(x[:, col], lower=self.lower, upper=self.upper)
+        return nn.at[:, col].set(
+            scaled_sigmoid(nn[:, col], lower=self.lower, upper=self.upper)
         )

@@ -15,6 +15,7 @@ from stream_ml.core.prior.base import PriorBase
 
 if TYPE_CHECKING:
     # LOCAL
+    from stream_ml.core._typing import DataT
     from stream_ml.core.base import Model
     from stream_ml.core.params.core import Params
 
@@ -37,6 +38,7 @@ class PriorBounds(PriorBase[Array]):
     def logpdf(
         self,
         pars: Params[Array],
+        data: DataT[Array],
         model: Model[Array],
         current_lnpdf: Array | None = None,
         /,
@@ -45,7 +47,7 @@ class PriorBounds(PriorBase[Array]):
         ...
 
     @abstractmethod
-    def __call__(self, x: Array, model: Model[Array], /) -> Array:
+    def __call__(self, nn: Array, data: Array, model: Model[Array], /) -> Array:
         """Evaluate the forward step in the prior."""
         ...
 
@@ -96,6 +98,7 @@ class NoBounds(PriorBounds[Any]):
     def logpdf(
         self,
         pars: Params[Array],
+        data: DataT[Array],
         model: Model[Array],
         current_lnpdf: Array | None = None,
         /,
@@ -106,6 +109,6 @@ class NoBounds(PriorBounds[Any]):
             raise ValueError(msg)
         return 0
 
-    def __call__(self, x: Array, model: Model[Array], /) -> Array:
+    def __call__(self, nn: Array, data: Array, model: Model[Array], /) -> Array:
         """Evaluate the forward step in the prior."""
-        return x
+        return nn

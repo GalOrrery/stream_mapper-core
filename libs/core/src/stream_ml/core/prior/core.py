@@ -12,8 +12,10 @@ from stream_ml.core.prior.base import PriorBase
 
 if TYPE_CHECKING:
     # LOCAL
+    from stream_ml.core._typing import DataT
     from stream_ml.core.base import Model
     from stream_ml.core.params.core import Params
+
 
 __all__: list[str] = []
 
@@ -22,12 +24,15 @@ __all__: list[str] = []
 class Prior(PriorBase[Array]):
     """Prior."""
 
-    logpdf_hook: Callable[[Params[Array], Model[Array], Array | None], Array]
+    logpdf_hook: Callable[
+        [Params[Array], DataT[Array], Model[Array], Array | None], Array
+    ]
     forward_hook: Callable[[Array, Model[Array]], Array]
 
     def logpdf(
         self,
         pars: Params[Array],
+        data: DataT[Array],
         model: Model[Array],
         current_lnpdf: Array | None = None,
         /,
@@ -42,6 +47,8 @@ class Prior(PriorBase[Array]):
         ----------
         pars : Params[Array], position-only
             The parameters to evaluate the logpdf at.
+        data : DataT, position-only
+            The data for which evaluate the prior.
         model : Model[Array], position-only
             The model for which evaluate the prior.
         current_lnpdf : Array | None, optional position-only
@@ -53,15 +60,17 @@ class Prior(PriorBase[Array]):
         Array
             The logpdf.
         """
-        return self.logpdf_hook(pars, model, current_lnpdf)
+        return self.logpdf_hook(pars, data, model, current_lnpdf)
 
-    def __call__(self, x: Array, model: Model[Array], /) -> Array:
+    def __call__(self, nn: Array, data: Array, model: Model[Array], /) -> Array:
         """Evaluate the forward step in the prior.
 
         Parameters
         ----------
-        x : Array
+        nn : Array
             The input to evaluate the prior at.
+        data : Array
+            The data to evaluate the prior at.
         model : Model[Array]
             The model to evaluate the prior at.
 
@@ -69,4 +78,4 @@ class Prior(PriorBase[Array]):
         -------
         Array
         """
-        return self.forward_hook(x, model)
+        return self.forward_hook(nn, model)

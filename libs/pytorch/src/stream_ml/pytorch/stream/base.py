@@ -50,13 +50,15 @@ class StreamModel(ModelBase, CoreStreamModel[Array]):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def ln_prior_arr(self, pars: Params[Array]) -> Array:
+    def ln_prior_arr(self, pars: Params[Array], data: DataT) -> Array:
         """Log prior.
 
         Parameters
         ----------
         pars : Params
             Parameters.
+        data : DataT
+            Data.
 
         Returns
         -------
@@ -68,13 +70,15 @@ class StreamModel(ModelBase, CoreStreamModel[Array]):
     # ML
 
     # TODO: keep moving up the hierarchy!
-    def _forward_prior(self, out: Array) -> Array:
+    def _forward_prior(self, out: Array, data: DataT) -> Array:
         """Forward pass.
 
         Parameters
         ----------
         out : Array
             Input.
+        data : DataT
+            Data.
 
         Returns
         -------
@@ -82,7 +86,7 @@ class StreamModel(ModelBase, CoreStreamModel[Array]):
             Same as input.
         """
         for bnd in self.param_bounds.flatvalues():
-            out = bnd(out, self)
+            out = bnd(out, data, self)
         return out
 
     @abc.abstractmethod

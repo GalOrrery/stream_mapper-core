@@ -8,7 +8,7 @@ from dataclasses import KW_ONLY, dataclass
 from typing import TYPE_CHECKING, Generic
 
 # LOCAL
-from stream_ml.core._typing import Array
+from stream_ml.core._typing import Array, DataT
 
 if TYPE_CHECKING:
     # LOCAL
@@ -29,6 +29,7 @@ class PriorBase(Generic[Array], metaclass=ABCMeta):
     def logpdf(
         self,
         pars: Params[Array],
+        data: DataT[Array],
         model: Model[Array],
         current_lnpdf: Array | None = None,
         /,
@@ -43,6 +44,8 @@ class PriorBase(Generic[Array], metaclass=ABCMeta):
         ----------
         pars : Params[Array], position-only
             The parameters to evaluate the logpdf at.
+        data : DataT, position-only
+            The data for which evaluate the prior.
         model : Model, position-only
             The model for which evaluate the prior.
         current_lnpdf : Array | None, optional position-only
@@ -57,13 +60,15 @@ class PriorBase(Generic[Array], metaclass=ABCMeta):
         ...
 
     @abstractmethod
-    def __call__(self, nn: Array, model: Model[Array], /) -> Array:
+    def __call__(self, nn: Array, data: Array, model: Model[Array], /) -> Array:
         """Evaluate the forward step in the prior.
 
         Parameters
         ----------
         nn : Array, position-only
             The input to evaluate the prior at.
+        data : Array, position-only
+            The data to evaluate the prior at.
         model : `~stream_ml.core.Model`, position-only
             The model to evaluate the prior at.
 
