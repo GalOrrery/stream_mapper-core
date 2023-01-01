@@ -237,4 +237,11 @@ class DoubleGaussian(StreamModel):
         out[:, is2] = res[:, is1] + xp.relu(res[:, is2])  # sigma2: [sigma1, inf)
 
         # use scaled sigmoid to ensure things are in bounds.
-        return self._forward_prior(out, data)
+        nn = self._forward_prior(out, data)
+
+        # Call the prior to limit the range of the parameters
+        # TODO: a better way to do the order of the priors.
+        for prior in self.priors:
+            nn = prior(nn, data, self)
+
+        return nn

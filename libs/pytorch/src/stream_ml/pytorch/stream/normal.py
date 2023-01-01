@@ -50,8 +50,6 @@ class Normal(StreamModel):
     n_features: int = 50
     n_layers: int = 3
 
-    indep_coord_name: str = "phi1"  # TODO: move up class hierarchy
-
     param_names: ParamNamesField = ParamNamesField(("weight", (..., ("mu", "sigma"))))
 
     def __post_init__(self) -> None:
@@ -212,4 +210,11 @@ class Normal(StreamModel):
         Array
             fraction, mean, sigma
         """
-        return self._forward_prior(self.layers(data[self.indep_coord_name]), data)
+        nn = self._forward_prior(self.layers(data[self.indep_coord_name]), data)
+
+        # Call the prior to limit the range of the parameters
+        # TODO: a better way to do the order of the priors.
+        for prior in self.priors:
+            nn = prior(nn, data, self)
+
+        return nn

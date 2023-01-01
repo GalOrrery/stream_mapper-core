@@ -14,6 +14,7 @@ from stream_ml.core.data import Data
 from stream_ml.core.params import MutableParams, ParamBounds, ParamNamesField, Params
 from stream_ml.core.params.bounds import ParamBoundsField
 from stream_ml.core.params.names import FlatParamName
+from stream_ml.core.prior.base import PriorBase
 from stream_ml.core.prior.bounds import NoBounds, PriorBounds
 from stream_ml.core.utils.hashdict import FrozenDict, FrozenDictField
 
@@ -68,6 +69,8 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
     # Bounds on the coordinates and parameters.
     coord_bounds: FrozenDictField[str, BoundsT] = FrozenDictField(FrozenDict())
     param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array](ParamBounds())
+
+    priors: tuple[PriorBase[Array], ...] = ()
 
     DEFAULT_BOUNDS: ClassVar  # TODO: [PriorBounds[Any]]
 

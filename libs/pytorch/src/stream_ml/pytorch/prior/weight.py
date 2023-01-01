@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 # STDLIB
-from abc import abstractmethod
 from dataclasses import KW_ONLY, dataclass
 from math import inf
 from typing import TYPE_CHECKING
 
 # THIRD-PARTY
-import pytorch as xp
+import torch as xp
 
 # LOCAL
 from stream_ml.core.data import Data
@@ -45,7 +44,6 @@ class BoundedHardThreshold(PriorBase[Array]):
     lower: float = -inf
     upper: float = inf
 
-    @abstractmethod
     def logpdf(
         self,
         pars: Params[Array],
@@ -84,7 +82,6 @@ class BoundedHardThreshold(PriorBase[Array]):
         ] = -inf
         return lnp
 
-    @abstractmethod
     def __call__(self, nn: Array, data: Data[Array], model: Model[Array], /) -> Array:
         """Evaluate the forward step in the prior.
 
@@ -101,15 +98,10 @@ class BoundedHardThreshold(PriorBase[Array]):
         -------
         Array
         """
-        im1 = model.param_names.flat.index("stream_weight")
-        where = within_bounds(data[self.coord_name], self.lower, self.upper)
-
-        if where.any():
-            out = nn.clone()
-            out[where, im1] = xp.threshold(nn[:, im1][where], self.threshold, 0)
-            return out
+        im1 = model.param_names.flat.index("weight")
+        where = within_bounds(data[self.coord_name][:, 0], self.lower, self.upper)
 
         out = nn.clone()
+        out[where, im1] = xp.threshold(nn[where, im1], self.threshold, 0)
 
-        out[:, im1] = xp.threshold(nn[:, im1], self.threshold, 0)
         return out

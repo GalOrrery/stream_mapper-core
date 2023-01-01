@@ -136,11 +136,11 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
         Array
             fraction, mean, sigma
         """
-        result = xp.concat([model(data) for model in self.components.values()], dim=1)
+        nn = xp.concat([model(data) for model in self.components.values()], dim=1)
 
         # Call the prior to limit the range of the parameters
         # TODO: a better way to do the order of the priors.
         for prior in self.priors:
-            result = prior(result, data, self)
+            nn = prior(nn, data, self)
 
-        return result
+        return nn

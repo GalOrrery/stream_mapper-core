@@ -104,4 +104,11 @@ class Uniform(BackgroundModel):
         Array
             fraction, mean, sigma
         """
-        return xp.asarray([])
+        nn = xp.asarray([])
+
+        # Call the prior to limit the range of the parameters
+        # TODO: a better way to do the order of the priors.
+        for prior in self.priors:
+            nn = prior(nn, data, self)
+
+        return nn

@@ -4,7 +4,11 @@ from __future__ import annotations
 
 # STDLIB
 from dataclasses import dataclass
-from typing import TypeVar, overload
+from typing import Any, TypeVar, overload
+
+# THIRD-PARTY
+import numpy as np
+from numpy.typing import NDArray
 
 # LOCAL
 from stream_ml.core.data import Data as CoreData
@@ -17,6 +21,8 @@ Self = TypeVar("Self", bound="Data[Array]")  # type: ignore[type-arg]
 class Data(CoreData[Array]):
     """Data."""
 
+    # -----------------------------------------------------------------------
+
     @overload
     def __getitem__(self, key: str, /) -> Array:  # get a column
         ...
@@ -27,6 +33,12 @@ class Data(CoreData[Array]):
 
     @overload
     def __getitem__(self: Self, key: slice, /) -> Self:  # get a slice of rows
+        ...
+
+    @overload
+    def __getitem__(
+        self: Self, key: list[int] | NDArray[np.integer[Any]], /
+    ) -> Self:  # get rows
         ...
 
     @overload
@@ -52,6 +64,8 @@ class Data(CoreData[Array]):
         key: str
         | int
         | slice
+        | list[int]
+        | NDArray[np.integer[Any]]
         | tuple[int, ...]
         | tuple[str, ...]
         | tuple[slice, ...]
@@ -61,6 +75,8 @@ class Data(CoreData[Array]):
         out = super().__getitem__(key)
 
         if isinstance(out, type(self)) and self.array.ndim == 1:
-            out.array.shape = (-1, 1)
+            object.__setattr__(out, "array", out.array[:, None])
+        elif isinstance(out, Array) and out.ndim == 1:
+            out = out[:, None]
 
-        return out
+        return out  # noqa: RET504

@@ -106,7 +106,7 @@ class MultivariateNormal(StreamModel):
         Array
         """
         eps = xp.finfo(pars[("weight",)].dtype).eps  # TODO: or tiny?
-        datav = xp.hstack([data[c] for c in self.coord_names])
+        datav = data[self.coord_names]
 
         lik = TorchMultivariateNormal(
             xp.hstack([pars[c, "mu"] for c in self.coord_names]),
@@ -151,7 +151,14 @@ class MultivariateNormal(StreamModel):
         Array
             fraction, mean, sigma
         """
-        return self._forward_prior(self.layers(data), data)
+        nn = self._forward_prior(self.layers(data[self.indep_coord_name]), data)
+
+        # Call the prior to limit the range of the parameters
+        # TODO: a better way to do the order of the priors.
+        for prior in self.priors:
+            nn = prior(nn, data, self)
+
+        return nn
 
 
 ##############################################################################
@@ -185,7 +192,7 @@ class MultivariateMissingNormal(MultivariateNormal):  # (MultivariateNormal)
         **kwargs : Array
             Additional arguments.
         """
-        datav = xp.hstack([data[c] for c in self.coord_names])
+        datav = data[self.coord_names].array
         mu = xp.hstack([pars[c, "mu"] for c in self.coord_names])
         sigma = xp.hstack([pars[c, "sigma"] for c in self.coord_names])
 

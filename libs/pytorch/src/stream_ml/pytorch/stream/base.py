@@ -4,7 +4,7 @@ from __future__ import annotations
 
 # STDLIB
 import abc
-from dataclasses import dataclass
+from dataclasses import KW_ONLY, dataclass
 
 # LOCAL
 from stream_ml.core.data import Data
@@ -19,6 +19,9 @@ __all__: list[str] = []
 @dataclass(unsafe_hash=True)
 class StreamModel(ModelBase, CoreStreamModel[Array]):
     """Stream Model."""
+
+    _: KW_ONLY
+    indep_coord_name: str = "phi1"  # TODO: move up class hierarchy
 
     # ========================================================================
     # Statistics

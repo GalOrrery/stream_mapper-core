@@ -6,6 +6,10 @@ from __future__ import annotations
 from dataclasses import KW_ONLY, dataclass
 from typing import Any, Generic, TypeGuard, TypeVar, cast, overload
 
+# THIRD-PARTY
+import numpy as np
+from numpy.typing import NDArray
+
 # LOCAL
 from stream_ml.core._typing import Array
 
@@ -58,6 +62,8 @@ class Data(Generic[Array]):
     def __len__(self) -> int:
         return len(self.array)
 
+    # -----------------------------------------------------------------------
+
     @overload
     def __getitem__(self, key: str, /) -> Array:  # get a column
         ...
@@ -68,6 +74,12 @@ class Data(Generic[Array]):
 
     @overload
     def __getitem__(self: Self, key: slice, /) -> Self:  # get a slice of rows
+        ...
+
+    @overload
+    def __getitem__(
+        self: Self, key: list[int] | NDArray[np.integer[Any]], /
+    ) -> Self:  # get rows
         ...
 
     @overload
@@ -93,6 +105,8 @@ class Data(Generic[Array]):
         key: str
         | int
         | slice
+        | list[int]
+        | NDArray[np.integer[Any]]
         | tuple[int, ...]
         | tuple[str, ...]
         | tuple[slice, ...]
@@ -106,6 +120,9 @@ class Data(Generic[Array]):
             return type(self)(self.array[None, key], names=self.names)  # type: ignore[index] # noqa: E501
 
         elif isinstance(key, slice):
+            return type(self)(self.array[key], names=self.names)  # type: ignore[index]
+
+        elif isinstance(key, (list, np.ndarray)):
             return type(self)(self.array[key], names=self.names)  # type: ignore[index]
 
         elif isinstance(key, tuple) and len(key) >= 2:
