@@ -16,7 +16,8 @@ from stream_ml.core.utils.hashdict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.core._typing import DataT, FlatParsT
+    from stream_ml.core._typing import FlatParsT
+    from stream_ml.core.data import Data
     from stream_ml.core.prior.base import PriorBase
 
 __all__: list[str] = []
@@ -269,7 +270,7 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
 
     @abstractmethod
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT[Array], **kwargs: Array
+        self, pars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log likelihood.
 
@@ -279,7 +280,7 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
         ----------
         pars : Params
             Parameters.
-        data : DataT
+        data : Data[Array]
             Data.
         **kwargs : Array
             Additional arguments.
@@ -291,14 +292,14 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
         raise NotImplementedError
 
     @abstractmethod
-    def ln_prior_arr(self, pars: Params[Array], data: DataT[Array]) -> Array:
+    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
         pars : Params
             Parameters.
-        data : DataT
+        data : Data[Array]
             Data.
 
         Returns

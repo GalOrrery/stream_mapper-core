@@ -6,13 +6,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any, Protocol, TypeAlias, TypeVar
 
-__all__ = [
-    "Array",
-    # Parameters
-    "FlatParsT",
-    # Data
-    "DataT",
-]
+__all__ = ["Array", "FlatParsT"]
 
 
 Self = TypeVar("Self", bound="ArrayLike")
@@ -24,6 +18,10 @@ class ArrayLike(Protocol):
     # ========================================================================
     # Properties
 
+    def __len__(self) -> int:
+        """Length."""
+        ...
+
     @property
     def shape(self) -> tuple[int, ...]:
         """Shape."""
@@ -32,7 +30,7 @@ class ArrayLike(Protocol):
     # ========================================================================
     # Dunder methods
 
-    def __getitem__(self: Self, key: Any) -> Self:
+    def __getitem__(self: Self, key: Any, /) -> Self:
         """Indexing."""
         ...
 
@@ -83,6 +81,5 @@ Array_co = TypeVar("Array_co", bound="ArrayLike", covariant=True)
 
 FlatParsT = Mapping[str, Array]
 
-DataT = Mapping[str, Array]
 
 BoundsT: TypeAlias = tuple[float, float]

@@ -5,16 +5,12 @@ from __future__ import annotations
 # STDLIB
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 # LOCAL
 from stream_ml.core._typing import Array
 from stream_ml.core.core import ModelBase
+from stream_ml.core.data import Data
 from stream_ml.core.params import Params
-
-if TYPE_CHECKING:
-    # LOCAL
-    from stream_ml.core._typing import DataT
 
 __all__: list[str] = []
 
@@ -63,7 +59,7 @@ class StreamModel(ModelBase[Array]):
 
     @abstractmethod
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT[Array], **kwargs: Array
+        self, pars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log-likelihood of the background.
 
@@ -71,7 +67,7 @@ class StreamModel(ModelBase[Array]):
         ----------
         pars : Params
             Parameters.
-        data : DataT
+        data : Data[Array]
             Data (phi1).
         **kwargs: Array
             Additional arguments.
@@ -83,14 +79,14 @@ class StreamModel(ModelBase[Array]):
         raise NotImplementedError
 
     @abstractmethod
-    def ln_prior_arr(self, pars: Params[Array], data: DataT[Array]) -> Array:
+    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
         pars : Params
             Parameters.
-        data : DataT
+        data : Data[Array]
             Data (phi1).
 
         Returns

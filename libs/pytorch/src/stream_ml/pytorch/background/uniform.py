@@ -4,20 +4,16 @@ from __future__ import annotations
 
 # STDLIB
 from dataclasses import KW_ONLY, dataclass
-from typing import TYPE_CHECKING
 
 # THIRD-PARTY
 import torch as xp
 
 # LOCAL
+from stream_ml.core.data import Data
 from stream_ml.core.params import ParamBoundsField, ParamNamesField, Params
 from stream_ml.pytorch._typing import Array
 from stream_ml.pytorch.background.base import BackgroundModel
 from stream_ml.pytorch.prior.bounds import SigmoidBounds
-
-if TYPE_CHECKING:
-    # LOCAL
-    from stream_ml.pytorch._typing import DataT
 
 __all__: list[str] = []
 
@@ -57,7 +53,7 @@ class Uniform(BackgroundModel):
     def ln_likelihood_arr(
         self,
         pars: Params[Array],
-        data: DataT,
+        data: Data[Array],
         *,
         mask: Array | None = None,
         **kwargs: Array,
@@ -68,7 +64,7 @@ class Uniform(BackgroundModel):
         ----------
         pars : Params
             Parameters.
-        data : DataT
+        data : Data[Array]
             Data (phi1).
 
         mask : (N, 1) Array[bool], keyword-only
@@ -88,14 +84,14 @@ class Uniform(BackgroundModel):
             dim=1, keepdim=True
         )
 
-    def ln_prior_arr(self, pars: Params[Array], data: DataT) -> Array:
+    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
-        pars : Params
+        pars : Params[Array]
             Parameters.
-        data : DataT
+        data : Data[Array]
             Data.
 
         Returns
@@ -110,12 +106,12 @@ class Uniform(BackgroundModel):
     # ========================================================================
     # ML
 
-    def forward(self, *args: Array) -> Array:
+    def forward(self, data: Data[Array]) -> Array:
         """Forward pass.
 
         Parameters
         ----------
-        args : Array
+        data : Data[Array]
             Input.
 
         Returns

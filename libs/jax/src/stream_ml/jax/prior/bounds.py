@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 import jax.numpy as xp
 
 # LOCAL
+from stream_ml.core.data import Data
 from stream_ml.core.prior.bounds import PriorBounds as CorePriorBounds
 from stream_ml.jax._typing import Array
 from stream_ml.jax.utils.misc import within_bounds
@@ -20,7 +21,6 @@ if TYPE_CHECKING:
     # LOCAL
     from stream_ml.core.base import Model
     from stream_ml.core.params.core import Params
-    from stream_ml.jax._typing import DataT
 
 __all__: list[str] = []
 
@@ -32,7 +32,7 @@ class PriorBounds(CorePriorBounds[Array]):
     def logpdf(
         self,
         pars: Params[Array],
-        data: DataT,
+        data: Data[Array],
         model: Model[Array],
         current_lnpdf: Array | None = None,
         /,

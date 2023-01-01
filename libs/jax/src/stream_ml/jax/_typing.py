@@ -6,14 +6,6 @@ from collections.abc import Mapping
 # THIRD-PARTY
 from jax import Array
 
-__all__ = [
-    "Array",
-    # Parameters
-    "FlatParsT",
-    # Data
-    "DataT",
-]
+__all__ = ["Array", "FlatParsT"]
 
 FlatParsT = Mapping[str, Array]
-
-DataT = Mapping[str, Array]

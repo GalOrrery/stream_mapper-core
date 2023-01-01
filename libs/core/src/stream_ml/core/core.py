@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, ClassVar
 # LOCAL
 from stream_ml.core._typing import Array, BoundsT
 from stream_ml.core.base import Model
+from stream_ml.core.data import Data
 from stream_ml.core.params import MutableParams, ParamBounds, ParamNamesField, Params
 from stream_ml.core.params.bounds import ParamBoundsField
 from stream_ml.core.params.names import FlatParamName
@@ -18,7 +19,7 @@ from stream_ml.core.utils.hashdict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.core._typing import DataT, FlatParsT
+    from stream_ml.core._typing import FlatParsT
 
 __all__: list[str] = []
 
@@ -169,7 +170,7 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
 
     @abstractmethod
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT[Array], **kwargs: Array
+        self, pars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Elementwise log-likelihood of the model.
 
@@ -177,7 +178,7 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
         ----------
         pars : Params[Array]
             Parameters.
-        data : DataT
+        data : Data
             Data (phi1).
         **kwargs : Array
             Additional arguments.
@@ -189,14 +190,14 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def ln_prior_arr(self, pars: Params[Array], data: DataT[Array]) -> Array:
+    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
         """Elementwise log prior.
 
         Parameters
         ----------
         pars : Params[Array]
             Parameters.
-        data : DataT
+        data : Data[Array]
             Data (phi1).
 
         Returns

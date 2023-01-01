@@ -5,20 +5,16 @@ from __future__ import annotations
 # STDLIB
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 # THIRD-PARTY
 from torch import nn
 
 # LOCAL
 from stream_ml.core.core import ModelBase as CoreModelBase
+from stream_ml.core.data import Data
 from stream_ml.core.params import MutableParams, Params
 from stream_ml.pytorch._typing import Array
 from stream_ml.pytorch.base import Model
-
-if TYPE_CHECKING:
-    # LOCAL
-    from stream_ml.pytorch._typing import DataT
 
 __all__: list[str] = []
 
@@ -68,7 +64,7 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
 
     @abstractmethod
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT, **kwargs: Array
+        self, pars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log-likelihood of the model.
 
@@ -76,7 +72,7 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
         ----------
         pars : Params[Array]
             Parameters.
-        data : DataT
+        data : Data[Array]
             Data (phi1).
         **kwargs : Array
             Additional arguments.
@@ -88,14 +84,14 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
         raise NotImplementedError
 
     @abstractmethod
-    def ln_prior_arr(self, pars: Params[Array], data: DataT) -> Array:
+    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
         pars : Params[Array]
             Parameters.
-        data : DataT
+        data : Data[Array]
             Data.
 
         Returns
@@ -108,12 +104,12 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
     # ML
 
     @abstractmethod
-    def forward(self, *args: Array) -> Array:
+    def forward(self, data: Data[Array]) -> Array:
         """Forward pass.
 
         Parameters
         ----------
-        args : Array
+        data : Data[Array]
             Input.
 
         Returns

@@ -5,17 +5,13 @@ from __future__ import annotations
 # STDLIB
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 # LOCAL
 from stream_ml.core.background.base import BackgroundModel as CoreBackgroundModel
+from stream_ml.core.data import Data
 from stream_ml.core.params import Params
 from stream_ml.pytorch._typing import Array
 from stream_ml.pytorch.core import ModelBase
-
-if TYPE_CHECKING:
-    # LOCAL
-    from stream_ml.pytorch._typing import DataT
 
 __all__: list[str] = []
 
@@ -29,7 +25,7 @@ class BackgroundModel(ModelBase, CoreBackgroundModel[Array]):
 
     @abstractmethod
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT, **kwargs: Array
+        self, pars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log-likelihood of the background.
 
@@ -37,7 +33,7 @@ class BackgroundModel(ModelBase, CoreBackgroundModel[Array]):
         ----------
         pars : Params[Array]
             Parameters.
-        data : DataT
+        data : Data[Array]
             Data (phi1).
         **kwargs : Array
             Additional arguments.
@@ -49,14 +45,14 @@ class BackgroundModel(ModelBase, CoreBackgroundModel[Array]):
         raise NotImplementedError
 
     @abstractmethod
-    def ln_prior_arr(self, pars: Params[Array], data: DataT) -> Array:
+    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
         pars : Params[Array]
             Parameters.
-        data : DataT
+        data : Data[Array]
             Data (phi1).s
 
         Returns
@@ -69,12 +65,12 @@ class BackgroundModel(ModelBase, CoreBackgroundModel[Array]):
     # ML
 
     @abstractmethod
-    def forward(self, *args: Array) -> Array:
+    def forward(self, data: Data[Array]) -> Array:
         """Forward pass.
 
         Parameters
         ----------
-        args : Array
+        data : Data[Array]
             Input.
 
         Returns

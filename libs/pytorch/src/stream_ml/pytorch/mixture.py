@@ -4,22 +4,18 @@ from __future__ import annotations
 
 # STDLIB
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 # THIRD-PARTY
 import torch as xp
 from torch import nn
 
 # LOCAL
+from stream_ml.core.data import Data
 from stream_ml.core.mixture import MixtureModelBase
 from stream_ml.core.params import Params
 from stream_ml.core.utils.hashdict import FrozenDictField
 from stream_ml.pytorch._typing import Array
 from stream_ml.pytorch.base import Model
-
-if TYPE_CHECKING:
-    # LOCAL
-    from stream_ml.pytorch._typing import DataT
 
 __all__: list[str] = []
 
@@ -65,7 +61,7 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
     # Statistics
 
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT, **kwargs: Array
+        self, pars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log likelihood.
 
@@ -75,7 +71,7 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
         ----------
         pars : Params
             Parameters.
-        data : DataT
+        data : Data[Array]
             Data.
         **kwargs : Array
             Additional arguments.
@@ -95,14 +91,14 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
         # Sum over the models, keeping the data dimension
         return xp.logsumexp(xp.hstack(liks), dim=1, keepdim=True)
 
-    def ln_prior_arr(self, pars: Params[Array], data: DataT) -> Array:
+    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
         pars : Params[Array]
             Parameters.
-        data : DataT
+        data : Data[Array]
             Data (phi1).
 
         Returns
@@ -127,25 +123,24 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
     # ========================================================================
     # ML
 
-    def forward(self, *args: Array) -> Array:
+    def forward(self, data: Data[Array], /) -> Array:
         """Forward pass.
 
         Parameters
         ----------
-        args : Array
-            Input. Only uses the first argument.
+        data : Data
+            Input.
 
         Returns
         -------
         Array
             fraction, mean, sigma
         """
-        result = xp.concat([model(*args) for model in self.components.values()], dim=1)
+        result = xp.concat([model(data) for model in self.components.values()], dim=1)
 
         # Call the prior to limit the range of the parameters
         # TODO: a better way to do the order of the priors.
-        # TODO: full data, not just args[0]
         for prior in self.priors:
-            result = prior(result, args[0], self)
+            result = prior(result, data, self)
 
         return result

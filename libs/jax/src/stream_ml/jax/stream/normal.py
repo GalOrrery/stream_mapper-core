@@ -15,6 +15,7 @@ from jax.scipy.stats import norm
 
 # LOCAL
 from stream_ml.core._typing import BoundsT
+from stream_ml.core.data import Data
 from stream_ml.core.params import ParamBounds, ParamBoundsField, ParamNames, Params
 from stream_ml.core.params.names import ParamNamesField
 from stream_ml.core.utils.hashdict import FrozenDict, FrozenDictField
@@ -24,7 +25,7 @@ from stream_ml.jax.utils.tanh import Tanh
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.jax._typing import Array, DataT
+    from stream_ml.jax._typing import Array
 
 __all__: list[str] = []
 
@@ -148,7 +149,7 @@ class Normal(StreamModel):
     # Statistics
 
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT, **kwargs: Array
+        self, pars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log-likelihood of the stream.
 
@@ -156,7 +157,7 @@ class Normal(StreamModel):
         ----------
         pars : Params[Array]
             Parameters.
-        data : DataT
+        data : Data[Array]
             Data (phi1, phi2).
         **kwargs : Array
             Additional arguments.
@@ -172,14 +173,14 @@ class Normal(StreamModel):
             data[c], pars[(c, "mu")], xp.clip(pars[(c, "sigma")], a_min=min_)
         )
 
-    def ln_prior_arr(self, pars: Params[Array], data: DataT) -> Array:
+    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
         pars : Params[Array]
             Parameters.
-        data : DataT
+        data : Data[Array]
             Data (phi1, phi2).
 
         Returns

@@ -4,20 +4,16 @@ from __future__ import annotations
 
 # STDLIB
 from dataclasses import KW_ONLY, dataclass
-from typing import TYPE_CHECKING
 
 # THIRD-PARTY
 import jax.numpy as xp
 
 # LOCAL
+from stream_ml.core.data import Data
 from stream_ml.core.params import ParamBoundsField, ParamNames, ParamNamesField, Params
 from stream_ml.jax._typing import Array
 from stream_ml.jax.background.base import BackgroundModel
 from stream_ml.jax.prior.bounds import SigmoidBounds
-
-if TYPE_CHECKING:
-    # LOCAL
-    from stream_ml.jax._typing import DataT
 
 __all__: list[str] = []
 
@@ -55,7 +51,7 @@ class Uniform(BackgroundModel):
     # Statistics
 
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT, **kwargs: Array
+        self, pars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log-likelihood of the background.
 
@@ -63,7 +59,7 @@ class Uniform(BackgroundModel):
         ----------
         pars : Params[Array]
             Parameters.
-        data : DataT
+        data : Data[Array]
             Data (phi1).
         **kwargs : Array
             Additional arguments.
@@ -76,14 +72,14 @@ class Uniform(BackgroundModel):
         eps = xp.finfo(pars[("weight",)].dtype).eps  # TOOD: or tiny?
         return xp.log(xp.clip(pars[("weight",)], eps)) - self._logdiffs.sum()
 
-    def ln_prior_arr(self, pars: Params[Array], data: DataT) -> Array:
+    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
         pars : Params[Array]
             Parameters.
-        data: DataT
+        data: Data[Array]
             Data (phi1).
 
         Returns
@@ -95,12 +91,12 @@ class Uniform(BackgroundModel):
     # ========================================================================
     # ML
 
-    def forward(self, *args: Array) -> Array:
+    def forward(self, data: Data[Array]) -> Array:
         """Forward pass.
 
         Parameters
         ----------
-        args : Array
+        data : Data[Array]
             Input.
 
         Returns

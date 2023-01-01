@@ -14,12 +14,13 @@ from torch import nn
 from torch.distributions import MultivariateNormal as TorchMultivariateNormal
 
 # LOCAL
+from stream_ml.core.data import Data
 from stream_ml.core.params import Params
 from stream_ml.pytorch.stream.base import StreamModel
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.pytorch._typing import Array, DataT
+    from stream_ml.pytorch._typing import Array
 
 __all__: list[str] = []
 
@@ -87,7 +88,7 @@ class MultivariateNormal(StreamModel):
     # Statistics
 
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT, **kwargs: Array
+        self, pars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log-likelihood of the stream.
 
@@ -95,7 +96,7 @@ class MultivariateNormal(StreamModel):
         ----------
         pars : Params
             Parameters.
-        data : DataT
+        data : Data[Array]
             Data (phi1, phi2, ...).
         **kwargs : Array
             Additional arguments.
@@ -114,14 +115,14 @@ class MultivariateNormal(StreamModel):
 
         return xp.log(xp.clip(pars[("weight",)], eps)) + lik[:, None]
 
-    def ln_prior_arr(self, pars: Params[Array], data: DataT) -> Array:
+    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
         pars : Params[Array]
             Parameters.
-        data : DataT
+        data : Data[Array]
             Data.
 
         Returns
@@ -137,12 +138,12 @@ class MultivariateNormal(StreamModel):
     # ========================================================================
     # ML
 
-    def forward(self, *args: Array) -> Array:
+    def forward(self, data: Data[Array]) -> Array:
         """Forward pass.
 
         Parameters
         ----------
-        args : Array
+        data : Data[Array]
             Input. Only uses the first argument.
 
         Returns
@@ -150,7 +151,7 @@ class MultivariateNormal(StreamModel):
         Array
             fraction, mean, sigma
         """
-        return self._forward_prior(self.layers(args[0]), args[0])
+        return self._forward_prior(self.layers(data), data)
 
 
 ##############################################################################
@@ -166,7 +167,7 @@ class MultivariateMissingNormal(MultivariateNormal):  # (MultivariateNormal)
     def ln_likelihood_arr(
         self,
         pars: Params[Array],
-        data: DataT,
+        data: Data[Array],
         *,
         mask: Array | None = None,
         **kwargs: Array,
@@ -177,7 +178,7 @@ class MultivariateMissingNormal(MultivariateNormal):  # (MultivariateNormal)
         ----------
         pars : Params[Array]
             Parameters.
-        data : DataT
+        data : Data[Array]
             Data.
         mask : Array
             Mask.

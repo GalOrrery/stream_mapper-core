@@ -2,6 +2,7 @@
 
 # LOCAL
 from . import background, stream, utils
+from .data import Data
 from .mixture import MixtureModel
 
 __all__ = [
@@ -11,4 +12,5 @@ __all__ = [
     "utils",
     # classes
     "MixtureModel",
+    "Data",
 ]

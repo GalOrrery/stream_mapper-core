@@ -16,6 +16,7 @@ from torch.distributions.normal import Normal as TorchNormal
 
 # LOCAL
 from stream_ml.core._typing import BoundsT
+from stream_ml.core.data import Data
 from stream_ml.core.params import ParamBounds, ParamNames, Params
 from stream_ml.core.params.names import ParamNamesField
 from stream_ml.core.prior.bounds import NoBounds
@@ -25,7 +26,7 @@ from stream_ml.pytorch.stream.base import StreamModel
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.pytorch._typing import Array, DataT
+    from stream_ml.pytorch._typing import Array
 
 __all__: list[str] = []
 
@@ -48,6 +49,8 @@ class Normal(StreamModel):
 
     n_features: int = 50
     n_layers: int = 3
+
+    indep_coord_name: str = "phi1"  # TODO: move up class hierarchy
 
     param_names: ParamNamesField = ParamNamesField(("weight", (..., ("mu", "sigma"))))
 
@@ -149,15 +152,15 @@ class Normal(StreamModel):
     # Statistics
 
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT, **kwargs: Array
+        self, pars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log-likelihood of the stream.
 
         Parameters
         ----------
-        pars : Params
+        pars : Params[Array]
             Parameters.
-        data : DataT
+        data : Data[Array]
             Data (phi1, phi2).
         **kwargs : Array
             Additional arguments.
@@ -173,14 +176,14 @@ class Normal(StreamModel):
         )
         return xp.log(xp.clip(pars[("weight",)], min=eps)) + lik
 
-    def ln_prior_arr(self, pars: Params[Array], data: DataT) -> Array:
+    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
-        pars : Params
+        pars : Params[Array]
             Parameters.
-        data : DataT
+        data : Data[Array]
             Data.
 
         Returns
@@ -196,12 +199,12 @@ class Normal(StreamModel):
     # ========================================================================
     # ML
 
-    def forward(self, *args: Array) -> Array:
+    def forward(self, data: Data[Array]) -> Array:
         """Forward pass.
 
         Parameters
         ----------
-        args : Array
+        data : Data[Array]
             Input. Only uses the first argument.
 
         Returns
@@ -209,4 +212,4 @@ class Normal(StreamModel):
         Array
             fraction, mean, sigma
         """
-        return self._forward_prior(self.layers(args[0]), args[0])
+        return self._forward_prior(self.layers(data[self.indep_coord_name]), data)
