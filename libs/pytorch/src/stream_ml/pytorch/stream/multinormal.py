@@ -106,7 +106,7 @@ class MultivariateNormal(StreamModel):
         Array
         """
         eps = xp.finfo(pars[("weight",)].dtype).eps  # TODO: or tiny?
-        datav = data[self.coord_names]
+        datav = data[self.coord_names].array
 
         lik = TorchMultivariateNormal(
             xp.hstack([pars[c, "mu"] for c in self.coord_names]),

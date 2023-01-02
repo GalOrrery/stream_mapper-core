@@ -109,7 +109,7 @@ class Params(Mapping[str, V | Mapping[str, V]]):
 
     def get_prefixed(self, prefix: str) -> Params[V]:
         """Get the keys starting with the prefix, stripped of that prefix."""
-        prefix = prefix + "_" if not prefix.endswith("_") else prefix
+        prefix = prefix + "." if not prefix.endswith(".") else prefix
         lp = len(prefix)
         return Params(
             {k[lp:]: v for k, v in self._mapping.items() if k.startswith(prefix)}

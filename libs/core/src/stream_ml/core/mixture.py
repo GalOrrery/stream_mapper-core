@@ -73,8 +73,8 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
 
         # Add the param_names  # TODO: make sure no duplicates
         self._param_names: ParamNames = ParamNames(
-            (f"{n}_{p[0]}", p[1]) if isinstance(p, tuple) else f"{n}_{p}"
-            for n, m in self.components.items()
+            (f"{c}.{p[0]}", p[1]) if isinstance(p, tuple) else f"{c}.{p}"
+            for c, m in self.components.items()
             for p in m.param_names
         )
 
@@ -219,7 +219,7 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
 
             # Add the component's parameters, prefixed with the component name
             pars._mapping.update(
-                m.unpack_params_from_arr(mp_arr).add_prefix(n + "_", inplace=True)
+                m.unpack_params_from_arr(mp_arr).add_prefix(n + ".", inplace=True)
             )
 
             # Increment the index
@@ -261,7 +261,7 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
         -------
         dict[str, V]
         """
-        prefix = prefix + "_" if not prefix.endswith("_") else prefix
+        prefix = prefix + "." if not prefix.endswith(".") else prefix
         lp = len(prefix)
         return {k[lp:]: v for k, v in kwargs.items() if k.startswith(prefix)}
 
