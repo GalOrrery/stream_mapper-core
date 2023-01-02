@@ -45,40 +45,55 @@ class ParamNamesBase(
 ):
     """Base class for parameter names."""
 
+    def __init__(self, iterable: Any = (), /) -> None:
+        """Create a new ParamNames instance."""
+        super().__init__()
+
+        # hint property types
+        self._flat: tuple[str | T, ...]
+        self._flats: tuple[tuple[str] | tuple[str | T, str], ...]
+
     @property
     def flat(self) -> tuple[str | T, ...]:
         """Flattened parameter names."""
-        names: list[str | T] = []
+        if not hasattr(self, "_flat"):
+            names: list[str | T] = []
 
-        for pn in self:
-            if isinstance(pn, str):
-                names.append(pn)
-            else:
-                names.extend(f"{pn[0]}_{k}" for k in pn[1])
+            for pn in self:
+                if isinstance(pn, str):
+                    names.append(pn)
+                else:
+                    names.extend(f"{pn[0]}_{k}" for k in pn[1])
 
-        return tuple(names)
+            object.__setattr__(self, "_flat", tuple(names))
+
+        return self._flat
 
     @property
     def flats(self) -> tuple[tuple[str] | tuple[str | T, str], ...]:
         """Flattened parameter names as tuples."""
-        names: list[tuple[str] | tuple[str | T, str]] = []
+        if not hasattr(self, "_flats"):
 
-        for pn in self:
-            if isinstance(pn, str):
-                names.append((pn,))
-            else:
-                names.extend((pn[0], k) for k in pn[1])
+            names: list[tuple[str] | tuple[str | T, str]] = []
 
-        return tuple(names)
+            for pn in self:
+                if isinstance(pn, str):
+                    names.append((pn,))
+                else:
+                    names.extend((pn[0], k) for k in pn[1])
+
+            object.__setattr__(self, "_flats", tuple(names))
+
+        return self._flats
 
 
 @final
 class ParamNames(ParamNamesBase[str]):
     """Parameter names."""
 
-    def __self__(self, iterable: Any = (), /) -> None:
+    def __init__(self, iterable: Any = (), /) -> None:
         """Create a new ParamNames instance."""
-        super().__init__()
+        super().__init__(iterable)
 
         # Validate structure
         for elt in self:
@@ -105,9 +120,9 @@ class ParamNames(ParamNamesBase[str]):
 class IncompleteParamNames(ParamNamesBase[EllipsisType]):
     """Incomplete parameter names."""
 
-    def __self__(self, iterable: Any = (), /) -> None:
+    def __init__(self, iterable: Any = (), /) -> None:
         """Create a new ParamNames instance."""
-        super().__init__()
+        super().__init__(iterable)
 
         # Validate structure
         for elt in self:
