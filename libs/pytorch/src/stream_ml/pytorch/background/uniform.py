@@ -28,6 +28,7 @@ class Uniform(BackgroundModel):
     param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array](
         {"weight": SigmoidBounds(0.0, 1.0, param_name=("weight",))}
     )
+    require_mask: bool = False
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -74,7 +75,14 @@ class Uniform(BackgroundModel):
         f = pars[("weight",)]
         eps = xp.finfo(f.dtype).eps  # TOOD: or tiny?
 
-        indicator = xp.ones_like(self._ln_diffs) if mask is None else mask.int()
+        if mask is None:
+            if self.require_mask:
+                msg = "mask is required"
+                raise ValueError(msg)
+            indicator = xp.ones_like(self._ln_diffs)
+        else:
+            indicator = mask.int()
+
         return xp.log(xp.clip(f, eps)) - (indicator * self._ln_diffs).sum(
             dim=1, keepdim=True
         )

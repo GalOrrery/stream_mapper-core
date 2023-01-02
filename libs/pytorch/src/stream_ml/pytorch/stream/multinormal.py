@@ -175,6 +175,9 @@ class MultivariateMissingNormal(MultivariateNormal):  # (MultivariateNormal)
     n_features: int = 36
     n_layers: int = 4
 
+    _: KW_ONLY
+    require_mask: bool = False
+
     def ln_likelihood_arr(
         self,
         pars: Params[Array],
@@ -201,18 +204,23 @@ class MultivariateMissingNormal(MultivariateNormal):  # (MultivariateNormal)
         sigma = xp.hstack([pars[c, "sigma"] for c in self.coord_names])
 
         if mask is None:
-            mask = xp.ones_like(datav)
+            if self.require_mask:
+                msg = "mask is required"
+                raise ValueError(msg)
+            indicator = xp.ones_like(datav)
+        else:
+            indicator = mask.int()
 
         # misc
         eps = xp.finfo(datav.dtype).eps  # TODO: or tiny?
-        dimensionality = mask.sum(dim=1, keepdim=True)  # (N, 1)
+        dimensionality = indicator.sum(dim=1, keepdim=True)  # (N, 1)
 
         # Data - model
-        dmm = mask * (datav - mu)  # (N, 4)
+        dmm = indicator * (datav - mu)  # (N, 4)
 
         # Covariance related
-        cov = mask * sigma**2  # (N, 4) positive definite  # TODO: add eps
-        det = (cov + (1 - mask)).prod(dim=1, keepdims=True)  # (N, 1)
+        cov = indicator * sigma**2  # (N, 4) positive definite  # TODO: add eps
+        det = (cov + (1 - indicator)).prod(dim=1, keepdims=True)  # (N, 1)
 
         return xp.log(xp.clip(pars[("weight",)], min=eps)) - 0.5 * (
             dimensionality * _log2pi  # dim of data

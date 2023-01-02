@@ -42,7 +42,7 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
         """
         pars = MutableParams[Array]()
         for i, k in enumerate(self.param_names.flats):
-            pars[k] = p_arr[:, i].view(-1, 1)
+            pars[k] = p_arr[:, i : i + 1]
         return Params(pars)
 
     def pack_params_to_arr(self, pars: Params[Array]) -> Array:
@@ -73,7 +73,7 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
         pars : Params[Array]
             Parameters.
         data : Data[Array]
-            Data (phi1).
+            Data.
         **kwargs : Array
             Additional arguments.
 
