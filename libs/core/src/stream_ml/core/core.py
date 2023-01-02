@@ -193,6 +193,23 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
+    def _ln_prior_coord_bnds(self, pars: Params[Array], data: Data[Array]) -> Array:
+        """Elementwise log prior for coordinate bounds.
+
+        Parameters
+        ----------
+        pars : Params[Array]
+            Parameters.
+        data : Data[Array]
+            Data.
+
+        Returns
+        -------
+        Array
+        """
+        raise NotImplementedError
+
+    @abstractmethod
     def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
         """Elementwise log prior.
 

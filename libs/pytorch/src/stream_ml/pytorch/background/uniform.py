@@ -101,7 +101,8 @@ class Uniform(BackgroundModel):
         -------
         Array
         """
-        lnp = xp.zeros_like(pars[("weight",)])
+        lnp = xp.zeros(len(data))
+        lnp += self._ln_prior_coord_bnds(pars, data)
         for bounds in self.param_bounds.flatvalues():
             lnp += bounds.logpdf(pars, data, self, lnp)
         return lnp

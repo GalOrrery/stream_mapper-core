@@ -31,7 +31,7 @@
   include_trailing_comma = "True"
   use_parentheses = "True"
   ensure_newline_before_comments = "True"
-  known_localfolder = "stream_ml"
+  known_localfolder = ["stream_ml", "stream_ml.jax"]
   known_third_party = ["numpy", "pytest"]
   import_heading_stdlib = "STDLIB"
   import_heading_firstparty = "FIRST-PARTY"

@@ -5,8 +5,10 @@ from __future__ import annotations
 # STDLIB
 from abc import abstractmethod
 from dataclasses import dataclass
+from functools import reduce
 
 # THIRD-PARTY
+import torch as xp
 from torch import nn
 
 # LOCAL
@@ -15,6 +17,7 @@ from stream_ml.core.data import Data
 from stream_ml.core.params import MutableParams, Params
 from stream_ml.pytorch._typing import Array
 from stream_ml.pytorch.base import Model
+from stream_ml.pytorch.utils.misc import within_bounds
 
 __all__: list[str] = []
 
@@ -82,6 +85,30 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
         Array
         """
         raise NotImplementedError
+
+    def _ln_prior_coord_bnds(self, pars: Params[Array], data: Data[Array]) -> Array:
+        """Elementwise log prior for coordinate bounds.
+
+        Parameters
+        ----------
+        pars : Params[Array]
+            Parameters.
+        data : Data[Array]
+            Data.
+
+        Returns
+        -------
+        Array
+            Zero everywhere except where the data are outside the
+            coordinate bounds, where it is -inf.
+        """
+        lnp = xp.zeros(len(data))
+        where = reduce(
+            xp.logical_or,
+            (~within_bounds(data[k], *v) for k, v in self.coord_bounds.items()),
+        )
+        lnp[where] = -xp.inf
+        return lnp
 
     @abstractmethod
     def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:

@@ -181,6 +181,7 @@ class Normal(StreamModel):
         """
         lnp = xp.zeros_like(pars[("weight",)])  # 100%
         # Bounds
+        lnp += self._ln_prior_coord_bnds(pars, data)
         for bound in self.param_bounds.flatvalues():
             lnp += bound.logpdf(pars, data, self, lnp)
         return lnp

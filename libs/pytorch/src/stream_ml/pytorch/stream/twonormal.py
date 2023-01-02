@@ -184,8 +184,9 @@ class DoubleGaussian(StreamModel):
         -------
         Array
         """
-        lnp = xp.zeros_like(pars[("weight1",)])  # 100%
+        lnp = xp.zeros(len(data))  # 100%
         # Bounds
+        lnp += self._ln_prior_coord_bnds(pars, data)
         for bound in self.param_bounds.flatvalues():
             lnp += bound.logpdf(pars, data, self, lnp)
 

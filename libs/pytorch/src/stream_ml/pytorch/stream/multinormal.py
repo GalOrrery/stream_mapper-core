@@ -135,6 +135,7 @@ class MultivariateNormal(StreamModel):
         """
         lnp = xp.zeros_like(pars[("weight",)])  # 100%
         # Bounds
+        lnp += self._ln_prior_coord_bnds(pars, data)
         for bounds in self.param_bounds.flatvalues():
             lnp += bounds.logpdf(pars, data, self, lnp)
         return lnp
