@@ -261,7 +261,7 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
         -------
         dict[str, V]
         """
-        prefix = prefix + "." if not prefix.endswith(".") else prefix
+        prefix = prefix + "_" if not prefix.endswith("_") else prefix
         lp = len(prefix)
         return {k[lp:]: v for k, v in kwargs.items() if k.startswith(prefix)}
 
