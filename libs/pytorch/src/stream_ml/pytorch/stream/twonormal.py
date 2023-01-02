@@ -184,7 +184,7 @@ class DoubleGaussian(StreamModel):
         -------
         Array
         """
-        lnp = xp.zeros(len(data))  # 100%
+        lnp = xp.zeros((len(data), 1))
         # Bounds
         lnp += self._ln_prior_coord_bnds(pars, data)
         for bound in self.param_bounds.flatvalues():

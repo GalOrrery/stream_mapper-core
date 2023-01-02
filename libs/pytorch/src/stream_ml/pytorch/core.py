@@ -102,7 +102,7 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
             Zero everywhere except where the data are outside the
             coordinate bounds, where it is -inf.
         """
-        lnp = xp.zeros(len(data))
+        lnp = xp.zeros((len(data), 1))
         where = reduce(
             xp.logical_or,
             (~within_bounds(data[k], *v) for k, v in self.coord_bounds.items()),

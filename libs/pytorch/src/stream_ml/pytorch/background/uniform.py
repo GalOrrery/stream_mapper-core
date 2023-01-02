@@ -101,7 +101,7 @@ class Uniform(BackgroundModel):
         -------
         Array
         """
-        lnp = xp.zeros(len(data))
+        lnp = xp.zeros((len(data), 1))
         # Bounds
         lnp += self._ln_prior_coord_bnds(pars, data)
         for bounds in self.param_bounds.flatvalues():
