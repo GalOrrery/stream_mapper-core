@@ -205,7 +205,6 @@ class Normal(StreamModel):
         nn = self._forward_prior(self.layers(data[self.indep_coord_name]), data)
 
         # Call the prior to limit the range of the parameters
-        # TODO: a better way to do the order of the priors.
         for prior in self.priors:
             nn = prior(nn, data, self)
 

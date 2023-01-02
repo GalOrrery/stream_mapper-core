@@ -10,7 +10,6 @@ import flax.linen as nn
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.core._typing import BoundsT
     from stream_ml.jax._typing import Array
 
 __all__: list[str] = []
@@ -35,24 +34,3 @@ def scaled_sigmoid(
     Array
     """
     return nn.sigmoid(x) * (upper - lower) + lower
-
-
-class ColumnarScaledSigmoid(nn.Module):  # type: ignore[misc]
-    """Tanh activation function as a Module."""
-
-    columns: tuple[int, ...]
-    bounds: tuple[BoundsT, ...]
-
-    def setup(self) -> None:
-        """Setup."""
-        if len(self.columns) != len(self.bounds):
-            msg = "columns and bounds must be the same length"
-            raise ValueError(msg)
-
-    def __call__(self, arr: Array) -> Array:
-        """Call."""
-        for col, (lower, upper) in zip(self.columns, self.bounds, strict=True):
-            arr = arr.at[:, col].set(
-                scaled_sigmoid(arr[:, col], lower=lower, upper=upper)
-            )
-        return arr
