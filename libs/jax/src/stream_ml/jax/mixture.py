@@ -21,7 +21,7 @@ from stream_ml.jax.base import Model
 __all__: list[str] = []
 
 
-@dataclass(unsafe_hash=True)
+@dataclass()
 class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[misc]
     """Full Model.
 
@@ -111,7 +111,7 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
 
         # Plugin for priors
         for prior in self.priors:
-            lp += prior.logpdf(pars, self, lp)
+            lp += prior.logpdf(pars, data, self, lp)
 
         # Sum over the priors
         return lp

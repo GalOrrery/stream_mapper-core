@@ -16,7 +16,7 @@ from stream_ml.jax.core import ModelBase
 __all__: list[str] = []
 
 
-@dataclass(unsafe_hash=True)
+@dataclass()
 class BackgroundModel(ModelBase, CoreBackgroundModel[Array]):
     """Background Model."""
 

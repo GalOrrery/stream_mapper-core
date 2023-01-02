@@ -18,7 +18,7 @@ from stream_ml.jax.prior.bounds import SigmoidBounds
 __all__: list[str] = []
 
 
-@dataclass(unsafe_hash=True)
+@dataclass()
 class Uniform(BackgroundModel):
     """Uniform background model."""
 
@@ -86,7 +86,8 @@ class Uniform(BackgroundModel):
         -------
         Array
         """
-        return xp.zeros_like(pars[("weight",)])
+        lnp = xp.zeros_like(pars[("weight",)])
+        return lnp + self._ln_prior_coord_bnds(pars, data)
 
     # ========================================================================
     # ML

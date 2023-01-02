@@ -6,7 +6,6 @@ from __future__ import annotations
 import functools
 import operator
 from dataclasses import KW_ONLY, dataclass
-from typing import TYPE_CHECKING
 
 # THIRD-PARTY
 import flax.linen as nn
@@ -19,18 +18,15 @@ from stream_ml.core.data import Data
 from stream_ml.core.params import ParamBounds, ParamBoundsField, ParamNames, Params
 from stream_ml.core.params.names import ParamNamesField
 from stream_ml.core.utils.hashdict import FrozenDict, FrozenDictField
+from stream_ml.jax._typing import Array
 from stream_ml.jax.prior.bounds import PriorBounds
 from stream_ml.jax.stream.base import StreamModel
 from stream_ml.jax.utils.tanh import Tanh
 
-if TYPE_CHECKING:
-    # LOCAL
-    from stream_ml.jax._typing import Array
-
 __all__: list[str] = []
 
 
-@dataclass(unsafe_hash=True)
+@dataclass()
 class Normal(StreamModel):
     """Stream Model.
 
