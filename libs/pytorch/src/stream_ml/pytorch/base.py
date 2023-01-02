@@ -118,7 +118,7 @@ class Model(CoreModel[Array], Protocol):
         pars : Params
             Parameters.
         data : Data[Array]
-            Data (phi1).
+            Data.
         **kwargs : Array
             Additional arguments.
 
@@ -137,7 +137,7 @@ class Model(CoreModel[Array], Protocol):
         pars : Params
             Parameters.
         data : Data
-            Data (phi1).
+            Data.
 
         Returns
         -------

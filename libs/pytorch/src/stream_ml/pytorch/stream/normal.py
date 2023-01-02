@@ -5,7 +5,7 @@ from __future__ import annotations
 # STDLIB
 import functools
 import operator
-from dataclasses import dataclass
+from dataclasses import KW_ONLY, dataclass
 from math import inf
 from typing import TYPE_CHECKING
 
@@ -50,6 +50,8 @@ class Normal(StreamModel):
     n_features: int = 50
     n_layers: int = 3
 
+    _: KW_ONLY
+
     param_names: ParamNamesField = ParamNamesField(("weight", (..., ("mu", "sigma"))))
 
     def __post_init__(self) -> None:
@@ -58,17 +60,6 @@ class Normal(StreamModel):
         # Validate the coord_names
         if len(self.coord_names) != 1:
             msg = "Only one coordinate is supported, e.g ('phi2',)"
-            raise ValueError(msg)
-        cn = self.coord_names[0]
-
-        # Validate the param_names
-        # If the param_names are an IncompleteParamNames, then this will
-        # complete them.
-        if self.param_names != ("weight", (cn, ("mu", "sigma"))):
-            msg = (
-                f"param_names must be ('weight', ({cn}, ('mu', 'sigma'))),"
-                f"got {self.param_names}"
-            )
             raise ValueError(msg)
 
         # Validate the param_bounds

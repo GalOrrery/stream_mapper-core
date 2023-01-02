@@ -37,11 +37,6 @@ class Uniform(BackgroundModel):
             msg = "n_features must be 0 for the uniform background"
             raise ValueError(msg)
 
-        # Validate the param_names
-        if self.param_names != ("weight",):
-            msg = "param_names must be ('weight',) for the uniform background"
-            raise ValueError(msg)
-
         # Pre-compute the log-difference
         self._ln_diffs = xp.asarray(
             [xp.log(xp.asarray([b - a])) for a, b in self.coord_bounds.values()]
@@ -65,7 +60,7 @@ class Uniform(BackgroundModel):
         pars : Params
             Parameters.
         data : Data[Array]
-            Data (phi1).
+            Data.
 
         mask : (N, 1) Array[bool], keyword-only
             Data availability. True if data is available, False if not.

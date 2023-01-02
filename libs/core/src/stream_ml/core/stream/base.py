@@ -68,7 +68,7 @@ class StreamModel(ModelBase[Array]):
         pars : Params
             Parameters.
         data : Data[Array]
-            Data (phi1).
+            Data.
         **kwargs: Array
             Additional arguments.
 
@@ -87,7 +87,7 @@ class StreamModel(ModelBase[Array]):
         pars : Params
             Parameters.
         data : Data[Array]
-            Data (phi1).
+            Data.
 
         Returns
         -------

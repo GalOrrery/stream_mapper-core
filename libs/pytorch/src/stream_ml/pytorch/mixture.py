@@ -99,7 +99,7 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
         pars : Params[Array]
             Parameters.
         data : Data[Array]
-            Data (phi1).
+            Data.
 
         Returns
         -------

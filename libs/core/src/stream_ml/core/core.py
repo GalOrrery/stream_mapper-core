@@ -182,7 +182,7 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
         pars : Params[Array]
             Parameters.
         data : Data
-            Data (phi1).
+            Data.
         **kwargs : Array
             Additional arguments.
 
@@ -201,7 +201,7 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
         pars : Params[Array]
             Parameters.
         data : Data[Array]
-            Data (phi1).
+            Data.
 
         Returns
         -------

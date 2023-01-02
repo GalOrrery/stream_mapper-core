@@ -60,7 +60,7 @@ class Uniform(BackgroundModel):
         pars : Params[Array]
             Parameters.
         data : Data[Array]
-            Data (phi1).
+            Data.
         **kwargs : Array
             Additional arguments.
 
@@ -80,7 +80,7 @@ class Uniform(BackgroundModel):
         pars : Params[Array]
             Parameters.
         data: Data[Array]
-            Data (phi1).
+            Data.
 
         Returns
         -------

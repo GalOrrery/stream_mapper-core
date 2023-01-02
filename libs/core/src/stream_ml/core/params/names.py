@@ -138,7 +138,6 @@ class IncompleteParamNames(ParamNamesBase[EllipsisType]):
         """Complete parameter names."""
         names: list[str | tuple[str, tuple[str, ...]]] = []
 
-        cni = 0
         for pn in self:
             if isinstance(pn, str):
                 names.append(pn)
@@ -146,11 +145,9 @@ class IncompleteParamNames(ParamNamesBase[EllipsisType]):
 
             pn0 = pn[0]
             if isinstance(pn0, EllipsisType):
-                names.append((coord_names[cni], pn[1]))
+                names.extend((cn, pn[1]) for cn in coord_names)
             else:
                 names.append((pn0, pn[1]))
-
-            cni += 1
 
         return ParamNames(names)
 
@@ -233,5 +230,18 @@ class ParamNamesField:
     ) -> None:
         if isinstance(value, IncompleteParamNames):
             value = value.complete(obj.coord_names)
+
+        # Validate against the default value, if it exists
+        if self._default is not MISSING:
+            default = self._default
+            if isinstance(default, IncompleteParamNames):
+                default = default.complete(obj.coord_names)
+
+            if value != default:
+                msg = (
+                    f"invalid value for {obj.__class__.__name__}.{self._name[1:]}:"
+                    f" expected {default}, got {value}"
+                )
+                raise ValueError(msg)
 
         object.__setattr__(obj, self._name, ParamNames(value))

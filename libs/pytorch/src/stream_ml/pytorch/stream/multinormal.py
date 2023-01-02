@@ -5,7 +5,7 @@ from __future__ import annotations
 # STDLIB
 import functools
 import operator
-from dataclasses import dataclass
+from dataclasses import KW_ONLY, dataclass
 from typing import TYPE_CHECKING
 
 # THIRD-PARTY
@@ -16,6 +16,7 @@ from torch.distributions import MultivariateNormal as TorchMultivariateNormal
 # LOCAL
 from stream_ml.core.data import Data
 from stream_ml.core.params import Params
+from stream_ml.core.params.names import ParamNamesField
 from stream_ml.pytorch.stream.base import StreamModel
 
 if TYPE_CHECKING:
@@ -46,6 +47,9 @@ class MultivariateNormal(StreamModel):
 
     n_features: int = 50
     n_layers: int = 3
+
+    _: KW_ONLY
+    param_names: ParamNamesField = ParamNamesField(("weight", (..., ("mu", "sigma"))))
 
     def __post_init__(self) -> None:
         super().__post_init__()

@@ -75,7 +75,7 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
         pars : Params[Array]
             Parameters.
         data : Data[Array]
-            Data (phi1).
+            Data.
         **kwargs : Array
             Additional arguments.
 
@@ -94,7 +94,7 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
         pars : Params[Array]
             Parameters.
         data : Data[Array]
-            Data (phi1).
+            Data.
 
         Returns
         -------
