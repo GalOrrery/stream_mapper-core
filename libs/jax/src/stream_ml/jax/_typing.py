@@ -1,31 +1,11 @@
 """Core feature."""
 
 # STDLIB
-from collections.abc import Mapping, MutableMapping
+from collections.abc import Mapping
 
 # THIRD-PARTY
 from jax import Array
 
-__all__ = [
-    "Array",
-    # Parameters
-    "FlatParsT",
-    "MutableFlatParsT",
-    "ParsT",
-    "MutableParsT",
-    # Data
-    "DataT",
-    "MutableDataT",
-]
-
-
-# TODO: define these from the stream_ml.core._typing versions
+__all__ = ["Array", "FlatParsT"]
 
 FlatParsT = Mapping[str, Array]
-MutableFlatParsT = MutableMapping[str, Array]
-
-ParsT = Mapping[str, Array | Mapping[str, Array]]
-MutableParsT = MutableMapping[str, Array | MutableMapping[str, Array]]
-
-DataT = Mapping[str, Array]
-MutableDataT = MutableMapping[str, Array]

@@ -2,15 +2,11 @@
 
 from __future__ import annotations
 
-# STDLIB
-from typing import TYPE_CHECKING
-
 # THIRD-PARTY
 import torch as xp
 
-if TYPE_CHECKING:
-    # LOCAL
-    from stream_ml.pytorch._typing import Array
+# LOCAL
+from stream_ml.pytorch._typing import Array
 
 __all__: list[str] = []
 

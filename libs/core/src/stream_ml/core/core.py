@@ -4,26 +4,27 @@ from __future__ import annotations
 
 # STDLIB
 from abc import ABCMeta, abstractmethod
-from dataclasses import KW_ONLY, dataclass
-from typing import TYPE_CHECKING
+from dataclasses import KW_ONLY, dataclass, replace
+from typing import TYPE_CHECKING, ClassVar
 
 # LOCAL
-from stream_ml.core._typing import Array
+from stream_ml.core._typing import Array, BoundsT
 from stream_ml.core.base import Model
-from stream_ml.core.utils.hashdict import HashableMapField
-from stream_ml.core.utils.params import (
-    MutableParams,
-    ParamBounds,
-    ParamBoundsField,
-    ParamNamesField,
-    Params,
-)
+from stream_ml.core.data import Data
+from stream_ml.core.params import MutableParams, ParamBounds, ParamNamesField, Params
+from stream_ml.core.params.bounds import ParamBoundsField
+from stream_ml.core.params.names import FlatParamName
+from stream_ml.core.prior.base import PriorBase
+from stream_ml.core.prior.bounds import NoBounds, PriorBounds
+from stream_ml.core.utils.hashdict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.core._typing import DataT, FlatParsT
+    from stream_ml.core._typing import FlatParsT
 
 __all__: list[str] = []
+
+inf = float("inf")
 
 
 @dataclass(unsafe_hash=True)
@@ -39,6 +40,22 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
         The (internal) name of the model, e.g. 'stream' or 'background'. Note
         that this can be different from the name of the model when it is used in
         a mixture model (see :class:`~stream_ml.core.core.MixtureModelBase`).
+
+    coord_names : tuple[str, ...], keyword-only
+        The names of the coordinates, not including the 'independent' variable.
+        E.g. for independent variable 'phi1' this might be ('phi2', 'prlx',
+        ...).
+    param_names : `~stream_ml.core.params.ParamNames`, keyword-only
+        The names of the parameters. Parameters dependent on the coordinates are
+        grouped by the coordinate name.
+        E.g. ('weight', ('phi1', ('mu', 'sigma'))).
+
+    coord_bounds : Mapping[str, tuple[float, float]], keyword-only
+        The bounds on the coordinates. If not provided, the bounds are
+        (-inf, inf) for all coordinates.
+
+    param_bounds : `~stream_ml.core.params.ParamBounds`, keyword-only
+        The bounds on the parameters.
     """
 
     n_features: int
@@ -50,35 +67,40 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
     param_names: ParamNamesField = ParamNamesField()
 
     # Bounds on the coordinates and parameters.
-    # name: (lower, upper)
-    coord_bounds: HashableMapField[str, tuple[float, float]] = HashableMapField()  # type: ignore[assignment] # noqa: E501
-    param_bounds: ParamBoundsField = ParamBoundsField()
+    coord_bounds: FrozenDictField[str, BoundsT] = FrozenDictField(FrozenDict())
+    param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array](ParamBounds())
+
+    priors: tuple[PriorBase[Array], ...] = ()
+
+    DEFAULT_BOUNDS: ClassVar  # TODO: [PriorBounds[Any]]
 
     def __post_init__(self) -> None:
         """Post-init validation."""
         super().__post_init__()
 
-        # Shapes attribute
-        self.shapes: dict[str, int | dict[str, int]]
-        shapes: dict[str, int | dict[str, int]] = {}
-        for pn in self.param_names:
-            if isinstance(pn, str):  # e.g. "mixparam"
-                shapes[pn] = self.n_features
-            else:  # e.g. ("phi2", ("mu", "sigma"))
-                shapes[pn[0]] = {p: self.n_features for p in pn[1]}
-        object.__setattr__(self, "shapes", shapes)
-
         # Validate the param_names
         if not self.param_names:
-            raise ValueError("param_names must be specified.")
+            msg = "param_names must be specified"
+            raise ValueError(msg)
 
         # Make coord bounds if not provided
-        for c in self.coord_names:
-            if c not in self.coord_bounds:
-                raise ValueError(f"coord_bounds must be provided for {c}.")
+        crnt_cbs = self.coord_bounds._mapping
+        cbs = {n: crnt_cbs.pop(n, (-inf, inf)) for n in self.coord_names}
+        if crnt_cbs:  # Error if there are extra keys
+            msg = f"coord_bounds contains invalid keys {crnt_cbs.keys()}."
+            raise ValueError(msg)
+        self.coord_bounds = FrozenDict(cbs)
 
-        # TODO: fill in -inf, inf bounds for missing parameters
-        self.param_bounds = ParamBounds.from_names(self.param_names) | self.param_bounds
+        # Make parameter bounds
+        # 1) Make the default bounds for all parameters.
+        # 2) Update from the user-specified bounds.
+        # 3) Fix up the names so each bound references its parameter.
+        param_bounds: ParamBounds[Array] = (
+            ParamBounds.from_names(self.param_names, default=self.DEFAULT_BOUNDS)
+            | self.param_bounds
+        )
+        param_bounds._fixup_param_names()  # TODO: better method name
+        self.param_bounds = param_bounds
 
     # ========================================================================
 
@@ -100,11 +122,10 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
         """
         pars = MutableParams[Array]()
 
-        for k in packed_pars.keys():
-            # mixparam is a special case.
-            # TODO: make this more general by using the params_bounds dict
-            if k == "mixparam":
-                pars["mixparam"] = packed_pars["mixparam"]
+        for k in packed_pars:
+            # Find the non-coordinate-specific parameters.
+            if k in self.param_bounds:
+                pars[k] = packed_pars[k]
                 continue
 
             # separate the coordinate and parameter names.
@@ -152,7 +173,7 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
 
     @abstractmethod
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT[Array], *args: Array
+        self, pars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Elementwise log-likelihood of the model.
 
@@ -160,9 +181,9 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
         ----------
         pars : Params[Array]
             Parameters.
-        data : DataT
-            Data (phi1).
-        *args : Array
+        data : Data
+            Data.
+        **kwargs : Array
             Additional arguments.
 
         Returns
@@ -172,16 +193,55 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def ln_prior_arr(self, pars: Params[Array]) -> Array:
-        """Elementwise log prior.
+    def _ln_prior_coord_bnds(self, pars: Params[Array], data: Data[Array]) -> Array:
+        """Elementwise log prior for coordinate bounds.
 
         Parameters
         ----------
         pars : Params[Array]
             Parameters.
+        data : Data[Array]
+            Data.
 
         Returns
         -------
         Array
         """
         raise NotImplementedError
+
+    @abstractmethod
+    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
+        """Elementwise log prior.
+
+        Parameters
+        ----------
+        pars : Params[Array]
+            Parameters.
+        data : Data[Array]
+            Data.
+
+        Returns
+        -------
+        Array
+        """
+        raise NotImplementedError
+
+    # ========================================================================
+    # Misc
+
+    @classmethod
+    def _make_bounds(
+        cls, bounds: PriorBounds[Array] | BoundsT | None, param_name: FlatParamName
+    ) -> PriorBounds[Array]:
+        """Make bounds."""
+        if isinstance(bounds, PriorBounds):
+            return bounds
+        elif bounds is None:
+            return NoBounds()
+        else:
+            return replace(
+                cls.DEFAULT_BOUNDS,
+                lower=bounds[0],
+                upper=bounds[1],
+                param_name=param_name,
+            )

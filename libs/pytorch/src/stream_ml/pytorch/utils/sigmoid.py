@@ -7,17 +7,24 @@ from typing import TYPE_CHECKING
 
 # THIRD-PARTY
 import torch as xp
-import torch.nn as nn
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml._typing import Array
+    from stream_ml.pytorch._typing import Array
 
 __all__: list[str] = []
 
+_0 = xp.asarray(0)
+_1 = xp.asarray(1)
 
-def sigmoid(x: Array, /, lower: Array | float = 0, upper: Array | float = 1) -> Array:
-    """Sigmoid function then scaling to within (lower, upper).
+
+def scaled_sigmoid(x: Array, /, lower: Array = _0, upper: Array = _1) -> Array:
+    """Sigmoid function mapping ``(-inf, inf)`` to ``(lower, upper)``.
+
+    Output for (lower, upper) is defined as:
+    - If (finite, finite), then this is a scaled sigmoid function.
+    - If (-inf, inf) then this is the identity function.
+    - Not implemented for (+/- inf, any), (any, +/- inf)
 
     Parameters
     ----------
@@ -31,43 +38,15 @@ def sigmoid(x: Array, /, lower: Array | float = 0, upper: Array | float = 1) -> 
     Returns
     -------
     Array
+
+    See Also
+    --------
+    stream_ml.core.utils.map_to_range
+        Maps ``[min(x), max(x)]`` to range ``[lower, upper]``.
     """
+    if xp.isneginf(lower) and xp.isposinf(upper):
+        return x
+    elif xp.isinf(lower) or xp.isinf(upper):
+        raise NotImplementedError
+
     return xp.sigmoid(x) * (upper - lower) + lower
-
-
-class ColumnarScaledSigmoid(nn.Module):  # type: ignore[misc]
-    r"""Applies scaled sigmoid function to the fraction and sigma."""
-
-    __constants__ = ["columns", "bounds", "inplace"]
-    columns: tuple[int, ...]
-    bounds: tuple[tuple[float, float], ...]
-    inplace: bool
-
-    def __init__(
-        self,
-        columns: tuple[int, ...],
-        bounds: tuple[tuple[float, float], ...],
-        *,
-        inplace: bool = False,
-    ) -> None:
-        super().__init__()
-        self.columns = columns
-        self.bounds = bounds
-        self.inplace = inplace
-
-        if len(columns) != len(bounds):
-            raise ValueError("columns and bounds must be the same length")
-
-    def forward(self, arr: Array) -> Array:
-        """Forward pass."""
-        if not self.inplace:
-            arr = arr.clone()
-
-        for col, (lower, upper) in zip(self.columns, self.bounds):
-            arr[:, col] = sigmoid(arr[:, col], lower=lower, upper=upper)
-
-        return arr
-
-    # def extra_repr(self) -> str:
-    #     inplace_str = "inplace=True" if self.inplace else ""
-    #     return inplace_str

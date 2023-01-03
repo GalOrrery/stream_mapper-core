@@ -5,20 +5,19 @@ from __future__ import annotations
 # STDLIB
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from functools import reduce
 
 # THIRD-PARTY
-import torch.nn as nn
+import torch as xp
+from torch import nn
 
 # LOCAL
 from stream_ml.core.core import ModelBase as CoreModelBase
-from stream_ml.core.utils.params import MutableParams, Params
+from stream_ml.core.data import Data
+from stream_ml.core.params import MutableParams, Params
 from stream_ml.pytorch._typing import Array
 from stream_ml.pytorch.base import Model
-
-if TYPE_CHECKING:
-    # LOCAL
-    from stream_ml.pytorch._typing import DataT
+from stream_ml.pytorch.utils.misc import within_bounds
 
 __all__: list[str] = []
 
@@ -46,7 +45,7 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
         """
         pars = MutableParams[Array]()
         for i, k in enumerate(self.param_names.flats):
-            pars[k] = p_arr[:, i].view(-1, 1)
+            pars[k] = p_arr[:, i : i + 1]
         return Params(pars)
 
     def pack_params_to_arr(self, pars: Params[Array]) -> Array:
@@ -68,7 +67,7 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
 
     @abstractmethod
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT, *args: Array
+        self, pars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log-likelihood of the model.
 
@@ -76,9 +75,9 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
         ----------
         pars : Params[Array]
             Parameters.
-        data : DataT
-            Data (phi1).
-        *args : Array
+        data : Data[Array]
+            Data.
+        **kwargs : Array
             Additional arguments.
 
         Returns
@@ -87,14 +86,40 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
         """
         raise NotImplementedError
 
+    def _ln_prior_coord_bnds(self, pars: Params[Array], data: Data[Array]) -> Array:
+        """Elementwise log prior for coordinate bounds.
+
+        Parameters
+        ----------
+        pars : Params[Array]
+            Parameters.
+        data : Data[Array]
+            Data.
+
+        Returns
+        -------
+        Array
+            Zero everywhere except where the data are outside the
+            coordinate bounds, where it is -inf.
+        """
+        lnp = xp.zeros((len(data), 1))
+        where = reduce(
+            xp.logical_or,
+            (~within_bounds(data[k], *v) for k, v in self.coord_bounds.items()),
+        )
+        lnp[where] = -xp.inf
+        return lnp
+
     @abstractmethod
-    def ln_prior_arr(self, pars: Params[Array]) -> Array:
+    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
         pars : Params[Array]
             Parameters.
+        data : Data[Array]
+            Data.
 
         Returns
         -------
@@ -106,12 +131,12 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
     # ML
 
     @abstractmethod
-    def forward(self, *args: Array) -> Array:
+    def forward(self, data: Data[Array]) -> Array:
         """Forward pass.
 
         Parameters
         ----------
-        args : Array
+        data : Data[Array]
             Input.
 
         Returns

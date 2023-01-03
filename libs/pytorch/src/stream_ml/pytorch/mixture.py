@@ -4,22 +4,18 @@ from __future__ import annotations
 
 # STDLIB
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 # THIRD-PARTY
 import torch as xp
-import torch.nn as nn
+from torch import nn
 
 # LOCAL
+from stream_ml.core.data import Data
 from stream_ml.core.mixture import MixtureModelBase
-from stream_ml.core.utils.hashdict import HashableMapField
-from stream_ml.core.utils.params import Params
+from stream_ml.core.params import Params
+from stream_ml.core.utils.hashdict import FrozenDictField
 from stream_ml.pytorch._typing import Array
 from stream_ml.pytorch.base import Model
-
-if TYPE_CHECKING:
-    # LOCAL
-    from stream_ml.pytorch._typing import DataT
 
 __all__: list[str] = []
 
@@ -38,7 +34,7 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
     """
 
     # Need to override this because of the type hinting
-    components: HashableMapField[str, Model] = HashableMapField[str, Model]()  # type: ignore[assignment]  # noqa: E501
+    components: FrozenDictField[str, Model] = FrozenDictField[str, Model]()  # type: ignore[assignment]  # noqa: E501
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -65,7 +61,7 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
     # Statistics
 
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT, *args: Array
+        self, pars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log likelihood.
 
@@ -75,67 +71,76 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
         ----------
         pars : Params
             Parameters.
-        data : DataT
+        data : Data[Array]
             Data.
-        args : Array
+        **kwargs : Array
             Additional arguments.
 
         Returns
         -------
         Array
         """
-        # (n_models, n_dat, 1)
-        liks = []
-        for name, model in self.items():
-            # Get the parameters for this model, stripping the model name
-            mps = pars.get_prefixed(name)
-            # Add the likelihood
-            lik = model.ln_likelihood_arr(mps, data, *args)
-            liks.append(lik)
-
+        # Get the parameters for each model, stripping the model name,
+        # and use that to evaluate the log likelihood for the model.
+        liks = tuple(
+            model.ln_likelihood_arr(
+                pars.get_prefixed(name), data, **self._get_prefixed_kwargs(name, kwargs)
+            )
+            for name, model in self.components.items()
+        )
         # Sum over the models, keeping the data dimension
-        return xp.logsumexp(xp.hstack(liks), dim=1)[:, None]
+        return xp.logsumexp(xp.hstack(liks), dim=1, keepdim=True)
 
-    def ln_prior_arr(self, pars: Params[Array]) -> Array:
+    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
-        pars : Params
+        pars : Params[Array]
             Parameters.
+        data : Data[Array]
+            Data.
 
         Returns
         -------
         Array
         """
-        ps = []
-        for name, model in self.components.items():
-            # Get the parameters for this model, stripping the model name
-            mps = pars.get_prefixed(name)
-            # Add the prior
-            ps.append(model.ln_prior_arr(mps))
+        # Get the parameters for each model, stripping the model name,
+        # and use that to evaluate the log prior for the model.
+        lps = tuple(
+            model.ln_prior_arr(pars.get_prefixed(name), data)
+            for name, model in self.components.items()
+        )
+        lp = xp.hstack(lps).sum(dim=1)[:, None]
 
         # Plugin for priors
-        for hook in self._hook_prior.values():
-            ps.append(hook(pars))
+        for prior in self.priors:
+            lp += prior.logpdf(pars, data, self, lp)
 
         # Sum over the priors
-        return xp.hstack(ps).sum(dim=1)[:, None]
+        return lp
 
     # ========================================================================
     # ML
 
-    def forward(self, *args: Array) -> Array:
+    def forward(self, data: Data[Array], /) -> Array:
         """Forward pass.
 
         Parameters
         ----------
-        args : Array
-            Input. Only uses the first argument.
+        data : Data
+            Input.
 
         Returns
         -------
         Array
             fraction, mean, sigma
         """
-        return xp.concat([model(*args) for model in self.components.values()], dim=1)
+        nn = xp.concat([model(data) for model in self.components.values()], dim=1)
+
+        # Call the prior to limit the range of the parameters
+        # TODO: a better way to do the order of the priors.
+        for prior in self.priors:
+            nn = prior(nn, data, self)
+
+        return nn

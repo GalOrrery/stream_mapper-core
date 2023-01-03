@@ -37,7 +37,6 @@
     "numpy>=1.18",
     "pytest",
     "pytest-astropy",
-    "typing_extensions>=4.4",
   ]
   docs = [
     "graphviz",
@@ -59,7 +58,7 @@
 
 [build-system]
   requires = [
-    "mypy>=0.971",
+    "mypy>=0.991",
     "setuptools>=45.0",
     "setuptools_scm[toml]>=6.3.1",
     "wheel",

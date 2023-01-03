@@ -4,20 +4,23 @@ from __future__ import annotations
 
 # STDLIB
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Protocol
+from math import inf
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol
 
 # THIRD-PARTY
 import torch as xp
-import torch.nn as nn
+from torch import nn
 
 # LOCAL
 from stream_ml.core.base import Model as CoreModel
-from stream_ml.core.utils.params import Params
+from stream_ml.core.data import Data
+from stream_ml.core.params import Params
 from stream_ml.pytorch._typing import Array
+from stream_ml.pytorch.prior.bounds import PriorBounds, SigmoidBounds
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.pytorch._typing import DataT, FlatParsT
+    from stream_ml.pytorch._typing import FlatParsT
 
 __all__: list[str] = []
 
@@ -35,6 +38,8 @@ class Model(CoreModel[Array], Protocol):
         that this can be different from the name of the model when it is used in
         a mixture model (see :class:`~stream_ml.core.core.MixtureModelBase`).
     """
+
+    DEFAULT_BOUNDS: ClassVar[PriorBounds] = SigmoidBounds(-inf, inf)
 
     def __post_init__(self) -> None:
         nn.Module.__init__(self)  # Needed for PyTorch
@@ -76,7 +81,7 @@ class Model(CoreModel[Array], Protocol):
 
         Returns
         -------
-        ParsT
+        Params[Array]
         """
         raise NotImplementedError
 
@@ -85,7 +90,7 @@ class Model(CoreModel[Array], Protocol):
 
         Parameters
         ----------
-        pars : ParsT
+        pars : Params[Array]
             Parameter dictionary.
 
         Returns
@@ -104,7 +109,7 @@ class Model(CoreModel[Array], Protocol):
 
     @abstractmethod
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT, *args: Array
+        self, pars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Elementwise log-likelihood of the model.
 
@@ -112,9 +117,9 @@ class Model(CoreModel[Array], Protocol):
         ----------
         pars : Params
             Parameters.
-        data : DataT
-            Data (phi1).
-        *args : Array
+        data : Data[Array]
+            Data.
+        **kwargs : Array
             Additional arguments.
 
         Returns
@@ -124,13 +129,15 @@ class Model(CoreModel[Array], Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def ln_prior_arr(self, pars: Params[Array]) -> Array:
+    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
         """Elementwise log prior.
 
         Parameters
         ----------
         pars : Params
             Parameters.
+        data : Data
+            Data.
 
         Returns
         -------
@@ -142,12 +149,12 @@ class Model(CoreModel[Array], Protocol):
     # ML
 
     @abstractmethod
-    def forward(self, *args: Array) -> Array:
+    def forward(self, data: Data[Array]) -> Array:
         """Forward pass.
 
         Parameters
         ----------
-        args : Array
+        data : Data[Array]
             Input.
 
         Returns
@@ -157,6 +164,6 @@ class Model(CoreModel[Array], Protocol):
         """
         raise NotImplementedError
 
-    def __call__(self, *args: Any, **kwds: Any) -> Array:
+    def __call__(self, *args: Any, **kwargs: Any) -> Array:
         """Pytoch call method."""
         ...

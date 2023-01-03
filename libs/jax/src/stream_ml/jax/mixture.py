@@ -4,27 +4,24 @@ from __future__ import annotations
 
 # STDLIB
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 # THIRD-PARTY
 import flax.linen as nn
 import jax.numpy as xp
+from jax.scipy.special import logsumexp
 
 # LOCAL
+from stream_ml.core.data import Data
 from stream_ml.core.mixture import MixtureModelBase
-from stream_ml.core.utils.hashdict import HashableMapField
-from stream_ml.core.utils.params import Params
+from stream_ml.core.params import Params
+from stream_ml.core.utils.hashdict import FrozenDictField
 from stream_ml.jax._typing import Array
 from stream_ml.jax.base import Model
-
-if TYPE_CHECKING:
-    # LOCAL
-    from stream_ml.jax._typing import DataT
 
 __all__: list[str] = []
 
 
-@dataclass(unsafe_hash=True)
+@dataclass()
 class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[misc]
     """Full Model.
 
@@ -38,7 +35,7 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
     """
 
     # Need to override this because of the type hinting
-    components: HashableMapField[str, Model] = HashableMapField()  # type: ignore[assignment]  # noqa: E501
+    components: FrozenDictField[str, Model] = FrozenDictField()  # type: ignore[assignment]  # noqa: E501
 
     def setup(self) -> None:
         """Setup ML."""
@@ -62,7 +59,7 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
     # Statistics
 
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT, *args: Array
+        self, pars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log likelihood.
 
@@ -72,52 +69,52 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
         ----------
         pars : Params[Array]
             Parameters.
-        data : DataT
+        data : Data[Array]
             Data.
-        args : Array
+        **kwargs : Array
             Additional arguments.
 
         Returns
         -------
         Array
         """
-        # (n_models, n_dat, 1)
-        liks = []
-        for name, model in self.items():
-            # Get the parameters for this model, stripping the model name
-            mps = pars.get_prefixed(name)
-            # Add the likelihood
-            lik = model.ln_likelihood(mps, data, *args)
-            liks.append(lik)
-
+        # Get the parameters for each model, stripping the model name,
+        # and use that to evaluate the log likelihood for the model.
+        liks = tuple(
+            model.ln_likelihood_arr(pars.get_prefixed(name), data, **kwargs)
+            for name, model in self.components.items()
+        )
         # Sum over the models, keeping the data dimension
-        return xp.logsumexp(xp.hstack(liks), dim=1)[:, None]
+        return logsumexp(xp.hstack(liks), axis=1)[:, None]
 
-    def ln_prior_arr(self, pars: Params[Array]) -> Array:
+    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
         pars : Params[Array]
             Parameters.
+        data: Data[Array]
+            Data.
 
         Returns
         -------
         Array
         """
-        ps = []
-        for name, model in self._models.items():
-            # Get the parameters for this model, stripping the model name
-            mps = self._strip_model_name(name, pars)
-            # Add the prior
-            ps.append(model.ln_prior(mps))
+        # Get the parameters for each model, stripping the model name,
+        # and use that to evaluate the log prior for the model.
+        lps = tuple(
+            model.ln_prior_arr(pars.get_prefixed(name), data)
+            for name, model in self.components.items()
+        )
+        lp = xp.hstack(lps).sum(dim=1)[:, None]
 
         # Plugin for priors
-        for hook in self._hook_prior.values():
-            ps.append(hook(pars))
+        for prior in self.priors:
+            lp += prior.logpdf(pars, data, self, lp)
 
         # Sum over the priors
-        return xp.hstack(ps).sum(dim=1)[:, None]
+        return lp
 
     # ========================================================================
     # ML
@@ -135,4 +132,13 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
         Array
             fraction, mean, sigma
         """
-        return xp.concatenate([model(*args) for model in self._models.values()], dim=1)
+        result = xp.concatenate(
+            [model(*args) for model in self.components.values()], axis=1
+        )
+
+        # Call the prior to limite the range of the parameters
+        # TODO: full data, not args[0]
+        for prior in self.priors:
+            result = prior(result, args[0], self)
+
+        return result

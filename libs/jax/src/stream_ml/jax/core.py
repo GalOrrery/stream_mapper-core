@@ -5,25 +5,24 @@ from __future__ import annotations
 # STDLIB
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from functools import reduce
 
 # THIRD-PARTY
 import flax.linen as nn
+import jax.numpy as xp
 
 # LOCAL
 from stream_ml.core.core import ModelBase as CoreModelBase
-from stream_ml.core.utils.params import MutableParams, Params
-from stream_ml.flax.base import Model
+from stream_ml.core.data import Data
+from stream_ml.core.params import MutableParams, Params
 from stream_ml.jax._typing import Array
-
-if TYPE_CHECKING:
-    # LOCAL
-    from stream_ml.jax._typing import DataT
+from stream_ml.jax.base import Model
+from stream_ml.jax.utils.misc import within_bounds
 
 __all__: list[str] = []
 
 
-@dataclass(unsafe_hash=True)
+@dataclass()
 class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
     """Model base class."""
 
@@ -70,7 +69,7 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
 
     @abstractmethod
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT, *args: Array
+        self, pars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log-likelihood of the model.
 
@@ -78,9 +77,9 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
         ----------
         pars : Params[Array]
             Parameters.
-        data : DataT
-            Data (phi1).
-        *args : Array
+        data : Data[Array]
+            Data.
+        **kwargs : Array
             Additional arguments.
 
         Returns
@@ -89,14 +88,40 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
         """
         raise NotImplementedError
 
+    def _ln_prior_coord_bnds(self, pars: Params[Array], data: Data[Array]) -> Array:
+        """Elementwise log prior for coordinate bounds.
+
+        Parameters
+        ----------
+        pars : Params[Array]
+            Parameters.
+        data : Data[Array]
+            Data.
+
+        Returns
+        -------
+        Array
+            Zero everywhere except where the data are outside the
+            coordinate bounds, where it is -inf.
+        """
+        lnp = xp.zeros(len(data))
+        where = reduce(
+            xp.logical_or,
+            (~within_bounds(data[k], *v) for k, v in self.coord_bounds.items()),
+        )
+        lnp = lnp.at[where].set(-xp.inf)
+        return lnp  # noqa: RET504
+
     @abstractmethod
-    def ln_prior_arr(self, pars: Params[Array]) -> Array:
+    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
         pars : Params[Array]
             Parameters.
+        data : Data[Array]
+            Data.
 
         Returns
         -------
@@ -113,7 +138,7 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
 
         Parameters
         ----------
-        args : Array
+        *args : Array
             Input.
 
         Returns

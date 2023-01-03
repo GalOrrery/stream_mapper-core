@@ -5,16 +5,12 @@ from __future__ import annotations
 # STDLIB
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 # LOCAL
 from stream_ml.core._typing import Array
 from stream_ml.core.core import ModelBase
-from stream_ml.core.utils.params import Params
-
-if TYPE_CHECKING:
-    # LOCAL
-    from stream_ml.core._typing import DataT
+from stream_ml.core.data import Data
+from stream_ml.core.params import Params
 
 __all__: list[str] = []
 
@@ -63,7 +59,7 @@ class StreamModel(ModelBase[Array]):
 
     @abstractmethod
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT[Array], *args: Array
+        self, pars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log-likelihood of the background.
 
@@ -71,9 +67,9 @@ class StreamModel(ModelBase[Array]):
         ----------
         pars : Params
             Parameters.
-        data : DataT
-            Data (phi1).
-        *args: Array
+        data : Data[Array]
+            Data.
+        **kwargs: Array
             Additional arguments.
 
         Returns
@@ -83,13 +79,32 @@ class StreamModel(ModelBase[Array]):
         raise NotImplementedError
 
     @abstractmethod
-    def ln_prior_arr(self, pars: Params[Array]) -> Array:
+    def _ln_prior_coord_bnds(self, pars: Params[Array], data: Data[Array]) -> Array:
+        """Elementwise log prior for coordinate bounds.
+
+        Parameters
+        ----------
+        pars : Params[Array]
+            Parameters.
+        data : Data[Array]
+            Data.
+
+        Returns
+        -------
+        Array
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
         pars : Params
             Parameters.
+        data : Data[Array]
+            Data.
 
         Returns
         -------

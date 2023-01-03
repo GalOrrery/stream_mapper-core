@@ -6,22 +6,24 @@ from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from collections.abc import Iterator, Mapping
 from dataclasses import KW_ONLY, dataclass
-from typing import TYPE_CHECKING, Any, Callable
-
-# THIRD-PARTY
-import numpy as np
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, TypeVar
 
 # LOCAL
-from stream_ml.core._typing import Array
+from stream_ml.core._typing import Array, BoundsT
 from stream_ml.core.base import Model
-from stream_ml.core.utils.hashdict import HashableMap, HashableMapField
-from stream_ml.core.utils.params import MutableParams, ParamBounds, ParamNames, Params
+from stream_ml.core.params import MutableParams, ParamBounds, ParamNames, Params
+from stream_ml.core.prior.base import PriorBase
+from stream_ml.core.utils.hashdict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.core._typing import DataT, FlatParsT
+    from stream_ml.core._typing import FlatParsT
+    from stream_ml.core.data import Data
 
 __all__: list[str] = []
+
+
+V = TypeVar("V")
 
 
 @dataclass
@@ -33,18 +35,34 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
     components : Mapping[str, Model], optional postional-only
         Mapping of Models. This allows for strict ordering of the Models and
         control over the type of the models attribute.
-    **morecomponents : Model
-        Additional Models.
+
+    name : str or None, optional keyword-only
+        The (internal) name of the model, e.g. 'stream' or 'background'. Note
+        that this can be different from the name of the model when it is used in
+        a mixture model (see :class:`~stream_ml.core.core.MixtureModelBase`).
+
+    tied_params : Mapping[str, Callable[[Params], Array]], optional keyword-only
+        Mapping of parameter names to functions that take the parameters of the
+        model and return the value of the tied parameter. This is useful for
+        tying parameters across models, e.g. the background and stream models
+        in a mixture model.
+
+    priors : tuple[PriorBase, ...], optional keyword-only
+        Mapping of parameter names to priors. This is useful for setting priors
+        on parameters across models, e.g. the background and stream models in a
+        mixture model.
     """
 
-    components: HashableMapField[str, Model[Array]] = HashableMapField()
+    components: FrozenDictField[str, Model[Array]] = FrozenDictField()
+
     _: KW_ONLY
-    tied_params: HashableMapField[
+    name: str | None = None  # the name of the model
+    tied_params: FrozenDictField[
         str, Callable[[Params[Array]], Array]
-    ] = HashableMapField({})
-    hook_prior: HashableMapField[
-        str, Callable[[Params[Array]], Array]
-    ] = HashableMapField({})
+    ] = FrozenDictField({})
+    priors: tuple[PriorBase[Array], ...] = ()
+
+    DEFAULT_BOUNDS: ClassVar = None
 
     def __post_init__(self) -> None:
         # Add the coord_names
@@ -55,20 +73,20 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
 
         # Add the param_names  # TODO: make sure no duplicates
         self._param_names: ParamNames = ParamNames(
-            (f"{n}_{p[0]}", p[1]) if isinstance(p, tuple) else f"{n}_{p}"
-            for n, m in self.components.items()
+            (f"{c}.{p[0]}", p[1]) if isinstance(p, tuple) else f"{c}.{p}"
+            for c, m in self.components.items()
             for p in m.param_names
         )
 
         # Add the coord_bounds
         # TODO: make sure duplicates have the same bounds
-        cbs: HashableMap[str, tuple[float, float]] = HashableMap()
+        cbs: FrozenDict[str, BoundsT] = FrozenDict()
         for m in self.components.values():
             cbs._mapping.update(m.coord_bounds)
         self._coord_bounds = cbs
 
         # Add the param_bounds
-        cps = ParamBounds()
+        cps: ParamBounds[Array] = ParamBounds()
         for n, m in self.components.items():
             cps._mapping.update({f"{n}_{k}": v for k, v in m.param_bounds.items()})
         self._param_bounds = cps
@@ -83,7 +101,8 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
     @coord_names.setter  # hack to match the Protocol
     def coord_names(self, value: Any) -> None:
         """Set the coordinate names."""
-        raise AttributeError("cannot set coord_names.")
+        msg = "cannot set coord_names"
+        raise AttributeError(msg)
 
     @property  # type: ignore[override]
     def param_names(self) -> ParamNames:
@@ -93,27 +112,30 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
     @param_names.setter  # hack to match the Protocol
     def param_names(self, value: Any) -> None:
         """Set the parameter names."""
-        raise AttributeError("cannot set param_names.")
+        msg = "cannot set param_names"
+        raise AttributeError(msg)
 
-    @property  # TODO: cached
-    def coord_bounds(self) -> HashableMap[str, tuple[float, float]]:
+    @property  # type: ignore[override]
+    def coord_bounds(self) -> FrozenDict[str, BoundsT]:
         """Coordinate names."""
         return self._coord_bounds
 
     @coord_bounds.setter  # hack to match the Protocol
     def coord_bounds(self, value: Any) -> None:
         """Set the coordinate bounds."""
-        raise AttributeError("cannot set coord_bounds.")
+        msg = "cannot set coord_bounds"
+        raise AttributeError(msg)
 
     @property  # type: ignore[override]
-    def param_bounds(self) -> ParamBounds:
+    def param_bounds(self) -> ParamBounds[Array]:
         """Coordinate names."""
         return self._param_bounds
 
     @param_bounds.setter  # hack to match the Protocol
     def param_bounds(self, value: Any) -> None:
         """Set the parameter bounds."""
-        raise AttributeError("cannot set param_bounds.")
+        msg = "cannot set param_bounds"
+        raise AttributeError(msg)
 
     # ===============================================================
     # Mapping
@@ -151,12 +173,13 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
             Nested dictionary of parameters wth parameters grouped by coordinate
             name.
         """
+        # FIXME! this doesn't work with the model components.
         pars = MutableParams[Array]()
 
-        for k in packed_pars.keys():
-            # mixparam is a special case.  # TODO: unspecial case
-            if k == "mixparam":
-                pars["mixparam"] = packed_pars["mixparam"]
+        for k in packed_pars:
+            # Find the non-coordinate-specific parameters.
+            if k in self.param_bounds:
+                pars[k] = packed_pars[k]
                 continue
 
             # separate the coordinate and parameter names.
@@ -179,31 +202,28 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
 
         Returns
         -------
-        ParsT
+        Params[Array]
         """
         # Unpack the parameters
         pars = Params[Array]()
-        for j, (n, m) in enumerate(self.components.items()):  # iter thru models
+        j = 0
+        for n, m in self.components.items():  # iter thru models
             # Get relevant parameters by index
-            # tied parameters are not included.
-            # TODO: use nested param_names and also in tied_params
-            param_inds = np.array(
-                tuple(
-                    i
-                    for i, p in enumerate(m.param_names.flat)
-                    if f"{n}_{p}" not in self.tied_params
-                )
-            )
-            mp_arr = p_arr[:, j + param_inds]
+            mp_arr = p_arr[:, slice(j, j + len(m.param_names.flat))]
 
-            # Skip empty
+            # TODO: what to do about tied parameters?
+
+            # Skip empty (and incrementing the index)
             if mp_arr.shape[1] == 0:
                 continue
 
             # Add the component's parameters, prefixed with the component name
             pars._mapping.update(
-                m.unpack_params_from_arr(mp_arr).add_prefix(n + "_", inplace=True)
+                m.unpack_params_from_arr(mp_arr).add_prefix(n + ".", inplace=True)
             )
+
+            # Increment the index
+            j += len(m.param_names.flat)
 
         # Add the dependent parameters
         for name, tie in self.tied_params.items():
@@ -226,12 +246,31 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
         """
         raise NotImplementedError
 
+    @staticmethod
+    def _get_prefixed_kwargs(prefix: str, kwargs: dict[str, V]) -> dict[str, V]:
+        """Get the kwargs with a given prefix.
+
+        Parameters
+        ----------
+        prefix : str
+            Prefix.
+        kwargs : dict[str, V]
+            Keyword arguments.
+
+        Returns
+        -------
+        dict[str, V]
+        """
+        prefix = prefix + "_" if not prefix.endswith("_") else prefix
+        lp = len(prefix)
+        return {k[lp:]: v for k, v in kwargs.items() if k.startswith(prefix)}
+
     # ===============================================================
     # Statistics
 
     @abstractmethod
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT[Array], *args: Array
+        self, pars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log likelihood.
 
@@ -241,9 +280,9 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
         ----------
         pars : Params
             Parameters.
-        data : DataT
+        data : Data[Array]
             Data.
-        args : Array
+        **kwargs : Array
             Additional arguments.
 
         Returns
@@ -253,13 +292,15 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
         raise NotImplementedError
 
     @abstractmethod
-    def ln_prior_arr(self, pars: Params[Array]) -> Array:
+    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
         pars : Params
             Parameters.
+        data : Data[Array]
+            Data.
 
         Returns
         -------

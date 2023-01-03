@@ -4,54 +4,54 @@ from __future__ import annotations
 
 # STDLIB
 from dataclasses import KW_ONLY, dataclass
-from typing import TYPE_CHECKING
 
 # THIRD-PARTY
 import jax.numpy as xp
 
 # LOCAL
-from stream_ml.core.utils.params import ParamBoundsField, ParamNamesField, Params
+from stream_ml.core.data import Data
+from stream_ml.core.params import ParamBoundsField, ParamNames, ParamNamesField, Params
+from stream_ml.jax._typing import Array
 from stream_ml.jax.background.base import BackgroundModel
-
-if TYPE_CHECKING:
-    # LOCAL
-    from stream_ml.jax._typing import Array, DataT
+from stream_ml.jax.prior.bounds import SigmoidBounds
 
 __all__: list[str] = []
 
 
-@dataclass(unsafe_hash=True)
-class UniformBackgroundModel(BackgroundModel):
+@dataclass()
+class Uniform(BackgroundModel):
     """Uniform background model."""
 
     n_features: int = 0
     _: KW_ONLY
-    param_names: ParamNamesField = ParamNamesField(("mixparam",))
-    param_bounds: ParamBoundsField = ParamBoundsField({"mixparam": (0.0, 1.0)})
+    param_names: ParamNamesField = ParamNamesField(ParamNames(("weight",)))
+    param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array](
+        {"weight": SigmoidBounds(0.0, 1.0, param_name=("weight",))}
+    )
 
     def __post_init__(self) -> None:
         super().__post_init__()
 
         # Validate the n_features
         if self.n_features != 0:
-            raise ValueError("n_features must be 0 for the uniform background.")
+            msg = "n_features must be 0 for the uniform background"
+            raise ValueError(msg)
 
         # Validate the param_names
-        if self.param_names != ("mixparam",):
-            raise ValueError(
-                "param_names must be ('mixparam',) for the uniform background."
-            )
+        if self.param_names != ("weight",):
+            msg = "param_names must be ('weight',) for the uniform background"
+            raise ValueError(msg)
 
         # Pre-compute the log-difference
-        self._logdiff = xp.asarray(
+        self._logdiffs = xp.asarray(
             [xp.log(xp.asarray(b - a)) for a, b in self.coord_bounds.values()]
-        ).sum()
+        )
 
     # ========================================================================
     # Statistics
 
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT, *args: Array
+        self, pars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log-likelihood of the background.
 
@@ -59,9 +59,9 @@ class UniformBackgroundModel(BackgroundModel):
         ----------
         pars : Params[Array]
             Parameters.
-        data : DataT
-            Data (phi1).
-        *args : Array
+        data : Data[Array]
+            Data.
+        **kwargs : Array
             Additional arguments.
 
         Returns
@@ -69,31 +69,35 @@ class UniformBackgroundModel(BackgroundModel):
         Array
         """
         # Need to protect the fraction if < 0
-        return xp.log(xp.clip(pars[("mixparam",)], 0)) - self._logdiff
+        eps = xp.finfo(pars[("weight",)].dtype).eps  # TOOD: or tiny?
+        return xp.log(xp.clip(pars[("weight",)], eps)) - self._logdiffs.sum()
 
-    def ln_prior_arr(self, pars: Params[Array]) -> Array:
+    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
         pars : Params[Array]
             Parameters.
+        data: Data[Array]
+            Data.
 
         Returns
         -------
         Array
         """
-        return xp.zeros_like(pars[("mixparam",)])
+        lnp = xp.zeros_like(pars[("weight",)])
+        return lnp + self._ln_prior_coord_bnds(pars, data)
 
     # ========================================================================
     # ML
 
-    def forward(self, *args: Array) -> Array:
+    def forward(self, data: Data[Array]) -> Array:
         """Forward pass.
 
         Parameters
         ----------
-        args : Array
+        data : Data[Array]
             Input.
 
         Returns
@@ -101,4 +105,11 @@ class UniformBackgroundModel(BackgroundModel):
         Array
             fraction, mean, sigma
         """
-        return xp.asarray([])
+        nn = xp.asarray([])
+
+        # Call the prior to limit the range of the parameters
+        # TODO: a better way to do the order of the priors.
+        for prior in self.priors:
+            nn = prior(nn, data, self)
+
+        return nn

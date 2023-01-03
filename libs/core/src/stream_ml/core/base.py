@@ -4,17 +4,19 @@ from __future__ import annotations
 
 # STDLIB
 from abc import abstractmethod
-from collections.abc import Mapping
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING, ClassVar, Protocol
 
 # LOCAL
 from stream_ml.core._typing import Array
-from stream_ml.core.utils.hashdict import HashableMap
-from stream_ml.core.utils.params import ParamBoundsField, ParamNamesField, Params
+from stream_ml.core.data import Data
+from stream_ml.core.params.bounds import ParamBounds, ParamBoundsField
+from stream_ml.core.params.core import Params
+from stream_ml.core.params.names import ParamNamesField
+from stream_ml.core.utils.hashdict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.core._typing import DataT, FlatParsT
+    from stream_ml.core._typing import BoundsT, FlatParsT
 
 __all__: list[str] = []
 
@@ -29,21 +31,17 @@ class Model(Protocol[Array]):
     param_names: ParamNamesField = ParamNamesField()
 
     # Bounds on the coordinates and parameters.
-    # name: (lower, upper)
-    coord_bounds: HashableMap[str, tuple[float, float]]
-    param_bounds: ParamBoundsField = ParamBoundsField()
-    # defaults to (-inf, inf)
+    coord_bounds: FrozenDictField[str, BoundsT] = FrozenDictField(FrozenDict())
+    param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array](ParamBounds())
+
+    DEFAULT_BOUNDS: ClassVar  # TODO: PriorBounds[Any]
 
     def __post_init__(self) -> None:
-
-        # Make sure the pieces of param_bounds are hashable.
-        # Static type checkers will complain about mutable input, but this allows
-        # for the run-time behavior to work regardless.
-        for name, bounds in self.param_bounds.items():
-            if isinstance(bounds, Mapping) and not isinstance(bounds, HashableMap):
-                self.param_bounds._mapping[name] = HashableMap(bounds)  # type: ignore[unreachable] # noqa: E501
-
-        return None
+        # Make sure the pieces of param_bounds are hashable. Static type
+        # checkers will complain about mutable input, but this allows for the
+        # run-time behavior to work regardless.
+        self.param_bounds._freeze()
+        return
 
     # ========================================================================
 
@@ -61,7 +59,7 @@ class Model(Protocol[Array]):
 
         Returns
         -------
-        ParsT
+        Params[Array]
             Nested dictionary of parameters wth parameters grouped by coordinate
             name.
         """
@@ -105,7 +103,7 @@ class Model(Protocol[Array]):
 
     @abstractmethod
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT[Array], *args: Array
+        self, pars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Elementwise log-likelihood of the model.
 
@@ -113,9 +111,9 @@ class Model(Protocol[Array]):
         ----------
         pars : Params[Array]
             Parameters.
-        data : DataT
-            Data (phi1).
-        *args : Array
+        data : Data[Array]
+            Data.
+        **kwargs : Array
             Additional arguments.
 
         Returns
@@ -125,13 +123,15 @@ class Model(Protocol[Array]):
         raise NotImplementedError
 
     @abstractmethod
-    def ln_prior_arr(self, pars: Params[Array]) -> Array:
+    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
         """Elementwise log prior.
 
         Parameters
         ----------
         pars : Params[Array]
             Parameters.
+        data : Data[Array]
+            Data.
 
         Returns
         -------
@@ -140,7 +140,7 @@ class Model(Protocol[Array]):
         raise NotImplementedError
 
     def ln_posterior_arr(
-        self, pars: Params[Array], data: DataT[Array], *args: Array
+        self, pars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Elementwise log posterior.
 
@@ -148,28 +148,28 @@ class Model(Protocol[Array]):
         ----------
         pars : Params[Array]
             Parameters.
-        data : DataT
+        data : Data
             Data.
-        args : Array
+        **kwargs : Array
             Arguments.
 
         Returns
         -------
         Array
         """
+        # TODO! move to ModelBase
         # fmt: off
         post_arr: Array = (
-            self.ln_likelihood_arr(pars, data, *args)
-            + self.ln_prior_arr(pars)
+            self.ln_likelihood_arr(pars, data, **kwargs)
+            + self.ln_prior_arr(pars, data)
         )
         # fmt: on
         return post_arr
 
     # ------------------------------------------------------------------------
-    # Statistics: summmed
 
     def ln_likelihood(
-        self, pars: Params[Array], data: DataT[Array], *args: Array
+        self, pars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log-likelihood of the model.
 
@@ -179,33 +179,37 @@ class Model(Protocol[Array]):
         ----------
         pars : Params[Array]
             Parameters.
-        data : DataT
-            Data (phi1).
-        *args : Array
+        data : Data
+            Data.
+        **kwargs : Array
             Additional arguments.
 
         Returns
         -------
         Array
         """
-        return self.ln_likelihood_arr(pars, data, *args).sum()
+        # TODO! move to ModelBase
+        return self.ln_likelihood_arr(pars, data, **kwargs).sum()
 
-    def ln_prior(self, pars: Params[Array]) -> Array:
+    def ln_prior(self, pars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
         pars : Params[Array]
             Parameters.
+        data : Data
+            Data.
 
         Returns
         -------
         Array
         """
-        return self.ln_prior_arr(pars).sum()  # FIXME?
+        # TODO! move to ModelBase
+        return self.ln_prior_arr(pars, data).sum()
 
     def ln_posterior(
-        self, pars: Params[Array], data: DataT[Array], *args: Array
+        self, pars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log posterior.
 
@@ -213,14 +217,17 @@ class Model(Protocol[Array]):
         ----------
         pars : Params[Array]
             Parameters.
-        data : DataT
+        data : Data[Array]
             Data.
-        args : Array
-            Arguments.
+        **kwargs : Array
+            Keyword arguments. These are passed to the likelihood function.
 
         Returns
         -------
         Array
         """
-        ln_post: Array = self.ln_likelihood(pars, data, *args) + self.ln_prior(pars)
+        # TODO! move to ModelBase
+        ln_post: Array = self.ln_likelihood(pars, data, **kwargs) + self.ln_prior(
+            pars, data
+        )
         return ln_post

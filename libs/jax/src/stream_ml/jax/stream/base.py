@@ -5,23 +5,18 @@ from __future__ import annotations
 # STDLIB
 import abc
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 # LOCAL
+from stream_ml.core.data import Data
+from stream_ml.core.params import Params
 from stream_ml.core.stream.base import StreamModel as CoreStreamModel
-from stream_ml.core.utils.params import Params
 from stream_ml.jax._typing import Array
 from stream_ml.jax.core import ModelBase
-
-if TYPE_CHECKING:
-    # LOCAL
-    from stream_ml.jax._typing import DataT
-
 
 __all__: list[str] = []
 
 
-@dataclass(unsafe_hash=True)
+@dataclass()
 class StreamModel(ModelBase, CoreStreamModel[Array]):
     """Stream Model."""
 
@@ -30,7 +25,7 @@ class StreamModel(ModelBase, CoreStreamModel[Array]):
 
     @abc.abstractmethod
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: DataT, *args: Array
+        self, pars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log-likelihood of the stream.
 
@@ -38,9 +33,9 @@ class StreamModel(ModelBase, CoreStreamModel[Array]):
         ----------
         pars : Params[Array]
             Parameters.
-        data : DataT
+        data : Data[Array]
             Data.
-        *args : Array
+        **kwargs : Array
             Additional arguments.
 
         Returns
@@ -50,13 +45,15 @@ class StreamModel(ModelBase, CoreStreamModel[Array]):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def ln_prior_arr(self, pars: Params[Array]) -> Array:
+    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
-        pars : ParsT
+        pars : Params[Array]
             Parameters.
+        data : Data[Array]
+            Data.
 
         Returns
         -------
@@ -68,12 +65,12 @@ class StreamModel(ModelBase, CoreStreamModel[Array]):
     # ML
 
     @abc.abstractmethod
-    def forward(self, *args: Array) -> Array:
+    def forward(self, data: Data[Array]) -> Array:
         """Forward pass.
 
         Parameters
         ----------
-        args : Array
+        data : Data[Array]
             Input.
 
         Returns

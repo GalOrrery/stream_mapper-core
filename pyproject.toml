@@ -31,7 +31,7 @@
   include_trailing_comma = "True"
   use_parentheses = "True"
   ensure_newline_before_comments = "True"
-  known_localfolder = "stream_ml"
+  known_localfolder = ["stream_ml", "stream_ml.jax"]
   known_third_party = ["numpy", "pytest"]
   import_heading_stdlib = "STDLIB"
   import_heading_firstparty = "FIRST-PARTY"
@@ -43,6 +43,8 @@
   namespace_packages = true
   explicit_package_bases = true
   mypy_path = "$MYPY_CONFIG_FILE_DIR/libs/core/src:$MYPY_CONFIG_FILE_DIR/libs/pytorch/src:$MYPY_CONFIG_FILE_DIR/libs/jax/src"
+
+  strict = true
   disallow_subclassing_any = false
   disallow_untyped_defs = true
   ignore_missing_imports = true
@@ -52,8 +54,8 @@
   warn_unused_configs = true
   warn_unreachable = true
   exclude = '''(^|/)tests/'''
-  plugins = []
   python_version = "3.10"
+  plugins = ["numpy.typing.mypy_plugin",]
 
   [[tool.mypy.overrides]]
     module = "*/tests/*"
@@ -66,5 +68,13 @@
 
 [tool.ruff]
 line-length = 88
-select = ["E", "F", "D", "U", "N", "S", "C", "B", "A", "T", "Q", "YTT", "RUF"]
-ignore = ["D105", "D107", "D203", "D213"]
+select = ["ALL"]
+ignore = [
+  "ANN101", "ANN102", "ANN401",
+  "ARG001", "ARG002",
+  "D105", "D107", "D203", "D213",
+  "FBT003",
+  "I001",
+  "PD",
+  "RET505", "RET506", "RET507",
+]

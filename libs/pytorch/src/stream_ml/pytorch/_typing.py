@@ -1,31 +1,12 @@
 """Pytorch type hints."""
 
 # STDLIB
-from collections.abc import Mapping, MutableMapping
+from collections.abc import Mapping
 
 # THIRD-PARTY
 from torch import Tensor as Array
 
-__all__ = [
-    "Array",
-    # Parameters
-    "FlatParsT",
-    "MutableFlatParsT",
-    "ParsT",
-    "MutableParsT",
-    # Data
-    "DataT",
-    "MutableDataT",
-]
+__all__ = ["Array", "FlatParsT"]
 
-
-# TODO: define these from the stream_ml.core._typing versions
 
 FlatParsT = Mapping[str, Array]
-MutableFlatParsT = MutableMapping[str, Array]
-
-ParsT = Mapping[str, Array | Mapping[str, Array]]
-MutableParsT = MutableMapping[str, Array | MutableMapping[str, Array]]
-
-DataT = Mapping[str, Array]
-MutableDataT = MutableMapping[str, Array]

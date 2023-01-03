@@ -3,26 +3,55 @@
 from __future__ import annotations
 
 # STDLIB
-from collections.abc import Iterator, Mapping, Sequence
-from typing import Any, Generic, TypeVar
+from collections.abc import (
+    ItemsView,
+    Iterable,
+    Iterator,
+    KeysView,
+    Mapping,
+    Sequence,
+    ValuesView,
+)
+from typing import Generic, Literal, Protocol, TypeVar
+
+# LOCAL
+from stream_ml.core.utils.sentinel import MISSING, Sentinel
 
 __all__: list[str] = []
 
 K = TypeVar("K")
 V = TypeVar("V")
+_VT_co = TypeVar("_VT_co", covariant=True)
 
 
-class HashableMap(Mapping[K, V]):
+class SupportsKeysAndGetItem(Protocol[K, _VT_co]):
+    """Protocol that supports keys and getitem."""
+
+    def keys(self) -> Iterable[K]:
+        """Return keys."""
+        ...
+
+    def __getitem__(self, __key: K) -> _VT_co:
+        """Get item."""
+        ...
+
+
+class FrozenDict(Mapping[K, V]):
     """A frozen (hashable) dictionary."""
 
     __slots__ = ("_mapping",)
 
-    def __init__(self, m: Any = (), /, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        m: SupportsKeysAndGetItem[K, V] | Iterable[tuple[K, V]] = (),
+        /,
+        **kwargs: V,
+    ) -> None:
         # Please do not mutate this dictionary.
         self._mapping: dict[K, V] = dict(m, **kwargs)
         # Make sure that the dictionary is hashable.
         hash(self)
-        return None
+        return
 
     def __iter__(self) -> Iterator[K]:
         return iter(self._mapping)
@@ -39,34 +68,52 @@ class HashableMap(Mapping[K, V]):
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self._mapping!r})"
 
-    def __or__(self, other: Mapping[K, V]) -> HashableMap[K, V]:
-        if not isinstance(other, HashableMap):
+    def __or__(self, other: Mapping[K, V]) -> FrozenDict[K, V]:
+        if not isinstance(other, FrozenDict):
             raise NotImplementedError
-        return HashableMap(self._mapping | dict(other))
+        return FrozenDict(self._mapping | dict(other))
+
+    def keys(self) -> KeysView[K]:
+        """Return keys view."""
+        return self._mapping.keys()
+
+    def values(self) -> ValuesView[V]:
+        """Return values view."""
+        return self._mapping.values()
+
+    def items(self) -> ItemsView[K, V]:
+        """Return items view."""
+        return self._mapping.items()
 
 
-class HashableMapField(Generic[K, V]):
+class FrozenDictField(Generic[K, V]):
     """Dataclass descriptor for a frozen map."""
 
     def __init__(
-        self, default: Mapping[K, V] | Sequence[tuple[K, V]] | None = None
+        self,
+        default: Mapping[K, V]
+        | Sequence[tuple[K, V]]
+        | Literal[Sentinel.MISSING] = MISSING,
     ) -> None:
-        self._default: HashableMap[K, V] | None
-        self._default = HashableMap(default) if default is not None else None
+        self._default: FrozenDict[K, V] | Literal[Sentinel.MISSING]
+        self._default = FrozenDict(default) if default is not MISSING else MISSING
 
     def __set_name__(self, owner: type, name: str) -> None:
         self._name = "_" + name
 
-    def __get__(self, obj: object | None, obj_cls: type | None) -> HashableMap[K, V]:
+    def __get__(self, obj: object | None, obj_cls: type | None) -> FrozenDict[K, V]:
         if obj is not None:
-            val: HashableMap[K, V] = getattr(obj, self._name)
+            val: FrozenDict[K, V] = getattr(obj, self._name)
             return val
 
         default = self._default
-        if default is None:
-            raise AttributeError(f"no default value for {self._name}")
+        if default is MISSING:
+            msg = f"no default value for {self._name}"
+            raise AttributeError(msg)
         return default
 
     def __set__(self, obj: object, value: Mapping[K, V]) -> None:
-        dv = HashableMap[K, V](self._default or {})  # Default value as a dict.
-        object.__setattr__(obj, self._name, dv | HashableMap(value))
+        # Default value as a dict.
+        dv = FrozenDict[K, V](self._default if self._default is not MISSING else {})
+        # Set the value. This is only called once by the dataclass.
+        object.__setattr__(obj, self._name, dv | FrozenDict(value))
