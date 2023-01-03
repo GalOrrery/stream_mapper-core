@@ -13,14 +13,14 @@ import jax.numpy as xp
 from jax.scipy.stats import norm
 
 # LOCAL
-from stream_ml.core._typing import BoundsT
 from stream_ml.core.data import Data
 from stream_ml.core.params import ParamBounds, ParamBoundsField, ParamNames, Params
 from stream_ml.core.params.names import ParamNamesField
-from stream_ml.core.utils.hashdict import FrozenDict, FrozenDictField
-from stream_ml.jax._typing import Array
+from stream_ml.core.typing import BoundsT
+from stream_ml.core.utils.frozendict import FrozenDict, FrozenDictField
 from stream_ml.jax.prior.bounds import PriorBounds
 from stream_ml.jax.stream.base import StreamModel
+from stream_ml.jax.typing import Array
 from stream_ml.jax.utils.tanh import Tanh
 
 __all__: list[str] = []

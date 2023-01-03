@@ -11,22 +11,23 @@ import numpy as np
 from numpy.typing import NDArray
 
 # LOCAL
-from stream_ml.core._typing import Array
+from stream_ml.core.typing import Array
 
 Self = TypeVar("Self", bound="Data[Array]")  # type: ignore[valid-type]
 
 
 def _all_strs(seq: tuple[Any, ...]) -> TypeGuard[tuple[str, ...]]:
+    """Check if all elements of a tuple are strings."""
     return all(isinstance(x, str) for x in seq)
 
 
 @dataclass(frozen=True)
 class Data(Generic[Array]):
-    """Data.
+    """Labelled data.
 
     Parameters
     ----------
-    data : Array
+    array : Array
         The data. This should be a 2D array, where rows are observations and
         columns are features.
     names : tuple[str, ...]
@@ -44,6 +45,7 @@ class Data(Generic[Array]):
     names: tuple[str, ...]
 
     def __post_init__(self) -> None:
+        # Check that the number of names matches the number of columns.
         if len(self.names) != self.array.shape[1]:
             msg = (
                 f"Number of names ({len(self.names)}) does not match number of columns "
@@ -51,12 +53,14 @@ class Data(Generic[Array]):
             )
             raise ValueError(msg)
 
+        # Map names to column indices.
         self._name_to_index: dict[str, int]
         object.__setattr__(
             self, "_name_to_index", {name: i for i, name in enumerate(self.names)}
         )
 
     def __getattr__(self, key: str) -> Any:
+        """Get an attribute of the underlying array."""
         return getattr(self.array, key)
 
     def __len__(self) -> int:
@@ -148,13 +152,13 @@ class Data(Generic[Array]):
     # Mapping methods
 
     def keys(self) -> tuple[str, ...]:
-        """Get the keys."""
+        """Get the keys (the names)."""
         return self.names
 
     def values(self) -> tuple[Array, ...]:
-        """Get the values."""
+        """Get the values as an iterator of the columns."""
         return tuple(self[k] for k in self.keys())
 
     def items(self) -> tuple[tuple[str, Array], ...]:
-        """Get the items."""
+        """Get the items as an iterator over the names and columns."""
         return tuple((k, self[k]) for k in self.keys())

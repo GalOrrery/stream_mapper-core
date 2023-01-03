@@ -13,7 +13,7 @@ import torch as xp
 # LOCAL
 from stream_ml.core.data import Data
 from stream_ml.core.prior.base import PriorBase
-from stream_ml.pytorch._typing import Array
+from stream_ml.pytorch.typing import Array
 from stream_ml.pytorch.utils.misc import within_bounds
 
 if TYPE_CHECKING:

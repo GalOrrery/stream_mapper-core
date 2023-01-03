@@ -25,7 +25,11 @@ _VT_co = TypeVar("_VT_co", covariant=True)
 
 
 class SupportsKeysAndGetItem(Protocol[K, _VT_co]):
-    """Protocol that supports keys and getitem."""
+    """Protocol for ``keys()`` and ``__getitem__`` support.
+
+    This is a subset of the ``Mapping`` protocol and the minimum requirement
+    for input to ``FrozenDict``.
+    """
 
     def keys(self) -> Iterable[K]:
         """Return keys."""

@@ -15,18 +15,18 @@ from torch import nn
 from torch.distributions.normal import Normal as TorchNormal
 
 # LOCAL
-from stream_ml.core._typing import BoundsT
 from stream_ml.core.data import Data
 from stream_ml.core.params import ParamBounds, ParamNames, Params
 from stream_ml.core.params.names import ParamNamesField
 from stream_ml.core.prior.bounds import NoBounds
-from stream_ml.core.utils.hashdict import FrozenDict
+from stream_ml.core.typing import BoundsT
+from stream_ml.core.utils.frozendict import FrozenDict
 from stream_ml.pytorch.prior.bounds import PriorBounds, SigmoidBounds
 from stream_ml.pytorch.stream.base import StreamModel
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.pytorch._typing import Array
+    from stream_ml.pytorch.typing import Array
 
 __all__: list[str] = []
 

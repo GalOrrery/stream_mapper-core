@@ -9,16 +9,16 @@ from dataclasses import KW_ONLY, dataclass
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, TypeVar
 
 # LOCAL
-from stream_ml.core._typing import Array, BoundsT
 from stream_ml.core.base import Model
 from stream_ml.core.params import MutableParams, ParamBounds, ParamNames, Params
 from stream_ml.core.prior.base import PriorBase
-from stream_ml.core.utils.hashdict import FrozenDict, FrozenDictField
+from stream_ml.core.typing import Array, BoundsT
+from stream_ml.core.utils.frozendict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.core._typing import FlatParsT
     from stream_ml.core.data import Data
+    from stream_ml.core.typing import FlatParsT
 
 __all__: list[str] = []
 

@@ -13,9 +13,9 @@ from torch import nn
 from stream_ml.core.data import Data
 from stream_ml.core.mixture import MixtureModelBase
 from stream_ml.core.params import Params
-from stream_ml.core.utils.hashdict import FrozenDictField
-from stream_ml.pytorch._typing import Array
+from stream_ml.core.utils.frozendict import FrozenDictField
 from stream_ml.pytorch.base import Model
+from stream_ml.pytorch.typing import Array
 
 __all__: list[str] = []
 

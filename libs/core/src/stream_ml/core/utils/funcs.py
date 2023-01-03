@@ -6,7 +6,7 @@ from __future__ import annotations
 from typing import overload
 
 # LOCAL
-from stream_ml.core._typing import Array
+from stream_ml.core.typing import Array
 
 __all__: list[str] = []
 

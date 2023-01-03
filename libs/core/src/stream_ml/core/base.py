@@ -7,16 +7,16 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, ClassVar, Protocol
 
 # LOCAL
-from stream_ml.core._typing import Array
 from stream_ml.core.data import Data
 from stream_ml.core.params.bounds import ParamBounds, ParamBoundsField
 from stream_ml.core.params.core import Params
 from stream_ml.core.params.names import ParamNamesField
-from stream_ml.core.utils.hashdict import FrozenDict, FrozenDictField
+from stream_ml.core.typing import Array
+from stream_ml.core.utils.frozendict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.core._typing import BoundsT, FlatParsT
+    from stream_ml.core.typing import BoundsT, FlatParsT
 
 __all__: list[str] = []
 
@@ -101,6 +101,9 @@ class Model(Protocol[Array]):
     # ========================================================================
     # Statistics
 
+    # ------------------------------------------------------------------------
+    # Elementwise versions
+
     @abstractmethod
     def ln_likelihood_arr(
         self, pars: Params[Array], data: Data[Array], **kwargs: Array
@@ -140,7 +143,7 @@ class Model(Protocol[Array]):
         raise NotImplementedError
 
     def ln_posterior_arr(
-        self, pars: Params[Array], data: Data[Array], **kwargs: Array
+        self, pars: Params[Array], data: Data[Array], **kw: Array
     ) -> Array:
         """Elementwise log posterior.
 
@@ -150,23 +153,17 @@ class Model(Protocol[Array]):
             Parameters.
         data : Data
             Data.
-        **kwargs : Array
+        **kw : Array
             Arguments.
 
         Returns
         -------
         Array
         """
-        # TODO! move to ModelBase
-        # fmt: off
-        post_arr: Array = (
-            self.ln_likelihood_arr(pars, data, **kwargs)
-            + self.ln_prior_arr(pars, data)
-        )
-        # fmt: on
-        return post_arr
+        return self.ln_likelihood_arr(pars, data, **kw) + self.ln_prior_arr(pars, data)
 
     # ------------------------------------------------------------------------
+    # Scalar versions
 
     def ln_likelihood(
         self, pars: Params[Array], data: Data[Array], **kwargs: Array
@@ -188,7 +185,6 @@ class Model(Protocol[Array]):
         -------
         Array
         """
-        # TODO! move to ModelBase
         return self.ln_likelihood_arr(pars, data, **kwargs).sum()
 
     def ln_prior(self, pars: Params[Array], data: Data[Array]) -> Array:
@@ -205,11 +201,10 @@ class Model(Protocol[Array]):
         -------
         Array
         """
-        # TODO! move to ModelBase
         return self.ln_prior_arr(pars, data).sum()
 
     def ln_posterior(
-        self, pars: Params[Array], data: Data[Array], **kwargs: Array
+        self, pars: Params[Array], data: Data[Array], **kw: Array
     ) -> Array:
         """Log posterior.
 
@@ -219,15 +214,11 @@ class Model(Protocol[Array]):
             Parameters.
         data : Data[Array]
             Data.
-        **kwargs : Array
+        **kw : Array
             Keyword arguments. These are passed to the likelihood function.
 
         Returns
         -------
         Array
         """
-        # TODO! move to ModelBase
-        ln_post: Array = self.ln_likelihood(pars, data, **kwargs) + self.ln_prior(
-            pars, data
-        )
-        return ln_post
+        return self.ln_likelihood(pars, data, **kw) + self.ln_prior(pars, data)

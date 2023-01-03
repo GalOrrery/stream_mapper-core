@@ -65,9 +65,11 @@ class ArrayLike(Protocol):
     # Math Methods
 
     def max(self: Self) -> Self:  # noqa: A003
+        """Maximum."""
         ...
 
     def min(self: Self) -> Self:  # noqa: A003
+        """Minimum."""
         ...
 
     def sum(self: Self, axis: int | None = None) -> Self:  # noqa: A003
@@ -76,7 +78,6 @@ class ArrayLike(Protocol):
 
 
 Array = TypeVar("Array", bound="ArrayLike")
-Array_co = TypeVar("Array_co", bound="ArrayLike", covariant=True)
 
 
 FlatParsT = Mapping[str, Array]

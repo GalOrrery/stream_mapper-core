@@ -8,9 +8,9 @@ from dataclasses import replace
 from typing import TYPE_CHECKING, Any, Generic, Literal, cast, overload
 
 # LOCAL
-from stream_ml.core._typing import Array
 from stream_ml.core.prior.bounds import NoBounds, PriorBounds
-from stream_ml.core.utils.hashdict import FrozenDict
+from stream_ml.core.typing import Array
+from stream_ml.core.utils.frozendict import FrozenDict
 from stream_ml.core.utils.sentinel import MISSING, Sentinel
 
 if TYPE_CHECKING:
@@ -18,11 +18,6 @@ if TYPE_CHECKING:
     from stream_ml.core.params.names import ParamNames
 
 __all__: list[str] = []
-
-#####################################################################
-# PARAMETERS
-
-inf = float("inf")
 
 
 #####################################################################

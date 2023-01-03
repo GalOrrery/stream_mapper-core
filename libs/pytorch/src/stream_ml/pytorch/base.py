@@ -15,12 +15,12 @@ from torch import nn
 from stream_ml.core.base import Model as CoreModel
 from stream_ml.core.data import Data
 from stream_ml.core.params import Params
-from stream_ml.pytorch._typing import Array
 from stream_ml.pytorch.prior.bounds import PriorBounds, SigmoidBounds
+from stream_ml.pytorch.typing import Array
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.pytorch._typing import FlatParsT
+    from stream_ml.pytorch.typing import FlatParsT
 
 __all__: list[str] = []
 

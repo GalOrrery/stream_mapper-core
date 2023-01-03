@@ -11,9 +11,9 @@ import torch as xp
 # LOCAL
 from stream_ml.core.data import Data
 from stream_ml.core.params import ParamBoundsField, ParamNamesField, Params
-from stream_ml.pytorch._typing import Array
 from stream_ml.pytorch.background.base import BackgroundModel
 from stream_ml.pytorch.prior.bounds import SigmoidBounds
+from stream_ml.pytorch.typing import Array
 
 __all__: list[str] = []
 

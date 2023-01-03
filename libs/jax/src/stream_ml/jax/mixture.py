@@ -14,9 +14,9 @@ from jax.scipy.special import logsumexp
 from stream_ml.core.data import Data
 from stream_ml.core.mixture import MixtureModelBase
 from stream_ml.core.params import Params
-from stream_ml.core.utils.hashdict import FrozenDictField
-from stream_ml.jax._typing import Array
+from stream_ml.core.utils.frozendict import FrozenDictField
 from stream_ml.jax.base import Model
+from stream_ml.jax.typing import Array
 
 __all__: list[str] = []
 

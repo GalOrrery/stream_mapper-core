@@ -15,8 +15,8 @@ from torch import nn
 from stream_ml.core.core import ModelBase as CoreModelBase
 from stream_ml.core.data import Data
 from stream_ml.core.params import MutableParams, Params
-from stream_ml.pytorch._typing import Array
 from stream_ml.pytorch.base import Model
+from stream_ml.pytorch.typing import Array
 from stream_ml.pytorch.utils.misc import within_bounds
 
 __all__: list[str] = []

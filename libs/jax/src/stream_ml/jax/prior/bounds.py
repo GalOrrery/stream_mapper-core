@@ -13,7 +13,7 @@ import jax.numpy as xp
 # LOCAL
 from stream_ml.core.data import Data
 from stream_ml.core.prior.bounds import PriorBounds as CorePriorBounds
-from stream_ml.jax._typing import Array
+from stream_ml.jax.typing import Array
 from stream_ml.jax.utils.misc import within_bounds
 from stream_ml.jax.utils.sigmoid import scaled_sigmoid
 

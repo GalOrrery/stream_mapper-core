@@ -10,8 +10,8 @@ from dataclasses import KW_ONLY, dataclass
 from stream_ml.core.data import Data
 from stream_ml.core.params import Params
 from stream_ml.core.stream.base import StreamModel as CoreStreamModel
-from stream_ml.pytorch._typing import Array
 from stream_ml.pytorch.core import ModelBase
+from stream_ml.pytorch.typing import Array
 
 __all__: list[str] = []
 

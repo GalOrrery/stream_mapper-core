@@ -7,9 +7,9 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Callable
 
 # LOCAL
-from stream_ml.core._typing import Array
 from stream_ml.core.data import Data
 from stream_ml.core.prior.base import PriorBase
+from stream_ml.core.typing import Array
 
 if TYPE_CHECKING:
     # LOCAL

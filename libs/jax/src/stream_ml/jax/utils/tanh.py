@@ -10,7 +10,7 @@ import flax.linen as nn
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.jax._typing import Array
+    from stream_ml.jax.typing import Array
 
 __all__: list[str] = []
 
@@ -20,7 +20,6 @@ class Tanh(nn.Module):  # type: ignore[misc]
 
     def setup(self) -> None:
         """Setup."""
-        pass
 
     def __call__(self, x: Array) -> Array:
         """Call."""

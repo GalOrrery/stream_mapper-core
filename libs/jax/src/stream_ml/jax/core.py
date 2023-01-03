@@ -15,8 +15,8 @@ import jax.numpy as xp
 from stream_ml.core.core import ModelBase as CoreModelBase
 from stream_ml.core.data import Data
 from stream_ml.core.params import MutableParams, Params
-from stream_ml.jax._typing import Array
 from stream_ml.jax.base import Model
+from stream_ml.jax.typing import Array
 from stream_ml.jax.utils.misc import within_bounds
 
 __all__: list[str] = []

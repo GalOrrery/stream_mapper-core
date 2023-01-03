@@ -13,11 +13,11 @@ import jax.numpy as xp
 from stream_ml.core.base import Model as CoreModel
 from stream_ml.core.data import Data
 from stream_ml.core.params import Params
-from stream_ml.jax._typing import Array
+from stream_ml.jax.typing import Array
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.jax._typing import FlatParsT
+    from stream_ml.jax.typing import FlatParsT
 
 __all__: list[str] = []
 

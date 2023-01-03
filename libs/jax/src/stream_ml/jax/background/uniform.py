@@ -11,9 +11,9 @@ import jax.numpy as xp
 # LOCAL
 from stream_ml.core.data import Data
 from stream_ml.core.params import ParamBoundsField, ParamNames, ParamNamesField, Params
-from stream_ml.jax._typing import Array
 from stream_ml.jax.background.base import BackgroundModel
 from stream_ml.jax.prior.bounds import SigmoidBounds
+from stream_ml.jax.typing import Array
 
 __all__: list[str] = []
 
