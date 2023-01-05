@@ -5,6 +5,7 @@ from __future__ import annotations
 # STDLIB
 from abc import abstractmethod
 from dataclasses import dataclass
+from typing import Any
 
 # LOCAL
 from stream_ml.core.background.base import BackgroundModel as CoreBackgroundModel
@@ -65,13 +66,15 @@ class BackgroundModel(ModelBase, CoreBackgroundModel[Array]):
     # ML
 
     @abstractmethod
-    def forward(self, data: Data[Array]) -> Array:
+    def __call__(self, *args: Array, **kwargs: Any) -> Array:
         """Forward pass.
 
         Parameters
         ----------
-        data : Data[Array]
+        *args : Array
             Input.
+        **kwargs : Any
+            Keyword arguments.
 
         Returns
         -------

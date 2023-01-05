@@ -4,6 +4,7 @@ from __future__ import annotations
 
 # STDLIB
 from dataclasses import KW_ONLY, dataclass
+from typing import Any
 
 # THIRD-PARTY
 import jax.numpy as xp
@@ -20,7 +21,13 @@ __all__: list[str] = []
 
 @dataclass()
 class Uniform(BackgroundModel):
-    """Uniform background model."""
+    """Uniform background model.
+
+    Raises
+    ------
+    ValueError
+        If there are not 0 features.
+    """
 
     n_features: int = 0
     _: KW_ONLY
@@ -29,17 +36,17 @@ class Uniform(BackgroundModel):
         {"weight": SigmoidBounds(0.0, 1.0, param_name=("weight",))}
     )
 
-    def __post_init__(self) -> None:
-        super().__post_init__()
+    def setup(self) -> None:
+        """JSetup the module's NN.
 
+        Raises
+        ------
+        ValueError
+            If there are not 0 features.
+        """
         # Validate the n_features
         if self.n_features != 0:
             msg = "n_features must be 0 for the uniform background"
-            raise ValueError(msg)
-
-        # Validate the param_names
-        if self.param_names != ("weight",):
-            msg = "param_names must be ('weight',) for the uniform background"
             raise ValueError(msg)
 
         # Pre-compute the log-difference
@@ -92,13 +99,15 @@ class Uniform(BackgroundModel):
     # ========================================================================
     # ML
 
-    def forward(self, data: Data[Array]) -> Array:
+    def __call__(self, *args: Array, **kwargs: Any) -> Array:
         """Forward pass.
 
         Parameters
         ----------
-        data : Data[Array]
+        *args : Array
             Input.
+        **kwargs : Any
+            Keyword arguments.
 
         Returns
         -------
@@ -108,8 +117,7 @@ class Uniform(BackgroundModel):
         nn = xp.asarray([])
 
         # Call the prior to limit the range of the parameters
-        # TODO: a better way to do the order of the priors.
         for prior in self.priors:
-            nn = prior(nn, data, self)
+            nn = prior(nn, args[0], self)
 
         return nn

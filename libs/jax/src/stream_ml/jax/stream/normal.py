@@ -6,6 +6,7 @@ from __future__ import annotations
 import functools
 import operator
 from dataclasses import KW_ONLY, dataclass
+from typing import Any
 
 # THIRD-PARTY
 import flax.linen as nn
@@ -68,7 +69,7 @@ class Normal(StreamModel):
             raise ValueError(msg)
 
         # Validate the param_bounds
-        for pn in self.param_names:
+        for pn in self.param_names.flats:
             # "in X" ignores __contains__ & __getitem__ signatures
             if not self.param_bounds.__contains__(pn):
                 msg = f"param_bounds must contain {pn}."
@@ -194,13 +195,15 @@ class Normal(StreamModel):
     # ========================================================================
     # ML
 
-    def __call__(self, *args: Array) -> Array:
+    def __call__(self, *args: Array, **kwargs: Any) -> Array:
         """Forward pass.
 
         Parameters
         ----------
-        args : Array
+        *args : Array
             Input. Only uses the first argument.
+        **kwargs : Any
+            Keyword arguments.
 
         Returns
         -------

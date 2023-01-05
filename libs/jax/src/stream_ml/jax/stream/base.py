@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 # STDLIB
-import abc
+from abc import abstractmethod
 from dataclasses import dataclass
+from typing import Any
 
 # LOCAL
 from stream_ml.core.data import Data
@@ -23,7 +24,7 @@ class StreamModel(ModelBase, CoreStreamModel[Array]):
     # ========================================================================
     # Statistics
 
-    @abc.abstractmethod
+    @abstractmethod
     def ln_likelihood_arr(
         self, pars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
@@ -44,7 +45,7 @@ class StreamModel(ModelBase, CoreStreamModel[Array]):
         """
         raise NotImplementedError
 
-    @abc.abstractmethod
+    @abstractmethod
     def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
@@ -64,14 +65,36 @@ class StreamModel(ModelBase, CoreStreamModel[Array]):
     # ========================================================================
     # ML
 
-    @abc.abstractmethod
-    def forward(self, data: Data[Array]) -> Array:
+    # TODO: keep moving up the hierarchy!
+    def _forward_prior(self, out: Array, data: Data[Array]) -> Array:
         """Forward pass.
 
         Parameters
         ----------
-        data : Data[Array]
+        out : Array
             Input.
+        data : Data[Array]
+            Data.
+
+        Returns
+        -------
+        Array
+            Same as input.
+        """
+        for bnd in self.param_bounds.flatvalues():
+            out = bnd(out, data, self)
+        return out
+
+    @abstractmethod
+    def __call__(self, *args: Array, **kwargs: Any) -> Array:
+        """Forward pass.
+
+        Parameters
+        ----------
+        *args : Array
+            Input.
+        **kwargs : Any
+            Keyword arguments.
 
         Returns
         -------

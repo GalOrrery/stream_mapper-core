@@ -26,11 +26,9 @@ __all__: list[str] = []
 class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
     """Model base class."""
 
-    @abstractmethod
-    def setup(self) -> None:
-        """Setup."""
+    # ========================================================================
 
-    def unpack_pars_to_arr(self, p_arr: Array) -> Params[Array]:
+    def unpack_params_from_arr(self, p_arr: Array) -> Params[Array]:
         """Unpack parameters into a dictionary.
 
         This function takes a parameter array and unpacks it into a dictionary
@@ -43,7 +41,7 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
 
         Returns
         -------
-        Params[Array]
+        Params
         """
         pars = MutableParams[Array]()
         for i, k in enumerate(self.param_names.flats):
@@ -131,6 +129,10 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
 
     # ========================================================================
     # ML
+
+    @abstractmethod
+    def setup(self) -> None:
+        """Setup."""
 
     @abstractmethod
     def __call__(self, *args: Array) -> Array:
