@@ -59,7 +59,6 @@ class SigmoidBounds(PriorBounds):
 
     def __call__(self, nn: Array, data: Data[Array], model: Model[Array], /) -> Array:
         """Evaluate the forward step in the prior."""
-        # if not self.inplace:
         nn = nn.clone()
 
         col = model.param_names.flats.index(self.param_name)

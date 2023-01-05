@@ -218,9 +218,7 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
                 continue
 
             # Add the component's parameters, prefixed with the component name
-            pars._dict.update(
-                m.unpack_params_from_arr(mp_arr).add_prefix(n + ".", inplace=True)
-            )
+            pars._dict.update(m.unpack_params_from_arr(mp_arr).add_prefix(n + "."))
 
             # Increment the index
             j += len(m.param_names.flat)

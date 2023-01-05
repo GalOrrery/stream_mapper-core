@@ -115,14 +115,9 @@ class Params(Mapping[str, V | Mapping[str, V]]):
             {k[lp:]: v for k, v in self._dict.items() if k.startswith(prefix)}
         )
 
-    def add_prefix(self, prefix: str, *, inplace: bool = False) -> Params[V]:
+    def add_prefix(self, prefix: str, /) -> Params[V]:
         """Add the prefix to the keys."""
-        if inplace:
-            for k in tuple(self._dict.keys()):
-                self._dict[prefix + k] = self._dict.pop(k)
-            return self
-
-        return Params({f"{prefix}{k}": v for k, v in self._dict.items()})
+        return type(self)({f"{prefix}{k}": v for k, v in self.items()})
 
 
 class MutableParams(Params[V], MutableMapping[str, V | MutableMapping[str, V]]):
