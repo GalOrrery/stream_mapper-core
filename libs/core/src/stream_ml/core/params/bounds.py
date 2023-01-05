@@ -118,36 +118,36 @@ class ParamBounds(
 
     def keys(self) -> KeysView[str]:
         """Parameter bounds keys."""
-        return self._mapping.keys()
+        return self._dict.keys()
 
     def values(
         self,
     ) -> ValuesView[PriorBounds[Array] | FrozenDict[str, PriorBounds[Array]]]:
         """Parameter bounds values."""
-        return self._mapping.values()
+        return self._dict.values()
 
     def items(
         self,
     ) -> ItemsView[str, PriorBounds[Array] | FrozenDict[str, PriorBounds[Array]]]:
         """Parameter bounds items."""
-        return self._mapping.items()
+        return self._dict.items()
 
     def __or__(self, other: Any) -> ParamBounds[Array]:
         """Combine two ParamBounds instances."""
         if not isinstance(other, ParamBounds):
             raise NotImplementedError
 
-        pbs = type(self)(**self._mapping)
+        pbs = type(self)(**self._dict)
 
         for k, v in other.items():
             if k not in pbs or isinstance(v, PriorBounds):
-                pbs._mapping[k] = v
+                pbs._dict[k] = v
                 continue
-            elif isinstance((sv := pbs._mapping[k]), PriorBounds):
+            elif isinstance((sv := pbs._dict[k]), PriorBounds):
                 msg = f"mixing tuple and FrozenDict is not allowed: {k}"
                 raise ValueError(msg)
             else:
-                pbs._mapping[k] = sv | v
+                pbs._dict[k] = sv | v
 
         return pbs
 
@@ -199,28 +199,28 @@ class ParamBounds(
         """
         for name, bounds in self.items():
             if isinstance(bounds, Mapping) and not isinstance(bounds, FrozenDict):
-                self._mapping[name] = FrozenDict(bounds)  # type: ignore[unreachable]
+                self._dict[name] = FrozenDict(bounds)  # type: ignore[unreachable]
 
     def _fixup_param_names(self) -> None:
         """Set the parameter name in the prior bounds."""
         for key, bound in self.flatitems():
             k0 = key[0]
-            v = self._mapping[k0]
+            v = self._dict[k0]
             if len(key) == 1:
                 if not isinstance(v, PriorBounds):
                     msg = f"cannot set param_name for {key}"
                     raise ValueError(msg)
-                self._mapping[k0] = replace(bound, param_name=key)
+                self._dict[k0] = replace(bound, param_name=key)
             elif len(key) == 2:
                 k1 = key[1]  # type: ignore[misc]
                 if not isinstance(v, FrozenDict):
                     msg = f"cannot set param_name for {key}"
                     raise ValueError(msg)
-                vv = v._mapping[k1]
+                vv = v._dict[k1]
                 if not isinstance(vv, PriorBounds):
                     msg = f"cannot set param_name for {key}"  # type: ignore[unreachable]  # noqa: E501
                     raise ValueError(msg)
-                v._mapping[k1] = replace(bound, param_name=key)
+                v._dict[k1] = replace(bound, param_name=key)
             else:
                 msg = "somehow this key has more than 2 elements"
                 raise ValueError(msg)

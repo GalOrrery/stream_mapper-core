@@ -43,7 +43,7 @@ class SupportsKeysAndGetItem(Protocol[K, _VT_co]):
 class FrozenDict(Mapping[K, V]):
     """A frozen (hashable) dictionary."""
 
-    __slots__ = ("_mapping",)
+    __slots__ = ("_dict", "_hash")
 
     def __init__(
         self,
@@ -52,42 +52,42 @@ class FrozenDict(Mapping[K, V]):
         **kwargs: V,
     ) -> None:
         # Please do not mutate this dictionary.
-        self._mapping: dict[K, V] = dict(m, **kwargs)
+        self._dict: dict[K, V] = dict(m, **kwargs)
         # Make sure that the dictionary is hashable.
         hash(self)
         return
 
     def __iter__(self) -> Iterator[K]:
-        return iter(self._mapping)
+        return iter(self._dict)
 
     def __len__(self) -> int:
-        return len(self._mapping)
+        return len(self._dict)
 
     def __getitem__(self, key: K) -> V:
-        return self._mapping[key]
+        return self._dict[key]
 
     def __hash__(self) -> int:
-        return hash(tuple(self._mapping.items()))
+        return hash(tuple(self._dict.items()))
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}({self._mapping!r})"
+        return f"{type(self).__name__}({self._dict!r})"
 
     def __or__(self, other: Mapping[K, V]) -> FrozenDict[K, V]:
         if not isinstance(other, FrozenDict):
             raise NotImplementedError
-        return FrozenDict(self._mapping | dict(other))
+        return FrozenDict(self._dict | dict(other))
 
     def keys(self) -> KeysView[K]:
         """Return keys view."""
-        return self._mapping.keys()
+        return self._dict.keys()
 
     def values(self) -> ValuesView[V]:
         """Return values view."""
-        return self._mapping.values()
+        return self._dict.values()
 
     def items(self) -> ItemsView[K, V]:
         """Return items view."""
-        return self._mapping.items()
+        return self._dict.items()
 
 
 class FrozenDictField(Generic[K, V]):

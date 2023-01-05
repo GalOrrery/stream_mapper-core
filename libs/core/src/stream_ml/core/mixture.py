@@ -82,13 +82,13 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
         # TODO: make sure duplicates have the same bounds
         cbs: FrozenDict[str, BoundsT] = FrozenDict()
         for m in self.components.values():
-            cbs._mapping.update(m.coord_bounds)
+            cbs._dict.update(m.coord_bounds)
         self._coord_bounds = cbs
 
         # Add the param_bounds
         cps: ParamBounds[Array] = ParamBounds()
         for n, m in self.components.items():
-            cps._mapping.update({f"{n}_{k}": v for k, v in m.param_bounds.items()})
+            cps._dict.update({f"{n}_{k}": v for k, v in m.param_bounds.items()})
         self._param_bounds = cps
 
         super().__post_init__()
@@ -218,7 +218,7 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
                 continue
 
             # Add the component's parameters, prefixed with the component name
-            pars._mapping.update(
+            pars._dict.update(
                 m.unpack_params_from_arr(mp_arr).add_prefix(n + ".", inplace=True)
             )
 
@@ -227,7 +227,7 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
 
         # Add the dependent parameters
         for name, tie in self.tied_params.items():
-            pars._mapping[name] = tie(pars)
+            pars._dict[name] = tie(pars)
 
         return pars
 
