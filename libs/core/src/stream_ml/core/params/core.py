@@ -3,35 +3,45 @@
 from __future__ import annotations
 
 # STDLIB
-from collections.abc import (
-    ItemsView,
-    Iterable,
-    Iterator,
-    KeysView,
-    Mapping,
-    MutableMapping,
-    ValuesView,
-)
-from typing import Any, TypeVar, cast, overload
+from collections.abc import Iterable, Mapping
+from typing import TypeVar, cast, overload
+
+# LOCAL
+from stream_ml.core.utils.frozendict import FrozenDict
 
 __all__: list[str] = []
+
+
+#####################################################################
+# TYPING
 
 
 V = TypeVar("V")
 
 
-class Params(Mapping[str, V | Mapping[str, V]]):
+#####################################################################
+
+
+class Params(FrozenDict[str, V | FrozenDict[str, V]]):
     """Parameter dictionary."""
 
-    __slots__ = ("_dict",)
+    def __init__(
+        self,
+        m: Mapping[str, V | Mapping[str, V]] = {},
+        /,
+        **kwargs: V | Mapping[str, V],
+    ) -> None:
+        # Freeze sub-dicts
+        d: dict[str, V | FrozenDict[str, V]] = {
+            k: v if not isinstance(v, Mapping) else FrozenDict[str, V](v)
+            for k, v in dict(m, **kwargs).items()
+        }
+        super().__init__(d)
 
-    def __init__(self, m: Any = (), /, **kwargs: V | Mapping[str, V]) -> None:
-        self._dict: MutableMapping[str, V | Mapping[str, V]] = dict(m, **kwargs)
-
-        # TODO: Validation
+    # -----------------------------------------------------
 
     @overload
-    def __getitem__(self, key: str) -> V | Mapping[str, V]:
+    def __getitem__(self, key: str) -> V | FrozenDict[str, V]:
         ...
 
     @overload
@@ -44,7 +54,7 @@ class Params(Mapping[str, V | Mapping[str, V]]):
 
     def __getitem__(
         self, key: str | tuple[str] | tuple[str, str]
-    ) -> V | Mapping[str, V]:
+    ) -> V | FrozenDict[str, V]:
         if isinstance(key, str):
             value = self._dict[key]
         elif len(key) == 1:
@@ -59,36 +69,12 @@ class Params(Mapping[str, V | Mapping[str, V]]):
             raise KeyError(str(key))
         return value
 
-    def __iter__(self) -> Iterator[str]:
-        """Iterate over the keys."""
-        return iter(self._dict)
-
-    def __len__(self) -> int:
-        """Length."""
-        return len(self._dict)
-
-    def __repr__(self) -> str:
-        """String representation."""
-        return f"{type(self).__name__}({self._dict!r})"
-
-    def keys(self) -> KeysView[str]:
-        """Keys."""
-        return self._dict.keys()
-
-    def values(self) -> ValuesView[V | Mapping[str, V]]:
-        """Values."""
-        return self._dict.values()
-
-    def items(self) -> ItemsView[str, V | Mapping[str, V]]:
-        """Items."""
-        return self._dict.items()
-
     # =========================================================================
     # Flat
 
     def flatitems(self) -> Iterable[tuple[str, V]]:
         """Flat items."""
-        for k, v in self._dict.items():
+        for k, v in self.items():
             if not isinstance(v, Mapping):
                 yield k, v
             else:
@@ -111,53 +97,79 @@ class Params(Mapping[str, V | Mapping[str, V]]):
         """Get the keys starting with the prefix, stripped of that prefix."""
         prefix = prefix + "." if not prefix.endswith(".") else prefix
         lp = len(prefix)
-        return Params(
-            {k[lp:]: v for k, v in self._dict.items() if k.startswith(prefix)}
-        )
+        return type(self)({k[lp:]: v for k, v in self.items() if k.startswith(prefix)})
 
     def add_prefix(self, prefix: str, /) -> Params[V]:
         """Add the prefix to the keys."""
         return type(self)({f"{prefix}{k}": v for k, v in self.items()})
 
 
-class MutableParams(Params[V], MutableMapping[str, V | MutableMapping[str, V]]):
-    """Mutable Params."""
+#####################################################################
 
-    @overload
-    def __setitem__(self, key: str, value: V | MutableMapping[str, V]) -> None:
-        ...
 
-    @overload
-    def __setitem__(self, key: tuple[str], value: V | MutableMapping[str, V]) -> None:
-        ...
+def freeze_params(m: Mapping[str, V | Mapping[str, V]], /) -> Params[V]:
+    """Freeze a mapping of parameters."""
+    return Params(m)
 
-    @overload
-    def __setitem__(self, key: tuple[str, str], value: V) -> None:
-        ...
 
-    def __setitem__(
-        self, key: str | tuple[str] | tuple[str, str], value: V | MutableMapping[str, V]
-    ) -> None:
-        if isinstance(key, str):
-            self._dict[key] = value
-        elif len(key) == 1:
-            self._dict[key[0]] = value
-        else:
-            key = cast("tuple[str, str]", key)  # TODO: remove cast
-            if key[0] not in self._dict:
-                self._dict[key[0]] = {}
-            if not isinstance((cm := self._dict[key[0]]), MutableMapping):
-                raise KeyError(str(key))
-            cm[key[1]] = value
+def unfreeze_params(
+    pars: Params[V],
+    /,
+) -> dict[str, V | dict[str, V]]:
+    """Unfreeze a mapping of parameters."""
+    return {k: v if not isinstance(v, Mapping) else dict(v) for k, v in pars.items()}
 
-    def __delitem__(self, key: str | tuple[str] | tuple[str, str]) -> None:
-        if isinstance(key, str):
-            del self._dict[key]
-        elif len(key) == 1:
-            del self._dict[key[0]]
-        else:
-            key = cast("tuple[str, str]", key)
-            cm = self._dict[key[0]]
-            if not isinstance(cm, MutableMapping):
-                raise KeyError(str(key))
-            del cm[key[1]]
+
+# -----------------------------------------------------
+
+
+@overload
+def set_param(
+    m: dict[str, V | dict[str, V]],
+    /,
+    key: str,
+    value: V | dict[str, V],
+) -> None:
+    ...
+
+
+@overload
+def set_param(
+    m: dict[str, V | dict[str, V]],
+    /,
+    key: tuple[str],
+    value: V | dict[str, V],
+) -> None:
+    ...
+
+
+@overload
+def set_param(
+    m: dict[str, V | dict[str, V]],
+    /,
+    key: tuple[str, str],
+    value: V,
+) -> None:
+    ...
+
+
+def set_param(
+    m: dict[str, V | dict[str, V]],
+    /,
+    key: str | tuple[str] | tuple[str, str],
+    value: V | dict[str, V],
+) -> None:
+    """Set a parameter in-place."""
+    if isinstance(key, str):
+        m[key] = value
+    elif len(key) == 1:
+        m[key[0]] = value
+    else:
+        key = cast("tuple[str, str]", key)  # TODO: remove cast
+        if key[0] not in m:
+            m[key[0]] = {}
+        if not isinstance((cm := m[key[0]]), dict):
+            raise KeyError(str(key))
+        cm[key[1]] = value  # type: ignore[assignment]
+
+    return

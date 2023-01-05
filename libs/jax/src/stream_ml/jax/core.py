@@ -14,7 +14,7 @@ import jax.numpy as xp
 # LOCAL
 from stream_ml.core.core import ModelBase as CoreModelBase
 from stream_ml.core.data import Data
-from stream_ml.core.params import MutableParams, Params
+from stream_ml.core.params import Params, freeze_params, set_param
 from stream_ml.jax.base import Model
 from stream_ml.jax.typing import Array
 from stream_ml.jax.utils.misc import within_bounds
@@ -43,10 +43,10 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
         -------
         Params
         """
-        pars = MutableParams[Array]()
+        pars: dict[str, Array | dict[str, Array]] = {}
         for i, k in enumerate(self.param_names.flats):
-            pars[k] = p_arr[:, i]
-        return Params(pars)
+            set_param(pars, k, p_arr[:, i : i + 1])
+        return freeze_params(pars)
 
     def pack_params_to_arr(self, pars: Params[Array]) -> Array:
         """Pack parameters into an array.

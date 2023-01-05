@@ -17,7 +17,7 @@ from stream_ml.jax.typing import Array
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.jax.typing import FlatParsT
+    pass
 
 __all__: list[str] = []
 
@@ -41,26 +41,6 @@ class Model(CoreModel[Array], Protocol):
         """Setup."""
 
     # ========================================================================
-
-    @abstractmethod
-    def unpack_params(self, packed_pars: FlatParsT) -> Params[Array]:
-        """Unpack parameters into a dictionary.
-
-        This function takes a parameter array and unpacks it into a dictionary
-        with the parameter names as keys.
-
-        Parameters
-        ----------
-        packed_pars : Array
-            Flat dictionary of parameters.
-
-        Returns
-        -------
-        Params[Array]
-            Nested dictionary of parameters wth parameters grouped by coordinate
-            name.
-        """
-        raise NotImplementedError
 
     @abstractmethod
     def unpack_params_from_arr(self, p_arr: Array) -> Params[Array]:

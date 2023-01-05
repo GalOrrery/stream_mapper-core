@@ -14,7 +14,7 @@ from torch import nn
 # LOCAL
 from stream_ml.core.core import ModelBase as CoreModelBase
 from stream_ml.core.data import Data
-from stream_ml.core.params import MutableParams, Params
+from stream_ml.core.params import Params, freeze_params, set_param
 from stream_ml.pytorch.base import Model
 from stream_ml.pytorch.typing import Array
 from stream_ml.pytorch.utils.misc import within_bounds
@@ -41,12 +41,12 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
 
         Returns
         -------
-        Params
+        Params[Array]
         """
-        pars = MutableParams[Array]()
+        pars: dict[str, Array | dict[str, Array]] = {}
         for i, k in enumerate(self.param_names.flats):
-            pars[k] = p_arr[:, i : i + 1]
-        return Params(pars)
+            set_param(pars, k, p_arr[:, i : i + 1])
+        return freeze_params(pars)
 
     def pack_params_to_arr(self, pars: Params[Array]) -> Array:
         """Pack parameters into an array.

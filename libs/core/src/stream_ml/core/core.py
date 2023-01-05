@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, ClassVar
 # LOCAL
 from stream_ml.core.base import Model
 from stream_ml.core.data import Data
-from stream_ml.core.params import MutableParams, ParamBounds, ParamNamesField, Params
+from stream_ml.core.params import ParamBounds, ParamNamesField, Params
 from stream_ml.core.params.bounds import ParamBoundsField
 from stream_ml.core.params.names import FlatParamName
 from stream_ml.core.prior.base import PriorBase
@@ -21,7 +21,7 @@ from stream_ml.core.utils.frozendict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.core.typing import FlatParsT
+    pass
 
 __all__: list[str] = []
 
@@ -102,37 +102,6 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
         self.param_bounds = param_bounds
 
     # ========================================================================
-
-    def unpack_params(self, packed_pars: FlatParsT[Array]) -> Params[Array]:
-        """Unpack parameters into a dictionary.
-
-        Unpack a flat dictionary of parameters -- where keys have coordinate name,
-        parameter name, and model component name -- into a nested dictionary with
-        parameters grouped by coordinate name.
-
-        Parameters
-        ----------
-        packed_pars : Array
-            Parameter array.
-
-        Returns
-        -------
-        Params[Array]
-        """
-        pars = MutableParams[Array]()
-
-        for k in packed_pars:
-            # Find the non-coordinate-specific parameters.
-            if k in self.param_bounds:
-                pars[k] = packed_pars[k]
-                continue
-
-            # separate the coordinate and parameter names.
-            coord_name, par_name = k.split("_", maxsplit=1)
-            # Add the parameter to the coordinate-specific dict.
-            pars[coord_name, par_name] = packed_pars[k]
-
-        return pars
 
     @abstractmethod
     def unpack_params_from_arr(self, p_arr: Array) -> Params[Array]:

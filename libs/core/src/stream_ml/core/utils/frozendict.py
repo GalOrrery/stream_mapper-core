@@ -90,6 +90,9 @@ class FrozenDict(Mapping[K, V]):
         return self._dict.items()
 
 
+# ===================================================================
+
+
 class FrozenDictField(Generic[K, V]):
     """Dataclass descriptor for a frozen map."""
 

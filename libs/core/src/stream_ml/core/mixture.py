@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Callable, ClassVar, TypeVar
 
 # LOCAL
 from stream_ml.core.base import Model
-from stream_ml.core.params import MutableParams, ParamBounds, ParamNames, Params
+from stream_ml.core.params import ParamBounds, ParamNames, Params
 from stream_ml.core.prior.base import PriorBase
 from stream_ml.core.typing import Array, BoundsT
 from stream_ml.core.utils.frozendict import FrozenDict, FrozenDictField
@@ -155,7 +155,7 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
 
     # ===============================================================
 
-    def unpack_params(self, packed_pars: FlatParsT[Array]) -> Params[Array]:
+    def unpack_params(self, packed_pars: FlatParsT[Array], /) -> Params[Array]:
         """Unpack parameters into a dictionary.
 
         Unpack a flat dictionary of parameters -- where keys have coordinate name,
@@ -164,7 +164,7 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
 
         Parameters
         ----------
-        packed_pars : Array
+        packed_pars : Array, positional-only
             Flat dictionary of parameters.
 
         Returns
@@ -173,21 +173,7 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
             Nested dictionary of parameters wth parameters grouped by coordinate
             name.
         """
-        # FIXME! this doesn't work with the model components.
-        pars = MutableParams[Array]()
-
-        for k in packed_pars:
-            # Find the non-coordinate-specific parameters.
-            if k in self.param_bounds:
-                pars[k] = packed_pars[k]
-                continue
-
-            # separate the coordinate and parameter names.
-            coord_name, par_name = k.split("_", maxsplit=1)
-            # Add the parameter to the coordinate-specific dict.
-            pars[coord_name, par_name] = packed_pars[k]
-
-        return Params(pars)
+        return super().unpack_params(packed_pars)
 
     def unpack_params_from_arr(self, p_arr: Array) -> Params[Array]:
         """Unpack parameters into a dictionary.
