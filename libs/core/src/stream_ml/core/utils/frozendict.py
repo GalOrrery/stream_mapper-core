@@ -117,6 +117,7 @@ class FrozenDict(Mapping[K, V]):
         return len(self._dict)
 
     def __getitem__(self, key: K) -> V:
+        # if isinstance(v, dict):  # TODO: in flax but hard to type
         return self._dict[key]
 
     def __hash__(self) -> int:
