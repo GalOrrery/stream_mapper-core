@@ -1,4 +1,22 @@
-"""Core feature."""
+"""Frozen dictionary.
+
+Modified from flax, with the following license:
+::
+
+    Copyright 2022 The Flax Authors.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+"""
 
 from __future__ import annotations
 
@@ -40,6 +58,42 @@ class SupportsKeysAndGetItem(Protocol[K, _VT_co]):
         ...
 
 
+# ===================================================================
+
+
+class FrozenKeysView(KeysView[K]):
+    """A wrapper for a more useful repr of the keys in a frozen dict."""
+
+    def __iter__(self) -> Iterator[K]:
+        return super().__iter__()
+
+    def __repr__(self) -> str:
+        return f"frozen_dict_keys({list(self)})"
+
+
+class FrozenValuesView(ValuesView[V]):
+    """A wrapper for a more useful repr of the values in a frozen dict."""
+
+    def __iter__(self) -> Iterator[V]:
+        return super().__iter__()
+
+    def __repr__(self) -> str:
+        return f"frozen_dict_values({list(self)})"
+
+
+class FrozenItemsView(ItemsView[K, V]):
+    """A wrapper for a more useful repr of the items in a frozen dict."""
+
+    def __iter__(self) -> Iterator[tuple[K, V]]:
+        return super().__iter__()
+
+    def __repr__(self) -> str:
+        return f"frozen_dict_items({list(self)})"
+
+
+# ===================================================================
+
+
 class FrozenDict(Mapping[K, V]):
     """A frozen (hashable) dictionary."""
 
@@ -79,15 +133,15 @@ class FrozenDict(Mapping[K, V]):
 
     def keys(self) -> KeysView[K]:
         """Return keys view."""
-        return self._dict.keys()
+        return FrozenKeysView(self)
 
     def values(self) -> ValuesView[V]:
         """Return values view."""
-        return self._dict.values()
+        return FrozenValuesView(self)
 
     def items(self) -> ItemsView[K, V]:
         """Return items view."""
-        return self._dict.items()
+        return FrozenItemsView(self)
 
 
 # ===================================================================
