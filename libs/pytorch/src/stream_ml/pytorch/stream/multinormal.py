@@ -54,21 +54,9 @@ class MultivariateNormal(StreamModel):
     def __post_init__(self) -> None:
         super().__post_init__()
 
-        # Validate the param_names
-        expect = (
-            ("weight",),
-            *((c, p) for c in self.coord_names for p in ("mu", "sigma")),
-        )
-        if self.param_names.flats != expect:
-            msg = f"Expected param_names.flats={expect}, got {self.param_names.flats}"
-            raise ValueError(msg)
-
         # Validate the param_bounds
-        if self.param_bounds.flatkeys() != expect:
-            msg = (
-                f"Expected param_bounds.flatkeys()={expect}, "
-                f"got {self.param_bounds.flatkeys()}"
-            )
+        if self.param_bounds.flatkeys() != self.param_names.flats:
+            msg = "param_bounds keys do not match param_names"
             raise ValueError(msg)
 
         # Define the layers of the neural network:
