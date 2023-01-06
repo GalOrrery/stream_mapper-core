@@ -95,7 +95,21 @@ class FrozenItemsView(ItemsView[K, V]):
 
 
 class FrozenDict(Mapping[K, V]):
-    """A frozen (hashable) dictionary."""
+    """A frozen (hashable) dictionary.
+
+    Parameters
+    ----------
+    m: SupportsKeysAndGetItem[K, V] | Iterable[tuple[K, V]], optional positional-only
+        Mapping argument. See ``dict`` for details.
+    __unsafe_skip_copy__: bool, optional keyword-only
+        If ``True``, the input mapping is used directly. This is unsafe because
+        the input mapping may be mutated after the ``FrozenDict`` is created.
+        This is used internally to avoid copying the input mapping when it is
+        already a ``FrozenDict``. Default is ``False``. This argument is
+        private and should not be used.
+    **kwargs: V, optional keyword-only
+        Additional keyword arguments. See ``dict`` for details.
+    """
 
     __slots__ = ("_dict", "_hash")
 
@@ -103,6 +117,8 @@ class FrozenDict(Mapping[K, V]):
         self,
         m: SupportsKeysAndGetItem[K, V] | Iterable[tuple[K, V]] = (),
         /,
+        *,
+        __unsafe_skip_copy__: bool = False,
         **kwargs: V,
     ) -> None:
         # Please do not mutate this dictionary.
@@ -135,8 +151,6 @@ class FrozenDict(Mapping[K, V]):
         return f"{type(self).__name__}({self._dict!r})"
 
     def __or__(self, other: Mapping[K, V]) -> FrozenDict[K, V]:
-        if not isinstance(other, FrozenDict):
-            raise NotImplementedError
         return FrozenDict(self._dict | dict(other))
 
     def __reduce__(self) -> tuple[type, tuple[dict[K, V]]]:
@@ -156,9 +170,9 @@ class FrozenDict(Mapping[K, V]):
         """Return items view."""
         return FrozenItemsView(self)
 
-    def copy(self, add_or_replace: Mapping[K, V]) -> FrozenDict[K, V]:
+    def copy(self, add_or_replace: Mapping[K, V] | None = None) -> FrozenDict[K, V]:
         """Create a new FrozenDict with additional or replaced entries."""
-        return type(self)({**self, **add_or_replace})
+        return type(self)({**self, **(add_or_replace or {})})
 
     def pop(self, key: K) -> tuple[FrozenDict[K, V], V]:
         """Create a new FrozenDict where one entry is removed.
