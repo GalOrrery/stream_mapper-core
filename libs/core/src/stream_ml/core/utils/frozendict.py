@@ -121,9 +121,8 @@ class FrozenDict(Mapping[K, V]):
         __unsafe_skip_copy__: bool = False,
         **kwargs: V,
     ) -> None:
-        # Please do not mutate this dictionary.
-        self._dict: dict[K, V] = dict(m, **kwargs)
-        # Make sure that the dictionary is hashable.
+        xs: dict[K, V] = dict(m, **kwargs)
+        self._dict = xs
         self._hash: int | None = None
 
     def __iter__(self) -> Iterator[K]:
@@ -200,6 +199,21 @@ class FrozenDict(Mapping[K, V]):
         new_dict.pop(key)
         new_self = type(self)(new_dict)
         return new_self, value
+
+
+def freeze(xs: Mapping[K, V]) -> FrozenDict[K, V]:
+    """Freeze a nested dict.
+
+    Makes a nested `dict` immutable by transforming it into `FrozenDict`.
+
+    Args:
+        xs: Dictionary to freeze (a regualr Python dict).
+
+    Returns
+    -------
+        The frozen dictionary.
+    """
+    return FrozenDict(xs)
 
 
 ###############################################################################
