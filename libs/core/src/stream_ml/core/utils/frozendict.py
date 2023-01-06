@@ -120,6 +120,9 @@ class FrozenDict(Mapping[K, V]):
         # if isinstance(v, dict):  # TODO: in flax but hard to type
         return self._dict[key]
 
+    def __contains__(self, key: object) -> bool:
+        return key in self._dict
+
     def __hash__(self) -> int:
         if self._hash is None:
             h = 0

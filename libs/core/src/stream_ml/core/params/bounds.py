@@ -164,7 +164,16 @@ class ParamBounds(
         ...
 
     def __contains__(self, o: Any, /) -> bool:
-        return super().__contains__(o)
+        """Check if a key is in the ParamBounds instance."""
+        if isinstance(o, str):
+            return super().__contains__(o)
+        else:
+            try:
+                self[o]
+            except KeyError:
+                return False
+            else:
+                return True
 
     # =========================================================================
     # Flat
