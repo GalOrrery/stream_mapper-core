@@ -108,8 +108,7 @@ class FrozenDict(Mapping[K, V]):
         # Please do not mutate this dictionary.
         self._dict: dict[K, V] = dict(m, **kwargs)
         # Make sure that the dictionary is hashable.
-        hash(self)
-        return
+        self._hash: int | None = None
 
     def __iter__(self) -> Iterator[K]:
         return iter(self._dict)
@@ -121,7 +120,12 @@ class FrozenDict(Mapping[K, V]):
         return self._dict[key]
 
     def __hash__(self) -> int:
-        return hash(tuple(self._dict.items()))
+        if self._hash is None:
+            h = 0
+            for key, value in self.items():
+                h ^= hash((key, value))
+            self._hash = h
+        return self._hash
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self._dict!r})"
@@ -130,6 +134,11 @@ class FrozenDict(Mapping[K, V]):
         if not isinstance(other, FrozenDict):
             raise NotImplementedError
         return FrozenDict(self._dict | dict(other))
+
+    def __reduce__(self) -> tuple[type, tuple[dict[K, V]]]:
+        return type(self), (self._dict,)
+
+    # ===================================================================
 
     def keys(self) -> KeysView[K]:
         """Return keys view."""
@@ -143,8 +152,12 @@ class FrozenDict(Mapping[K, V]):
         """Return items view."""
         return FrozenItemsView(self)
 
+    def copy(self, add_or_replace: Mapping[K, V]) -> FrozenDict[K, V]:
+        """Create a new FrozenDict with additional or replaced entries."""
+        return type(self)({**self, **add_or_replace})
 
-# ===================================================================
+
+###############################################################################
 
 
 class FrozenDictField(Generic[K, V]):
