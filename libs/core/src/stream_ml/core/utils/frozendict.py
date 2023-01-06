@@ -160,6 +160,33 @@ class FrozenDict(Mapping[K, V]):
         """Create a new FrozenDict with additional or replaced entries."""
         return type(self)({**self, **add_or_replace})
 
+    def pop(self, key: K) -> tuple[FrozenDict[K, V], V]:
+        """Create a new FrozenDict where one entry is removed.
+
+        Parameters
+        ----------
+        key: K
+            the key to remove from the dict
+
+        Returns
+        -------
+        new_self: FrozenDict[K, V]
+            A new FrozenDict with the removed value.
+        value: V
+            The removed value.
+
+        Examples
+        --------
+        >>> d = FrozenDict({"a": 1, "b": 2})
+        >>> d.pop("a")
+        FrozenDict({'b': 2}), 1
+        """
+        value = self[key]
+        new_dict = dict(self._dict)
+        new_dict.pop(key)
+        new_self = type(self)(new_dict)
+        return new_self, value
+
 
 ###############################################################################
 
