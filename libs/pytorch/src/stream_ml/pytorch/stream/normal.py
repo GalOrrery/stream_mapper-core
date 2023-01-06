@@ -57,17 +57,13 @@ class Normal(StreamModel):
     def __post_init__(self) -> None:
         super().__post_init__()
 
+        # Validate param bounds.
+        self.param_bounds.validate(self.param_names)
+
         # Validate the coord_names
         if len(self.coord_names) != 1:
             msg = "Only one coordinate is supported, e.g ('phi2',)"
             raise ValueError(msg)
-
-        # Validate the param_bounds
-        for pn in self.param_names.flats:
-            if not self.param_bounds.__contains__(pn):
-                msg = f"param_bounds must contain {pn} (unflattened)."
-                raise ValueError(msg)
-        # TODO: recursively check for all sub-parameters
 
         # Define the layers of the neural network:
         # Total: in (phi) -> out (fraction, mean, sigma)

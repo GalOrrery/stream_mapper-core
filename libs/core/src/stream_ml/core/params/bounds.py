@@ -234,6 +234,18 @@ class ParamBounds(
                 msg = "somehow this key has more than 2 elements"
                 raise ValueError(msg)
 
+    def validate(self, names: ParamNames, *, error: bool = False) -> bool | None:
+        """Check that the paramter bounds are consistendt with the model."""
+        if self.flatkeys() != names.flats:
+            if error:
+                # TODO: more informative error.
+                msg = "param_bounds keys do not match param_names"
+                raise ValueError(msg)
+            else:
+                return False
+
+        return True
+
 
 class ParamBoundsField(Generic[Array]):
     """Dataclass descriptor for parameter bounds.
