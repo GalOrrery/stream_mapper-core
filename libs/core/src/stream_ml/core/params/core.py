@@ -69,7 +69,7 @@ class Params(FrozenDict[str, V | FrozenDict[str, V]]):
             raise KeyError(str(key))
         return value
 
-    def unfreeze(self) -> dict[str, V | dict[str, V]]:
+    def unfreeze(self) -> dict[str, V | dict[str, V]]:  # type: ignore[override]
         """Unfreeze the parameters."""
         return unfreeze_params(self)
 

@@ -122,7 +122,7 @@ class FrozenDict(Mapping[K, V]):
         **kwargs: V,
     ) -> None:
         xs: dict[K, V] = dict(m, **kwargs)
-        self._dict = xs
+        self._dict = xs if __unsafe_skip_copy__ else _prepare_freeze(xs)
         self._hash: int | None = None
 
     def __iter__(self) -> Iterator[K]:
@@ -153,7 +153,7 @@ class FrozenDict(Mapping[K, V]):
         return FrozenDict(self._dict | dict(other))
 
     def __reduce__(self) -> tuple[type, tuple[dict[K, V]]]:
-        return type(self), (self._dict,)
+        return type(self), (self.unfreeze(),)
 
     # ===================================================================
 
@@ -200,6 +200,34 @@ class FrozenDict(Mapping[K, V]):
         new_self = type(self)(new_dict)
         return new_self, value
 
+    def unfreeze(self) -> dict[K, V]:
+        """Unfreeze this FrozenDict.
+
+        Return:
+        ------
+        dict[K, V]
+            An unfrozen version of this FrozenDict instance.
+        """
+        return unfreeze(self)
+
+
+def _recursive_prepare_freeze(xs: FrozenDict[K, V] | Mapping[K, V], /) -> dict[K, V]:
+    """Deep copy unfrozen dicts to make the dictionary FrozenDict safe."""
+    # recursively copy dictionary to avoid ref sharing
+    return {
+        k: _recursive_prepare_freeze(v)  # type: ignore[misc]
+        if (isinstance(v, (Mapping, dict)) and not isinstance(xs, FrozenDict))
+        else v
+        for k, v in xs.items()
+    }
+
+
+def _prepare_freeze(xs: Mapping[K, V]) -> dict[K, V]:
+    """Deep copy unfrozen dicts to make the dictionary FrozenDict safe."""
+    if isinstance(xs, FrozenDict):
+        return xs._dict
+    return dict(xs)  # TODO: use _recursive_prepare_freeze(xs)
+
 
 def freeze(xs: Mapping[K, V]) -> FrozenDict[K, V]:
     """Freeze a nested dict.
@@ -214,6 +242,34 @@ def freeze(xs: Mapping[K, V]) -> FrozenDict[K, V]:
         The frozen dictionary.
     """
     return FrozenDict(xs)
+
+
+def _recursive_unfreeze(x: Mapping[K, V], /) -> dict[K, V]:
+    ys = {}
+    for k, v in x.items():
+        if isinstance(v, Mapping):
+            v = _recursive_unfreeze(v)  # type: ignore[assignment]
+        ys[k] = v
+    return ys
+
+
+def unfreeze(x: FrozenDict[K, V]) -> dict[K, V]:
+    """Unfreeze a FrozenDict.
+
+    Makes a mutable copy of a `FrozenDict` mutable by transforming
+    it into (nested) dict.
+
+    Parameters
+    ----------
+    x: FrozenDict
+        Frozen dictionary to unfreeze.
+
+    Returns
+    -------
+    dict
+        The unfrozen dictionary.
+    """
+    return _recursive_unfreeze(x)
 
 
 ###############################################################################
