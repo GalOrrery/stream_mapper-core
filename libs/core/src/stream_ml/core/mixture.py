@@ -13,7 +13,7 @@ from stream_ml.core.base import Model
 from stream_ml.core.params import ParamBounds, ParamNames, Params
 from stream_ml.core.prior.base import PriorBase
 from stream_ml.core.typing import Array, BoundsT
-from stream_ml.core.utils.frozendict import FrozenDict, FrozenDictField
+from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
     # LOCAL

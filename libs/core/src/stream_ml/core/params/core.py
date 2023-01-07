@@ -7,7 +7,7 @@ from collections.abc import Iterable, Mapping
 from typing import TypeVar, cast, overload
 
 # LOCAL
-from stream_ml.core.utils.frozendict import FrozenDict
+from stream_ml.core.utils.frozen_dict import FrozenDict
 
 __all__: list[str] = []
 
@@ -32,10 +32,11 @@ class Params(FrozenDict[str, V | FrozenDict[str, V]]):
         **kwargs: V | Mapping[str, V],
     ) -> None:
         # Freeze sub-dicts
-        d: dict[str, V | FrozenDict[str, V]] = {
-            k: v if not isinstance(v, Mapping) else FrozenDict[str, V](v)
-            for k, v in dict(m, **kwargs).items()
-        }
+        d: dict[str, V | FrozenDict[str, V]] = {}
+        for k, v in dict(m, **kwargs).items():
+            if isinstance(v, Mapping):
+                v = FrozenDict[str, V](v)
+            d[k] = v
         super().__init__(d)
 
     # -----------------------------------------------------

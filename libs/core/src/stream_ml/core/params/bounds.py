@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 # STDLIB
-from collections.abc import ItemsView, Iterable, KeysView, Mapping, ValuesView
+from collections.abc import Iterable, Mapping
 from dataclasses import replace
 from typing import TYPE_CHECKING, Any, Generic, Literal, cast, overload
 
 # LOCAL
 from stream_ml.core.prior.bounds import NoBounds, PriorBounds
 from stream_ml.core.typing import Array
-from stream_ml.core.utils.frozendict import FrozenDict
+from stream_ml.core.utils.frozen_dict import FrozenDict
 from stream_ml.core.utils.sentinel import MISSING, Sentinel
 
 if TYPE_CHECKING:
@@ -42,7 +42,6 @@ class ParamBounds(
             elif v is None:
                 pb[k] = NoBounds()
             elif isinstance(v, Mapping):
-                # TODO: not cast to dict if already a FrozenDict
                 pb[k] = FrozenDict(
                     {
                         kk: (vv if isinstance(vv, PriorBounds) else NoBounds())
@@ -53,7 +52,7 @@ class ParamBounds(
                 msg = f"Invalid element type: {type(v)}"
                 raise TypeError(msg)
 
-        super().__init__(pb)
+        super().__init__(pb, __unsafe_skip_copy__=True)
 
     @classmethod
     def from_names(
@@ -116,41 +115,6 @@ class ParamBounds(
             value = v[key[1]]
         return value  # noqa: RET504
 
-    def keys(self) -> KeysView[str]:
-        """Parameter bounds keys."""
-        return self._dict.keys()
-
-    def values(
-        self,
-    ) -> ValuesView[PriorBounds[Array] | FrozenDict[str, PriorBounds[Array]]]:
-        """Parameter bounds values."""
-        return self._dict.values()
-
-    def items(
-        self,
-    ) -> ItemsView[str, PriorBounds[Array] | FrozenDict[str, PriorBounds[Array]]]:
-        """Parameter bounds items."""
-        return self._dict.items()
-
-    def __or__(self, other: Any) -> ParamBounds[Array]:
-        """Combine two ParamBounds instances."""
-        if not isinstance(other, ParamBounds):
-            raise NotImplementedError
-
-        pbs = type(self)(**self._dict)
-
-        for k, v in other.items():
-            if k not in pbs or isinstance(v, PriorBounds):
-                pbs._dict[k] = v
-                continue
-            elif isinstance((sv := pbs._dict[k]), PriorBounds):
-                msg = f"mixing tuple and FrozenDict is not allowed: {k}"
-                raise ValueError(msg)
-            else:
-                pbs._dict[k] = sv | v
-
-        return pbs
-
     @overload
     def __contains__(self, o: str, /) -> bool:
         ...
@@ -166,7 +130,7 @@ class ParamBounds(
     def __contains__(self, o: Any, /) -> bool:
         """Check if a key is in the ParamBounds instance."""
         if isinstance(o, str):
-            return super().__contains__(o)
+            return bool(super().__contains__(o))
         else:
             try:
                 self[o]
@@ -199,16 +163,6 @@ class ParamBounds(
 
     # =========================================================================
     # Misc
-
-    def _freeze(self) -> None:
-        """Freeze the bounds.
-
-        At runtime, it is hard to enforce that the Mapping containers are
-        FrozenDict. This method will clean this up.
-        """
-        for name, bounds in self.items():
-            if isinstance(bounds, Mapping) and not isinstance(bounds, FrozenDict):
-                self._dict[name] = FrozenDict(bounds)  # type: ignore[unreachable]
 
     def _fixup_param_names(self) -> None:
         """Set the parameter name in the prior bounds."""

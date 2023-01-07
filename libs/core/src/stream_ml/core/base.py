@@ -12,7 +12,7 @@ from stream_ml.core.params.bounds import ParamBounds, ParamBoundsField
 from stream_ml.core.params.core import Params, freeze_params, set_param
 from stream_ml.core.params.names import ParamNamesField
 from stream_ml.core.typing import Array
-from stream_ml.core.utils.frozendict import FrozenDict, FrozenDictField
+from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
     # LOCAL
@@ -37,11 +37,7 @@ class Model(Protocol[Array]):
     DEFAULT_BOUNDS: ClassVar  # TODO: PriorBounds[Any]
 
     def __post_init__(self) -> None:
-        # Make sure the pieces of param_bounds are hashable. Static type
-        # checkers will complain about mutable input, but this allows for the
-        # run-time behavior to work regardless.
-        self.param_bounds._freeze()
-        return
+        pass
 
     # ========================================================================
 

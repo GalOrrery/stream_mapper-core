@@ -1,6 +1,6 @@
 """Frozen dictionary.
 
-Modified from flax, with the following license:
+Modified from :mod:`~flax`, with the following license:
 ::
 
     Copyright 2022 The Flax Authors.
@@ -16,6 +16,15 @@ Modified from flax, with the following license:
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
+
+Main changes:
+
+- static typing
+- ``__or__`` method
+- FrozenItemsView
+- FrozenDictField
+- default value for ``add_or_replace`` in ``copy``
+- removed jax stuff
 """
 
 from __future__ import annotations
@@ -30,16 +39,24 @@ from collections.abc import (
     Sequence,
     ValuesView,
 )
-from typing import Generic, Literal, Protocol, TypeVar
+from typing import Any, Generic, Literal, Protocol, TypeVar
 
 # LOCAL
 from stream_ml.core.utils.sentinel import MISSING, Sentinel
 
 __all__: list[str] = []
 
+
+###############################################################################
+
+
 K = TypeVar("K")
 V = TypeVar("V")
+Self = TypeVar("Self", bound="FrozenDict[K, V]")  # type: ignore[valid-type]
 _VT_co = TypeVar("_VT_co", covariant=True)
+
+
+###############################################################################
 
 
 class SupportsKeysAndGetItem(Protocol[K, _VT_co]):
@@ -149,8 +166,10 @@ class FrozenDict(Mapping[K, V]):
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self._dict!r})"
 
-    def __or__(self, other: Mapping[K, V]) -> FrozenDict[K, V]:
-        return FrozenDict(self._dict | dict(other))
+    def __or__(self: Self, other: Any | FrozenDict[K, V]) -> Self:
+        if not isinstance(other, type(self)):
+            return NotImplemented
+        return type(self)(self._dict | other._dict)
 
     def __reduce__(self) -> tuple[type, tuple[dict[K, V]]]:
         return type(self), (self.unfreeze(),)
@@ -211,43 +230,48 @@ class FrozenDict(Mapping[K, V]):
         return unfreeze(self)
 
 
-def _recursive_prepare_freeze(xs: FrozenDict[K, V] | Mapping[K, V], /) -> dict[K, V]:
+def _recursive_prepare_freeze(xs: dict[K, V], /) -> dict[K, V]:
     """Deep copy unfrozen dicts to make the dictionary FrozenDict safe."""
     # recursively copy dictionary to avoid ref sharing
     return {
-        k: _recursive_prepare_freeze(v)  # type: ignore[misc]
-        if (isinstance(v, (Mapping, dict)) and not isinstance(xs, FrozenDict))
-        else v
+        k: (
+            _recursive_prepare_freeze(v)  # type: ignore[misc]
+            if isinstance(v, dict)
+            else v
+        )
         for k, v in xs.items()
     }
 
 
-def _prepare_freeze(xs: Mapping[K, V]) -> dict[K, V]:
+def _prepare_freeze(xs: dict[K, V] | FrozenDict[K, V]) -> dict[K, V]:
     """Deep copy unfrozen dicts to make the dictionary FrozenDict safe."""
     if isinstance(xs, FrozenDict):
         return xs._dict
-    return dict(xs)  # TODO: use _recursive_prepare_freeze(xs)
+    return _recursive_prepare_freeze(xs)
 
 
-def freeze(xs: Mapping[K, V]) -> FrozenDict[K, V]:
+def freeze(m: dict[K, V], /) -> FrozenDict[K, V]:
     """Freeze a nested dict.
 
     Makes a nested `dict` immutable by transforming it into `FrozenDict`.
 
-    Args:
-        xs: Dictionary to freeze (a regualr Python dict).
+    Parameters
+    ----------
+    m: dict[K, V]
+        Dictionary to freeze.
 
     Returns
     -------
+    FrozenDict
         The frozen dictionary.
     """
-    return FrozenDict(xs)
+    return FrozenDict(m)
 
 
 def _recursive_unfreeze(x: Mapping[K, V], /) -> dict[K, V]:
     ys = {}
     for k, v in x.items():
-        if isinstance(v, Mapping):
+        if isinstance(v, dict):
             v = _recursive_unfreeze(v)  # type: ignore[assignment]
         ys[k] = v
     return ys
@@ -280,7 +304,8 @@ class FrozenDictField(Generic[K, V]):
 
     def __init__(
         self,
-        default: Mapping[K, V]
+        default: dict[K, V]
+        | FrozenDict[K, V]
         | Sequence[tuple[K, V]]
         | Literal[Sentinel.MISSING] = MISSING,
     ) -> None:

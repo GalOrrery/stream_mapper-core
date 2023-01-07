@@ -20,7 +20,7 @@ from stream_ml.core.params import ParamBounds, ParamNames, Params
 from stream_ml.core.params.names import ParamNamesField
 from stream_ml.core.prior.bounds import NoBounds
 from stream_ml.core.typing import BoundsT
-from stream_ml.core.utils.frozendict import FrozenDict
+from stream_ml.core.utils.frozen_dict import FrozenDict
 from stream_ml.pytorch.prior.bounds import PriorBounds, SigmoidBounds
 from stream_ml.pytorch.stream.base import StreamModel
 
