@@ -52,13 +52,20 @@ class ParamNamesBase(
         self._data = tuple(iterable)
 
         # hint property types
+        self._top_level: tuple[str | T, ...]
         self._flat: tuple[str | T, ...]
         self._flats: tuple[tuple[str] | tuple[str | T, str], ...]
 
     @property
     def top_level(self) -> tuple[str | T, ...]:
         """Top-level parameter names."""
-        return tuple((k[0] if isinstance(k, tuple) else k) for k in self)
+        if not hasattr(self, "_top_level"):
+            object.__setattr__(
+                self,
+                "_top_level",
+                tuple(k[0] if isinstance(k, tuple) else k for k in self),
+            )
+        return self._top_level
 
     # ========================================================================
     # Concretizing abstract methods
