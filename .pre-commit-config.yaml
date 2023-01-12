@@ -57,8 +57,14 @@ repos:
       - id: black-jupyter
         additional_dependencies: [toml]
 
+  - repo: https://github.com/adamchainz/blacken-docs
+    rev: v1.12.1
+    hooks:
+      - id: blacken-docs
+        additional_dependencies: [black]
+
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: "v0.0.209"
+    rev: "v0.0.219"
     hooks:
       - id: ruff
         args:

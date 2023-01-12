@@ -4,7 +4,8 @@ from __future__ import annotations
 
 # STDLIB
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Protocol
+from math import inf
+from typing import Any, ClassVar, Protocol
 
 # THIRD-PARTY
 import jax.numpy as xp
@@ -13,11 +14,8 @@ import jax.numpy as xp
 from stream_ml.core.base import Model as CoreModel
 from stream_ml.core.data import Data
 from stream_ml.core.params import Params
+from stream_ml.jax.prior.bounds import PriorBounds, SigmoidBounds
 from stream_ml.jax.typing import Array
-
-if TYPE_CHECKING:
-    # LOCAL
-    pass
 
 __all__: list[str] = []
 
@@ -35,6 +33,8 @@ class Model(CoreModel[Array], Protocol):
         that this can be different from the name of the model when it is used in
         a mixture model (see :class:`~stream_ml.core.core.MixtureModelBase`).
     """
+
+    DEFAULT_BOUNDS: ClassVar[PriorBounds] = SigmoidBounds(-inf, inf)
 
     @abstractmethod
     def setup(self) -> None:
@@ -60,7 +60,6 @@ class Model(CoreModel[Array], Protocol):
         """
         raise NotImplementedError
 
-    @abstractmethod
     def pack_params_to_arr(self, pars: Params[Array]) -> Array:
         """Pack parameters into an array.
 
