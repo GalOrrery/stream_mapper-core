@@ -19,6 +19,8 @@ __all__: list[str] = []
 class StreamModel(ModelBase[Array]):
     """Stream Model."""
 
+    n_features: int
+
     # ========================================================================
 
     @abstractmethod

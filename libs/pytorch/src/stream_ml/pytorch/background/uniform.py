@@ -25,7 +25,6 @@ _eps = float(xp.finfo(xp.float32).eps)
 class Uniform(BackgroundModel):
     """Uniform background model."""
 
-    n_features: int = 0
     _: KW_ONLY
     param_names: ParamNamesField = ParamNamesField(("weight",))
     param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array](

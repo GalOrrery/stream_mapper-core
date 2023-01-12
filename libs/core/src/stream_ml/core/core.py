@@ -32,9 +32,6 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
 
     Parameters
     ----------
-    n_features : int
-        The number off features used by the NN.
-
     name : str or None, optional keyword-only
         The (internal) name of the model, e.g. 'stream' or 'background'. Note
         that this can be different from the name of the model when it is used in
@@ -56,8 +53,6 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
     param_bounds : `~stream_ml.core.params.ParamBounds`, keyword-only
         The bounds on the parameters.
     """
-
-    n_features: int
 
     _: KW_ONLY
     name: str | None = None  # the name of the model
@@ -210,10 +205,10 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
             return bounds
         elif bounds is None:
             return NoBounds()
-        else:
-            return replace(
-                cls.DEFAULT_BOUNDS,
-                lower=bounds[0],
-                upper=bounds[1],
-                param_name=param_name,
-            )
+
+        return replace(
+            cls.DEFAULT_BOUNDS,
+            lower=bounds[0],
+            upper=bounds[1],
+            param_name=param_name,
+        )
