@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 # STDLIB
-import functools
-import operator
 from dataclasses import KW_ONLY, dataclass
 from typing import Any
 
@@ -27,7 +25,7 @@ from stream_ml.jax.utils.tanh import Tanh
 __all__: list[str] = []
 
 
-@dataclass()
+@dataclass
 class Normal(StreamModel):
     """Stream Model.
 
@@ -57,37 +55,6 @@ class Normal(StreamModel):
         if len(self.coord_names) != 1:
             msg = "Only one coordinate is supported, e.g ('phi2',)"
             raise ValueError(msg)
-
-        cn = self.coord_names[0]
-
-        # Validate the param_names
-        if self.param_names != ("weight", (cn, ("mu", "sigma"))):
-            msg = (
-                f"param_names must be ('weight', ({cn}, ('mu', 'sigma'))),"
-                f" gott {self.param_names}"
-            )
-            raise ValueError(msg)
-
-        # Validate the param_bounds
-        for pn in self.param_names.flats:
-            # "in X" ignores __contains__ & __getitem__ signatures
-            if not self.param_bounds.__contains__(pn):
-                msg = f"param_bounds must contain {pn}."
-                raise ValueError(msg)
-            # TODO: recursively check for all sub-parameters
-
-    def setup(self) -> None:
-        """Setup."""
-        self.layers = nn.Sequential(
-            nn.Dense(self.n_features),
-            Tanh(),
-            *functools.reduce(
-                operator.add,
-                ((nn.Dense(self.n_features), Tanh()) for _ in range(self.n_layers - 2)),
-            ),
-            nn.Dense(3),
-            name=self.name,
-        )
 
     @classmethod
     def from_simpler_inputs(
@@ -197,6 +164,7 @@ class Normal(StreamModel):
     # ========================================================================
     # ML
 
+    @nn.compact  # type: ignore[misc]
     def __call__(self, *args: Array, **kwargs: Any) -> Array:
         """Forward pass.
 
@@ -212,4 +180,11 @@ class Normal(StreamModel):
         Array
             fraction, mean, sigma
         """
-        return self._forward_prior(self.layers(args[0]), args[0])
+        x = nn.Dense(self.n_features)(args[0])
+        x = Tanh()(x)
+        for _ in range(self.n_layers - 2):
+            x = nn.Dense(self.n_features)(x)
+            x = Tanh()(x)
+        x = nn.Dense(3)(x)
+
+        return self._forward_prior(x, x)

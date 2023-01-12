@@ -36,10 +36,6 @@ class Model(CoreModel[Array], Protocol):
 
     DEFAULT_BOUNDS: ClassVar[PriorBounds] = SigmoidBounds(-inf, inf)
 
-    @abstractmethod
-    def setup(self) -> None:
-        """Setup."""
-
     # ========================================================================
 
     @abstractmethod

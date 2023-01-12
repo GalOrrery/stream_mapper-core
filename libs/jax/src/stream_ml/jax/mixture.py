@@ -21,7 +21,7 @@ from stream_ml.jax.typing import Array
 __all__: list[str] = []
 
 
-@dataclass()
+@dataclass
 class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[misc]
     """Full Model.
 
@@ -37,9 +37,17 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
     # Need to override this because of the type hinting
     components: FrozenDictField[str, Model] = FrozenDictField()  # type: ignore[assignment]  # noqa: E501
 
+    def __post_init__(self) -> None:
+        MixtureModelBase.__post_init__(self)
+        # Needs to be done after, otherwise nn.Module freezes the dataclass.
+        super().__post_init__()
+
     def setup(self) -> None:
-        """Setup ML."""
-        # TODO!
+        """Setup the model."""
+        # TODO! better registering of the submodels. Maybe by subclassing
+        #  FrozenDictField and adding a register method?
+        for name, model in self.components.items():
+            setattr(self, "_model_" + name, model)
 
     def pack_params_to_arr(self, mpars: Params[Array], /) -> Array:
         """Pack parameters into an array.
@@ -135,13 +143,18 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
         Array
             fraction, mean, sigma
         """
-        result = xp.concatenate(
-            [model(*args) for model in self.components.values()], axis=1
-        )
+        xs = []
+        for n in self.components:
+            y = getattr(self, "_model_" + n)(*args)
+            if y.shape == (0,):
+                continue
+            xs.append(y)
+
+        x = xp.concatenate(xs, axis=1)
 
         # Call the prior to limite the range of the parameters
         # TODO: full data, not args[0]
         for prior in self.priors:
-            result = prior(result, args[0], self)
+            x = prior(x, args[0], self)
 
-        return result
+        return x

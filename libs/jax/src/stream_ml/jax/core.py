@@ -26,6 +26,11 @@ __all__: list[str] = []
 class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
     """Model base class."""
 
+    def __post_init__(self) -> None:
+        CoreModelBase.__post_init__(self)
+        # Needs to be done after, otherwise nn.Module freezes the dataclass.
+        super().__post_init__()
+
     # ========================================================================
 
     def unpack_params_from_arr(self, p_arr: Array) -> Params[Array]:
@@ -133,10 +138,6 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
 
     # ========================================================================
     # ML
-
-    @abstractmethod
-    def setup(self) -> None:
-        """Setup."""
 
     @abstractmethod
     def __call__(self, *args: Array) -> Array:

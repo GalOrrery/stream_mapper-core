@@ -38,6 +38,13 @@ class Uniform(BackgroundModel):
         {"weight": SigmoidBounds(_eps, 1.0, param_name=("weight",))}
     )
 
+    def __post_init__(self) -> None:
+        # Pre-compute the log-difference
+        self._logdiffs = xp.asarray(
+            [xp.log(xp.asarray(b - a)) for a, b in self.coord_bounds.values()]
+        )
+        super().__post_init__()
+
     def setup(self) -> None:
         """JSetup the module's NN.
 
@@ -50,11 +57,6 @@ class Uniform(BackgroundModel):
         if self.n_features != 0:
             msg = "n_features must be 0 for the uniform background"
             raise ValueError(msg)
-
-        # Pre-compute the log-difference
-        self._logdiffs = xp.asarray(
-            [xp.log(xp.asarray(b - a)) for a, b in self.coord_bounds.values()]
-        )
 
     # ========================================================================
     # Statistics
@@ -118,7 +120,7 @@ class Uniform(BackgroundModel):
         Array
             fraction, mean, sigma
         """
-        nn = xp.asarray([])
+        nn = xp.array([])
 
         # Call the prior to limit the range of the parameters
         for prior in self.priors:
