@@ -99,6 +99,17 @@ class ParamNamesBase(
         return self._data[index]
 
     # ========================================================================
+    # Comparison
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, ParamNamesBase):
+            return NotImplemented
+        return self._data == other._data
+
+    def __hash__(self) -> int:
+        return hash(self._data)
+
+    # ========================================================================
     # Flat
 
     @property
