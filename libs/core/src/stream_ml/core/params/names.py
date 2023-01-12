@@ -171,10 +171,9 @@ def is_complete(
     pns: Sequence[IncompleteParamNameGroupT], /
 ) -> TypeGuard[Sequence[ParamNameGroupT]]:
     """Check if parameter names are complete."""
-    for pn in pns:
-        if isinstance(pn, tuple) and isinstance(pn[0], EllipsisType):
-            return False
-    return True
+    return all(
+        not (isinstance(pn, tuple) and isinstance(pn[0], EllipsisType)) for pn in pns
+    )
 
 
 #####################################################################
