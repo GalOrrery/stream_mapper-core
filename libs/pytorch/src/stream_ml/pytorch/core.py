@@ -32,7 +32,14 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
         # Validate param bounds.
         self.param_bounds.validate(self.param_names)
 
+        self._ndim: int = len(self.coord_names)
+
     # ========================================================================
+
+    @property
+    def ndim(self) -> int:
+        """Number of dimensions."""
+        return self._ndim
 
     def unpack_params_from_arr(self, p_arr: Array) -> Params[Array]:
         """Unpack parameters into a dictionary.

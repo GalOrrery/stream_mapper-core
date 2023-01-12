@@ -41,6 +41,11 @@ class Model(Protocol[Array]):
 
     # ========================================================================
 
+    @property
+    def ndim(self) -> int:
+        """Number of dimensions."""
+        return len(self.coord_names)
+
     def unpack_params(self, packed_pars: FlatParsT[Array], /) -> Params[Array]:
         """Unpack parameters into a dictionary.
 
