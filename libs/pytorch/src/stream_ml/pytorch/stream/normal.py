@@ -137,14 +137,15 @@ class Normal(StreamModel):
     # Statistics
 
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: Data[Array], **kwargs: Array
+        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log-likelihood of the stream.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data (phi1, phi2).
         **kwargs : Array
@@ -155,19 +156,20 @@ class Normal(StreamModel):
         Array
         """
         c = self.coord_names[0]
-        eps = xp.finfo(pars[("weight",)].dtype).eps  # TOOD: or tiny?
-        lik = TorchNormal(pars[c, "mu"], xp.clip(pars[c, "sigma"], min=eps)).log_prob(
+        eps = xp.finfo(mpars[("weight",)].dtype).eps  # TOOD: or tiny?
+        lik = TorchNormal(mpars[c, "mu"], xp.clip(mpars[c, "sigma"], min=eps)).log_prob(
             data[c]
         )
-        return xp.log(xp.clip(pars[("weight",)], min=eps)) + lik
+        return xp.log(xp.clip(mpars[("weight",)], min=eps)) + lik
 
-    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
+    def ln_prior_arr(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data.
 
@@ -175,11 +177,11 @@ class Normal(StreamModel):
         -------
         Array
         """
-        lnp = xp.zeros_like(pars[("weight",)])  # 100%
+        lnp = xp.zeros_like(mpars[("weight",)])  # 100%
         # Bounds
-        lnp += self._ln_prior_coord_bnds(pars, data)
+        lnp += self._ln_prior_coord_bnds(mpars, data)
         for bound in self.param_bounds.flatvalues():
-            lnp += bound.logpdf(pars, data, self, lnp)
+            lnp += bound.logpdf(mpars, data, self, lnp)
         return lnp
 
     # ========================================================================

@@ -46,7 +46,7 @@ class BoundedHardThreshold(PriorBase[Array]):
 
     def logpdf(
         self,
-        pars: Params[Array],
+        mpars: Params[Array],
         data: Data[Array],
         model: Model[Array],
         current_lnpdf: Array | None = None,
@@ -60,8 +60,9 @@ class BoundedHardThreshold(PriorBase[Array]):
 
         Parameters
         ----------
-        pars : Params[Array], position-only
-            The parameters to evaluate the logpdf at.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array], position-only
             The data for which evaluate the prior.
         model : Model, position-only
@@ -75,10 +76,10 @@ class BoundedHardThreshold(PriorBase[Array]):
         Array
             The logpdf.
         """
-        lnp = xp.zeros_like(pars[("weight",)])
+        lnp = xp.zeros_like(mpars[("weight",)])
         lnp[
             within_bounds(data[self.coord_name], self.lower, self.upper)
-            & (pars[("weight",)] < self.threshold)
+            & (mpars[("weight",)] < self.threshold)
         ] = -inf
         return lnp
 

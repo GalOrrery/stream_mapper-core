@@ -78,14 +78,15 @@ class MultivariateNormal(StreamModel):
     # Statistics
 
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: Data[Array], **kwargs: Array
+        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log-likelihood of the stream.
 
         Parameters
         ----------
-        pars : Params
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data (phi1, phi2, ...).
         **kwargs : Array
@@ -95,23 +96,26 @@ class MultivariateNormal(StreamModel):
         -------
         Array
         """
-        eps = xp.finfo(pars[("weight",)].dtype).eps  # TODO: or tiny?
+        eps = xp.finfo(mpars[("weight",)].dtype).eps  # TODO: or tiny?
         datav = data[self.coord_names].array
 
         lik = TorchMultivariateNormal(
-            xp.hstack([pars[c, "mu"] for c in self.coord_names]),
-            xp.diag_embed(xp.hstack([pars[c, "sigma"] for c in self.coord_names]) ** 2),
+            xp.hstack([mpars[c, "mu"] for c in self.coord_names]),
+            xp.diag_embed(
+                xp.hstack([mpars[c, "sigma"] for c in self.coord_names]) ** 2
+            ),
         ).log_prob(datav)
 
-        return xp.log(xp.clip(pars[("weight",)], eps)) + lik[:, None]
+        return xp.log(xp.clip(mpars[("weight",)], eps)) + lik[:, None]
 
-    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
+    def ln_prior_arr(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data.
 
@@ -119,11 +123,11 @@ class MultivariateNormal(StreamModel):
         -------
         Array
         """
-        lnp = xp.zeros_like(pars[("weight",)])  # 100%
+        lnp = xp.zeros_like(mpars[("weight",)])  # 100%
         # Bounds
-        lnp += self._ln_prior_coord_bnds(pars, data)
+        lnp += self._ln_prior_coord_bnds(mpars, data)
         for bounds in self.param_bounds.flatvalues():
-            lnp += bounds.logpdf(pars, data, self, lnp)
+            lnp += bounds.logpdf(mpars, data, self, lnp)
         return lnp
 
     # ========================================================================
@@ -167,7 +171,7 @@ class MultivariateMissingNormal(MultivariateNormal):  # (MultivariateNormal)
 
     def ln_likelihood_arr(
         self,
-        pars: Params[Array],
+        mpars: Params[Array],
         data: Data[Array],
         *,
         mask: Array | None = None,
@@ -177,8 +181,9 @@ class MultivariateMissingNormal(MultivariateNormal):  # (MultivariateNormal)
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data.
         mask : Array
@@ -187,8 +192,8 @@ class MultivariateMissingNormal(MultivariateNormal):  # (MultivariateNormal)
             Additional arguments.
         """
         datav = data[self.coord_names].array
-        mu = xp.hstack([pars[c, "mu"] for c in self.coord_names])
-        sigma = xp.hstack([pars[c, "sigma"] for c in self.coord_names])
+        mu = xp.hstack([mpars[c, "mu"] for c in self.coord_names])
+        sigma = xp.hstack([mpars[c, "sigma"] for c in self.coord_names])
 
         if mask is None:
             if self.require_mask:
@@ -209,7 +214,7 @@ class MultivariateMissingNormal(MultivariateNormal):  # (MultivariateNormal)
         cov = indicator * sigma**2  # (N, 4) positive definite  # TODO: add eps
         det = (cov + (1 - indicator)).prod(dim=1, keepdims=True)  # (N, 1)
 
-        return xp.log(xp.clip(pars[("weight",)], min=eps)) - 0.5 * (
+        return xp.log(xp.clip(mpars[("weight",)], min=eps)) - 0.5 * (
             dimensionality * _log2pi  # dim of data
             + xp.log(det)
             + (  # TODO: speed up

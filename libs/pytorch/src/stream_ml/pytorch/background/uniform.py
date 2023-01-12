@@ -48,7 +48,7 @@ class Uniform(BackgroundModel):
 
     def ln_likelihood_arr(
         self,
-        pars: Params[Array],
+        mpars: Params[Array],
         data: Data[Array],
         *,
         mask: Array | None = None,
@@ -58,8 +58,9 @@ class Uniform(BackgroundModel):
 
         Parameters
         ----------
-        pars : Params
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data.
 
@@ -72,28 +73,29 @@ class Uniform(BackgroundModel):
         -------
         Array
         """
-        f = pars[("weight",)]
+        f = mpars[("weight",)]
         eps = xp.finfo(f.dtype).eps  # TOOD: or tiny?
 
-        if mask is None:
-            if self.require_mask:
-                msg = "mask is required"
-                raise ValueError(msg)
-            indicator = xp.ones_like(self._ln_diffs)
-        else:
+        if mask is not None:
             indicator = mask.int()
+        elif self.require_mask:
+            msg = "mask is required"
+            raise ValueError(msg)
+        else:
+            indicator = xp.ones_like(self._ln_diffs)
 
         return xp.log(xp.clip(f, eps)) - (indicator * self._ln_diffs).sum(
             dim=1, keepdim=True
         )
 
-    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
+    def ln_prior_arr(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data.
 
@@ -103,9 +105,9 @@ class Uniform(BackgroundModel):
         """
         lnp = xp.zeros((len(data), 1))
         # Bounds
-        lnp += self._ln_prior_coord_bnds(pars, data)
+        lnp += self._ln_prior_coord_bnds(mpars, data)
         for bounds in self.param_bounds.flatvalues():
-            lnp += bounds.logpdf(pars, data, self, lnp)
+            lnp += bounds.logpdf(mpars, data, self, lnp)
         return lnp
 
     # ========================================================================

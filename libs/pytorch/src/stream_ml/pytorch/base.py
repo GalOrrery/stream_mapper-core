@@ -65,13 +65,14 @@ class Model(CoreModel[Array], Protocol):
         """
         raise NotImplementedError
 
-    def pack_params_to_arr(self, pars: Params[Array]) -> Array:
+    def pack_params_to_arr(self, mpars: Params[Array], /) -> Array:
         """Pack parameters into an array.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameter dictionary.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
 
         Returns
         -------
@@ -81,7 +82,7 @@ class Model(CoreModel[Array], Protocol):
         # ie, that if elt is a string, then pars[elt] is a 1D array
         # and if elt is a tuple, then pars[elt] is a dict.
         return xp.concatenate(
-            [xp.atleast_1d(pars[elt]) for elt in self.param_names.flats]
+            [xp.atleast_1d(mpars[elt]) for elt in self.param_names.flats]
         )
 
     # ========================================================================
@@ -89,14 +90,15 @@ class Model(CoreModel[Array], Protocol):
 
     @abstractmethod
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: Data[Array], **kwargs: Array
+        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Elementwise log-likelihood of the model.
 
         Parameters
         ----------
-        pars : Params
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data.
         **kwargs : Array
@@ -109,13 +111,14 @@ class Model(CoreModel[Array], Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
+    def ln_prior_arr(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Elementwise log prior.
 
         Parameters
         ----------
-        pars : Params
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data
             Data.
 

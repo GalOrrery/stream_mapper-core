@@ -38,7 +38,7 @@ class PriorBounds(PriorBase[Array]):
     @abstractmethod
     def logpdf(
         self,
-        pars: Params[Array],
+        mpars: Params[Array],
         data: Data[Array],
         model: Model[Array],
         current_lnpdf: Array | None = None,
@@ -98,7 +98,7 @@ class NoBounds(PriorBounds[Any]):
 
     def logpdf(
         self,
-        pars: Params[Array],
+        mpars: Params[Array],
         data: Data[Array],
         model: Model[Array],
         current_lnpdf: Array | None = None,

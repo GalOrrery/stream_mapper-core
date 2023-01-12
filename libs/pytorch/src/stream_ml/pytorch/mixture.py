@@ -43,25 +43,26 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
         for name, model in self.components.items():
             self.add_module(name=name, module=model)
 
-    def pack_params_to_arr(self, pars: Params[Array]) -> Array:
+    def pack_params_to_arr(self, mpars: Params[Array], /) -> Array:
         """Pack parameters into an array.
 
         Parameters
         ----------
-        pars : Params
-            Parameter dictionary.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
 
         Returns
         -------
         Array
         """
-        return Model.pack_params_to_arr(self, pars)
+        return Model.pack_params_to_arr(self, mpars)
 
     # ===============================================================
     # Statistics
 
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: Data[Array], **kwargs: Array
+        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log likelihood.
 
@@ -69,8 +70,9 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
 
         Parameters
         ----------
-        pars : Params
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data.
         **kwargs : Array
@@ -84,20 +86,23 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
         # and use that to evaluate the log likelihood for the model.
         liks = tuple(
             model.ln_likelihood_arr(
-                pars.get_prefixed(name), data, **self._get_prefixed_kwargs(name, kwargs)
+                mpars.get_prefixed(name),
+                data,
+                **self._get_prefixed_kwargs(name, kwargs),
             )
             for name, model in self.components.items()
         )
         # Sum over the models, keeping the data dimension
         return xp.logsumexp(xp.hstack(liks), dim=1, keepdim=True)
 
-    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
+    def ln_prior_arr(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data.
 
@@ -108,14 +113,14 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
         # Get the parameters for each model, stripping the model name,
         # and use that to evaluate the log prior for the model.
         lps = tuple(
-            model.ln_prior_arr(pars.get_prefixed(name), data)
+            model.ln_prior_arr(mpars.get_prefixed(name), data)
             for name, model in self.components.items()
         )
         lp = xp.hstack(lps).sum(dim=1)[:, None]
 
         # Plugin for priors
         for prior in self.priors:
-            lp += prior.logpdf(pars, data, self, lp)
+            lp += prior.logpdf(mpars, data, self, lp)
 
         # Sum over the priors
         return lp

@@ -216,13 +216,14 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
         return pars
 
     @abstractmethod
-    def pack_params_to_arr(self, pars: Params[Array]) -> Array:
+    def pack_params_to_arr(self, mpars: Params[Array], /) -> Array:
         """Pack parameters into an array.
 
         Parameters
         ----------
-        pars : Params
-            Parameter dictionary.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
 
         Returns
         -------
@@ -254,7 +255,7 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
 
     @abstractmethod
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: Data[Array], **kwargs: Array
+        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log likelihood.
 
@@ -262,8 +263,9 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
 
         Parameters
         ----------
-        pars : Params
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data.
         **kwargs : Array
@@ -276,13 +278,14 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
         raise NotImplementedError
 
     @abstractmethod
-    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
+    def ln_prior_arr(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
-        pars : Params
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data.
 

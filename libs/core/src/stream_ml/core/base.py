@@ -92,13 +92,14 @@ class Model(Protocol[Array]):
         raise NotImplementedError
 
     @abstractmethod
-    def pack_params_to_arr(self, pars: Params[Array]) -> Array:
-        """Pack parameters into an array.
+    def pack_params_to_arr(self, mpars: Params[Array], /) -> Array:
+        """Pack model parameters into an array.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameter dictionary.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
 
         Returns
         -------
@@ -114,14 +115,15 @@ class Model(Protocol[Array]):
 
     @abstractmethod
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: Data[Array], **kwargs: Array
+        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Elementwise log-likelihood of the model.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data.
         **kwargs : Array
@@ -134,13 +136,14 @@ class Model(Protocol[Array]):
         raise NotImplementedError
 
     @abstractmethod
-    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
+    def ln_prior_arr(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Elementwise log prior.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data.
 
@@ -151,14 +154,15 @@ class Model(Protocol[Array]):
         raise NotImplementedError
 
     def ln_posterior_arr(
-        self, pars: Params[Array], data: Data[Array], **kw: Array
+        self, mpars: Params[Array], data: Data[Array], **kw: Array
     ) -> Array:
         """Elementwise log posterior.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data
             Data.
         **kw : Array
@@ -168,13 +172,15 @@ class Model(Protocol[Array]):
         -------
         Array
         """
-        return self.ln_likelihood_arr(pars, data, **kw) + self.ln_prior_arr(pars, data)
+        return self.ln_likelihood_arr(mpars, data, **kw) + self.ln_prior_arr(
+            mpars, data
+        )
 
     # ------------------------------------------------------------------------
     # Scalar versions
 
     def ln_likelihood(
-        self, pars: Params[Array], data: Data[Array], **kwargs: Array
+        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log-likelihood of the model.
 
@@ -182,8 +188,9 @@ class Model(Protocol[Array]):
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data
             Data.
         **kwargs : Array
@@ -193,15 +200,16 @@ class Model(Protocol[Array]):
         -------
         Array
         """
-        return self.ln_likelihood_arr(pars, data, **kwargs).sum()
+        return self.ln_likelihood_arr(mpars, data, **kwargs).sum()
 
-    def ln_prior(self, pars: Params[Array], data: Data[Array]) -> Array:
+    def ln_prior(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data
             Data.
 
@@ -209,17 +217,18 @@ class Model(Protocol[Array]):
         -------
         Array
         """
-        return self.ln_prior_arr(pars, data).sum()
+        return self.ln_prior_arr(mpars, data).sum()
 
     def ln_posterior(
-        self, pars: Params[Array], data: Data[Array], **kw: Array
+        self, mpars: Params[Array], data: Data[Array], **kw: Array
     ) -> Array:
         """Log posterior.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data.
         **kw : Array
@@ -229,4 +238,4 @@ class Model(Protocol[Array]):
         -------
         Array
         """
-        return self.ln_likelihood(pars, data, **kw) + self.ln_prior(pars, data)
+        return self.ln_likelihood(mpars, data, **kw) + self.ln_prior(mpars, data)

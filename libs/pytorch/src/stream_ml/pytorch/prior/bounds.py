@@ -32,7 +32,7 @@ class PriorBounds(CorePriorBounds[Array]):
 
     def logpdf(
         self,
-        pars: Params[Array],
+        mpars: Params[Array],
         data: Data[Array],
         model: Model[Array],
         current_lnpdf: Array | None = None,
@@ -43,8 +43,8 @@ class PriorBounds(CorePriorBounds[Array]):
             msg = "need to set param_name"
             raise ValueError(msg)
 
-        bp = xp.zeros_like(pars[self.param_name])
-        bp[~within_bounds(pars[self.param_name], self.lower, self.upper)] = -xp.inf
+        bp = xp.zeros_like(mpars[self.param_name])
+        bp[~within_bounds(mpars[self.param_name], self.lower, self.upper)] = -xp.inf
         return bp
 
     @abstractmethod

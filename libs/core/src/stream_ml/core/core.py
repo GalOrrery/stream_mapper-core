@@ -122,13 +122,14 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def pack_params_to_arr(self, pars: Params[Array]) -> Array:
+    def pack_params_to_arr(self, mpars: Params[Array], /) -> Array:
         """Pack parameters into an array.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameter dictionary.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
 
         Returns
         -------
@@ -141,14 +142,15 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
 
     @abstractmethod
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: Data[Array], **kwargs: Array
+        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Elementwise log-likelihood of the model.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data
             Data.
         **kwargs : Array
@@ -161,13 +163,14 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def _ln_prior_coord_bnds(self, pars: Params[Array], data: Data[Array]) -> Array:
+    def _ln_prior_coord_bnds(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Elementwise log prior for coordinate bounds.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data.
 
@@ -178,13 +181,14 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
+    def ln_prior_arr(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Elementwise log prior.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data.
 

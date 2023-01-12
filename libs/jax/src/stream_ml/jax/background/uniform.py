@@ -58,14 +58,15 @@ class Uniform(BackgroundModel):
     # Statistics
 
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: Data[Array], **kwargs: Array
+        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log-likelihood of the background.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data.
         **kwargs : Array
@@ -76,16 +77,17 @@ class Uniform(BackgroundModel):
         Array
         """
         # Need to protect the fraction if < 0
-        eps = xp.finfo(pars[("weight",)].dtype).eps  # TOOD: or tiny?
-        return xp.log(xp.clip(pars[("weight",)], eps)) - self._logdiffs.sum()
+        eps = xp.finfo(mpars[("weight",)].dtype).eps  # TOOD: or tiny?
+        return xp.log(xp.clip(mpars[("weight",)], eps)) - self._logdiffs.sum()
 
-    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
+    def ln_prior_arr(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data: Data[Array]
             Data.
 
@@ -93,8 +95,8 @@ class Uniform(BackgroundModel):
         -------
         Array
         """
-        lnp = xp.zeros_like(pars[("weight",)])
-        return lnp + self._ln_prior_coord_bnds(pars, data)
+        lnp = xp.zeros_like(mpars[("weight",)])
+        return lnp + self._ln_prior_coord_bnds(mpars, data)
 
     # ========================================================================
     # ML
