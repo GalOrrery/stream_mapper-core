@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 # STDLIB
-from collections.abc import ItemsView, Iterable, KeysView, Mapping, ValuesView
+from collections.abc import Iterable, Mapping
 from dataclasses import replace
 from typing import TYPE_CHECKING, Any, Generic, Literal, cast, overload
 
 # LOCAL
-from stream_ml.core._typing import Array
 from stream_ml.core.prior.bounds import NoBounds, PriorBounds
-from stream_ml.core.utils.hashdict import FrozenDict
+from stream_ml.core.typing import Array
+from stream_ml.core.utils.frozen_dict import FrozenDict
 from stream_ml.core.utils.sentinel import MISSING, Sentinel
 
 if TYPE_CHECKING:
@@ -18,11 +18,6 @@ if TYPE_CHECKING:
     from stream_ml.core.params.names import ParamNames
 
 __all__: list[str] = []
-
-#####################################################################
-# PARAMETERS
-
-inf = float("inf")
 
 
 #####################################################################
@@ -47,7 +42,6 @@ class ParamBounds(
             elif v is None:
                 pb[k] = NoBounds()
             elif isinstance(v, Mapping):
-                # TODO: not cast to dict if already a FrozenDict
                 pb[k] = FrozenDict(
                     {
                         kk: (vv if isinstance(vv, PriorBounds) else NoBounds())
@@ -58,7 +52,7 @@ class ParamBounds(
                 msg = f"Invalid element type: {type(v)}"
                 raise TypeError(msg)
 
-        super().__init__(pb)
+        super().__init__(pb, __unsafe_skip_copy__=True)
 
     @classmethod
     def from_names(
@@ -121,41 +115,6 @@ class ParamBounds(
             value = v[key[1]]
         return value  # noqa: RET504
 
-    def keys(self) -> KeysView[str]:
-        """Parameter bounds keys."""
-        return self._mapping.keys()
-
-    def values(
-        self,
-    ) -> ValuesView[PriorBounds[Array] | FrozenDict[str, PriorBounds[Array]]]:
-        """Parameter bounds values."""
-        return self._mapping.values()
-
-    def items(
-        self,
-    ) -> ItemsView[str, PriorBounds[Array] | FrozenDict[str, PriorBounds[Array]]]:
-        """Parameter bounds items."""
-        return self._mapping.items()
-
-    def __or__(self, other: Any) -> ParamBounds[Array]:
-        """Combine two ParamBounds instances."""
-        if not isinstance(other, ParamBounds):
-            raise NotImplementedError
-
-        pbs = type(self)(**self._mapping)
-
-        for k, v in other.items():
-            if k not in pbs or isinstance(v, PriorBounds):
-                pbs._mapping[k] = v
-                continue
-            elif isinstance((sv := pbs._mapping[k]), PriorBounds):
-                msg = f"mixing tuple and FrozenDict is not allowed: {k}"
-                raise ValueError(msg)
-            else:
-                pbs._mapping[k] = sv | v
-
-        return pbs
-
     @overload
     def __contains__(self, o: str, /) -> bool:
         ...
@@ -169,7 +128,16 @@ class ParamBounds(
         ...
 
     def __contains__(self, o: Any, /) -> bool:
-        return super().__contains__(o)
+        """Check if a key is in the ParamBounds instance."""
+        if isinstance(o, str):
+            return bool(super().__contains__(o))
+        else:
+            try:
+                self[o]
+            except KeyError:
+                return False
+            else:
+                return True
 
     # =========================================================================
     # Flat
@@ -196,39 +164,41 @@ class ParamBounds(
     # =========================================================================
     # Misc
 
-    def _freeze(self) -> None:
-        """Freeze the bounds.
-
-        At runtime, it is hard to enforce that the Mapping containers are
-        FrozenDict. This method will clean this up.
-        """
-        for name, bounds in self.items():
-            if isinstance(bounds, Mapping) and not isinstance(bounds, FrozenDict):
-                self._mapping[name] = FrozenDict(bounds)  # type: ignore[unreachable]
-
     def _fixup_param_names(self) -> None:
         """Set the parameter name in the prior bounds."""
         for key, bound in self.flatitems():
             k0 = key[0]
-            v = self._mapping[k0]
+            v = self._dict[k0]
             if len(key) == 1:
                 if not isinstance(v, PriorBounds):
                     msg = f"cannot set param_name for {key}"
                     raise ValueError(msg)
-                self._mapping[k0] = replace(bound, param_name=key)
+                self._dict[k0] = replace(bound, param_name=key)
             elif len(key) == 2:
                 k1 = key[1]  # type: ignore[misc]
                 if not isinstance(v, FrozenDict):
                     msg = f"cannot set param_name for {key}"
                     raise ValueError(msg)
-                vv = v._mapping[k1]
+                vv = v._dict[k1]
                 if not isinstance(vv, PriorBounds):
                     msg = f"cannot set param_name for {key}"  # type: ignore[unreachable]  # noqa: E501
                     raise ValueError(msg)
-                v._mapping[k1] = replace(bound, param_name=key)
+                v._dict[k1] = replace(bound, param_name=key)
             else:
                 msg = "somehow this key has more than 2 elements"
                 raise ValueError(msg)
+
+    def validate(self, names: ParamNames, *, error: bool = False) -> bool | None:
+        """Check that the paramter bounds are consistendt with the model."""
+        if self.flatkeys() != names.flats:
+            if error:
+                # TODO: more informative error.
+                msg = "param_bounds keys do not match param_names"
+                raise ValueError(msg)
+            else:
+                return False
+
+        return True
 
 
 class ParamBoundsField(Generic[Array]):

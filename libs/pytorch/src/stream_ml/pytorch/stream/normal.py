@@ -15,25 +15,30 @@ from torch import nn
 from torch.distributions.normal import Normal as TorchNormal
 
 # LOCAL
-from stream_ml.core._typing import BoundsT
 from stream_ml.core.data import Data
 from stream_ml.core.params import ParamBounds, ParamNames, Params
 from stream_ml.core.params.names import ParamNamesField
 from stream_ml.core.prior.bounds import NoBounds
-from stream_ml.core.utils.hashdict import FrozenDict
+from stream_ml.core.typing import BoundsT
+from stream_ml.core.utils.frozen_dict import FrozenDict
 from stream_ml.pytorch.prior.bounds import PriorBounds, SigmoidBounds
 from stream_ml.pytorch.stream.base import StreamModel
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.pytorch._typing import Array
+    from stream_ml.pytorch.typing import Array
 
 __all__: list[str] = []
 
 
+_eps = float(xp.finfo(xp.float32).eps)
+
+
 @dataclass(unsafe_hash=True)
 class Normal(StreamModel):
-    """Stream Model.
+    r"""2D Gaussian with mixture weight.
+
+    :math:`(weight, \mu, \sigma)(\phi1)`
 
     Parameters
     ----------
@@ -62,13 +67,6 @@ class Normal(StreamModel):
             msg = "Only one coordinate is supported, e.g ('phi2',)"
             raise ValueError(msg)
 
-        # Validate the param_bounds
-        for pn in self.param_names.flats:
-            if not self.param_bounds.__contains__(pn):
-                msg = f"param_bounds must contain {pn} (unflattened)."
-                raise ValueError(msg)
-        # TODO: recursively check for all sub-parameters
-
         # Define the layers of the neural network:
         # Total: in (phi) -> out (fraction, mean, sigma)
         self.layers = nn.Sequential(
@@ -92,9 +90,9 @@ class Normal(StreamModel):
         *,
         coord_name: str,
         coord_bounds: BoundsT = (-inf, inf),
-        weight_bounds: PriorBounds | BoundsT = SigmoidBounds(0, 1),  # noqa: B008
+        weight_bounds: PriorBounds | BoundsT = SigmoidBounds(_eps, 1),  # noqa: B_eps008
         mu_bounds: PriorBounds | BoundsT | None | NoBounds = None,
-        sigma_bounds: PriorBounds | BoundsT = SigmoidBounds(0, 0.3),  # noqa: B008
+        sigma_bounds: PriorBounds | BoundsT = SigmoidBounds(_eps, 0.3),  # noqa: B008
     ) -> Normal:
         """Create a Normal from a simpler set of inputs.
 
@@ -141,14 +139,15 @@ class Normal(StreamModel):
     # Statistics
 
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: Data[Array], **kwargs: Array
+        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log-likelihood of the stream.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data (phi1, phi2).
         **kwargs : Array
@@ -159,19 +158,20 @@ class Normal(StreamModel):
         Array
         """
         c = self.coord_names[0]
-        eps = xp.finfo(pars[("weight",)].dtype).eps  # TOOD: or tiny?
-        lik = TorchNormal(pars[c, "mu"], xp.clip(pars[c, "sigma"], min=eps)).log_prob(
+        eps = xp.finfo(mpars[("weight",)].dtype).eps  # TOOD: or tiny?
+        lik = TorchNormal(mpars[c, "mu"], xp.clip(mpars[c, "sigma"], min=eps)).log_prob(
             data[c]
         )
-        return xp.log(xp.clip(pars[("weight",)], min=eps)) + lik
+        return xp.log(xp.clip(mpars[("weight",)], min=eps)) + lik
 
-    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
+    def ln_prior_arr(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data.
 
@@ -179,11 +179,11 @@ class Normal(StreamModel):
         -------
         Array
         """
-        lnp = xp.zeros_like(pars[("weight",)])  # 100%
+        lnp = xp.zeros_like(mpars[("weight",)])  # 100%
         # Bounds
-        lnp += self._ln_prior_coord_bnds(pars, data)
+        lnp += self._ln_prior_coord_bnds(mpars, data)
         for bound in self.param_bounds.flatvalues():
-            lnp += bound.logpdf(pars, data, self, lnp)
+            lnp += bound.logpdf(mpars, data, self, lnp)
         return lnp
 
     # ========================================================================

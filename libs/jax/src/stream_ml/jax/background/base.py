@@ -5,13 +5,14 @@ from __future__ import annotations
 # STDLIB
 from abc import abstractmethod
 from dataclasses import dataclass
+from typing import Any
 
 # LOCAL
 from stream_ml.core.background.base import BackgroundModel as CoreBackgroundModel
 from stream_ml.core.data import Data
 from stream_ml.core.params import Params
-from stream_ml.jax._typing import Array
 from stream_ml.jax.core import ModelBase
+from stream_ml.jax.typing import Array
 
 __all__: list[str] = []
 
@@ -25,14 +26,15 @@ class BackgroundModel(ModelBase, CoreBackgroundModel[Array]):
 
     @abstractmethod
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: Data[Array], **kwargs: Array
+        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log-likelihood of the background.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data.
         **kwargs : Array
@@ -45,13 +47,14 @@ class BackgroundModel(ModelBase, CoreBackgroundModel[Array]):
         raise NotImplementedError
 
     @abstractmethod
-    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
+    def ln_prior_arr(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data.
 
@@ -65,13 +68,15 @@ class BackgroundModel(ModelBase, CoreBackgroundModel[Array]):
     # ML
 
     @abstractmethod
-    def forward(self, data: Data[Array]) -> Array:
+    def __call__(self, *args: Array, **kwargs: Any) -> Array:
         """Forward pass.
 
         Parameters
         ----------
-        data : Data[Array]
+        *args : Array
             Input.
+        **kwargs : Any
+            Keyword arguments.
 
         Returns
         -------

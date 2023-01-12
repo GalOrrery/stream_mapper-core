@@ -8,8 +8,8 @@ from dataclasses import KW_ONLY, dataclass
 from typing import TYPE_CHECKING, Generic
 
 # LOCAL
-from stream_ml.core._typing import Array
 from stream_ml.core.data import Data
+from stream_ml.core.typing import Array
 
 if TYPE_CHECKING:
     # LOCAL
@@ -29,7 +29,7 @@ class PriorBase(Generic[Array], metaclass=ABCMeta):
     @abstractmethod
     def logpdf(
         self,
-        pars: Params[Array],
+        mpars: Params[Array],
         data: Data[Array],
         model: Model[Array],
         current_lnpdf: Array | None = None,
@@ -43,8 +43,9 @@ class PriorBase(Generic[Array], metaclass=ABCMeta):
 
         Parameters
         ----------
-        pars : Params[Array], position-only
-            The parameters to evaluate the logpdf at.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array], position-only
             The data for which evaluate the prior.
         model : Model, position-only

@@ -7,10 +7,10 @@ from abc import abstractmethod
 from dataclasses import dataclass
 
 # LOCAL
-from stream_ml.core._typing import Array
 from stream_ml.core.core import ModelBase
 from stream_ml.core.data import Data
 from stream_ml.core.params import Params
+from stream_ml.core.typing import Array
 
 __all__: list[str] = []
 
@@ -18,6 +18,8 @@ __all__: list[str] = []
 @dataclass(unsafe_hash=True)
 class StreamModel(ModelBase[Array]):
     """Stream Model."""
+
+    n_features: int
 
     # ========================================================================
 
@@ -40,13 +42,14 @@ class StreamModel(ModelBase[Array]):
         raise NotImplementedError
 
     @abstractmethod
-    def pack_params_to_arr(self, pars: Params[Array]) -> Array:
+    def pack_params_to_arr(self, mpars: Params[Array], /) -> Array:
         """Pack parameters into an array.
 
         Parameters
         ----------
-        pars : Params
-            Parameter dictionary.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
 
         Returns
         -------
@@ -59,14 +62,15 @@ class StreamModel(ModelBase[Array]):
 
     @abstractmethod
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: Data[Array], **kwargs: Array
+        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log-likelihood of the background.
 
         Parameters
         ----------
-        pars : Params
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data.
         **kwargs: Array
@@ -79,13 +83,14 @@ class StreamModel(ModelBase[Array]):
         raise NotImplementedError
 
     @abstractmethod
-    def _ln_prior_coord_bnds(self, pars: Params[Array], data: Data[Array]) -> Array:
+    def _ln_prior_coord_bnds(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Elementwise log prior for coordinate bounds.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data.
 
@@ -96,13 +101,14 @@ class StreamModel(ModelBase[Array]):
         raise NotImplementedError
 
     @abstractmethod
-    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
+    def ln_prior_arr(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
-        pars : Params
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data.
 

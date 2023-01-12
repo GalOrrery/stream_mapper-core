@@ -12,7 +12,7 @@ from numpy.typing import NDArray
 
 # LOCAL
 from stream_ml.core.data import Data as CoreData
-from stream_ml.pytorch._typing import Array
+from stream_ml.pytorch.typing import Array
 
 Self = TypeVar("Self", bound="Data[Array]")  # type: ignore[type-arg]
 

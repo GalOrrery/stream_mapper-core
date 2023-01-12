@@ -6,13 +6,14 @@ from __future__ import annotations
 from abc import abstractmethod
 from collections.abc import Iterator
 from dataclasses import KW_ONLY, dataclass
+from math import inf
 from typing import TYPE_CHECKING, Any, TypeVar
 
 # LOCAL
-from stream_ml.core._typing import Array, BoundsT
 from stream_ml.core.data import Data
 from stream_ml.core.params.names import FlatParamName
 from stream_ml.core.prior.base import PriorBase
+from stream_ml.core.typing import Array, BoundsT
 
 if TYPE_CHECKING:
     # LOCAL
@@ -37,7 +38,7 @@ class PriorBounds(PriorBase[Array]):
     @abstractmethod
     def logpdf(
         self,
-        pars: Params[Array],
+        mpars: Params[Array],
         data: Data[Array],
         model: Model[Array],
         current_lnpdf: Array | None = None,
@@ -86,18 +87,18 @@ class PriorBounds(PriorBase[Array]):
 class NoBounds(PriorBounds[Any]):
     """No bounds."""
 
-    lower: float = -float("inf")
-    upper: float = float("inf")
+    lower: float = -inf
+    upper: float = inf
 
     def __post_init__(self, /) -> None:
         """Post-init."""
-        if self.lower != -float("inf") or self.upper != float("inf"):
+        if self.lower != -inf or self.upper != inf:
             msg = "lower and upper must be -inf and inf"
             raise ValueError(msg)
 
     def logpdf(
         self,
-        pars: Params[Array],
+        mpars: Params[Array],
         data: Data[Array],
         model: Model[Array],
         current_lnpdf: Array | None = None,

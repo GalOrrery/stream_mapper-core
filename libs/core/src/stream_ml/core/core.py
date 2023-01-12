@@ -5,26 +5,25 @@ from __future__ import annotations
 # STDLIB
 from abc import ABCMeta, abstractmethod
 from dataclasses import KW_ONLY, dataclass, replace
+from math import inf
 from typing import TYPE_CHECKING, ClassVar
 
 # LOCAL
-from stream_ml.core._typing import Array, BoundsT
 from stream_ml.core.base import Model
 from stream_ml.core.data import Data
-from stream_ml.core.params import MutableParams, ParamBounds, ParamNamesField, Params
+from stream_ml.core.params import ParamBounds, ParamNamesField, Params
 from stream_ml.core.params.bounds import ParamBoundsField
 from stream_ml.core.params.names import FlatParamName
 from stream_ml.core.prior.base import PriorBase
 from stream_ml.core.prior.bounds import NoBounds, PriorBounds
-from stream_ml.core.utils.hashdict import FrozenDict, FrozenDictField
+from stream_ml.core.typing import Array, BoundsT
+from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.core._typing import FlatParsT
+    pass
 
 __all__: list[str] = []
-
-inf = float("inf")
 
 
 @dataclass(unsafe_hash=True)
@@ -33,9 +32,6 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
 
     Parameters
     ----------
-    n_features : int
-        The number off features used by the NN.
-
     name : str or None, optional keyword-only
         The (internal) name of the model, e.g. 'stream' or 'background'. Note
         that this can be different from the name of the model when it is used in
@@ -57,8 +53,6 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
     param_bounds : `~stream_ml.core.params.ParamBounds`, keyword-only
         The bounds on the parameters.
     """
-
-    n_features: int
 
     _: KW_ONLY
     name: str | None = None  # the name of the model
@@ -84,7 +78,7 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
             raise ValueError(msg)
 
         # Make coord bounds if not provided
-        crnt_cbs = self.coord_bounds._mapping
+        crnt_cbs = self.coord_bounds._dict
         cbs = {n: crnt_cbs.pop(n, (-inf, inf)) for n in self.coord_names}
         if crnt_cbs:  # Error if there are extra keys
             msg = f"coord_bounds contains invalid keys {crnt_cbs.keys()}."
@@ -103,37 +97,6 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
         self.param_bounds = param_bounds
 
     # ========================================================================
-
-    def unpack_params(self, packed_pars: FlatParsT[Array]) -> Params[Array]:
-        """Unpack parameters into a dictionary.
-
-        Unpack a flat dictionary of parameters -- where keys have coordinate name,
-        parameter name, and model component name -- into a nested dictionary with
-        parameters grouped by coordinate name.
-
-        Parameters
-        ----------
-        packed_pars : Array
-            Parameter array.
-
-        Returns
-        -------
-        Params[Array]
-        """
-        pars = MutableParams[Array]()
-
-        for k in packed_pars:
-            # Find the non-coordinate-specific parameters.
-            if k in self.param_bounds:
-                pars[k] = packed_pars[k]
-                continue
-
-            # separate the coordinate and parameter names.
-            coord_name, par_name = k.split("_", maxsplit=1)
-            # Add the parameter to the coordinate-specific dict.
-            pars[coord_name, par_name] = packed_pars[k]
-
-        return pars
 
     @abstractmethod
     def unpack_params_from_arr(self, p_arr: Array) -> Params[Array]:
@@ -154,13 +117,14 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def pack_params_to_arr(self, pars: Params[Array]) -> Array:
+    def pack_params_to_arr(self, mpars: Params[Array], /) -> Array:
         """Pack parameters into an array.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameter dictionary.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
 
         Returns
         -------
@@ -173,14 +137,15 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
 
     @abstractmethod
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: Data[Array], **kwargs: Array
+        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Elementwise log-likelihood of the model.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data
             Data.
         **kwargs : Array
@@ -193,13 +158,14 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def _ln_prior_coord_bnds(self, pars: Params[Array], data: Data[Array]) -> Array:
+    def _ln_prior_coord_bnds(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Elementwise log prior for coordinate bounds.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data.
 
@@ -210,13 +176,14 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
+    def ln_prior_arr(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Elementwise log prior.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data.
 
@@ -238,10 +205,10 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
             return bounds
         elif bounds is None:
             return NoBounds()
-        else:
-            return replace(
-                cls.DEFAULT_BOUNDS,
-                lower=bounds[0],
-                upper=bounds[1],
-                param_name=param_name,
-            )
+
+        return replace(
+            cls.DEFAULT_BOUNDS,
+            lower=bounds[0],
+            upper=bounds[1],
+            param_name=param_name,
+        )

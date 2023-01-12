@@ -15,12 +15,12 @@ from torch import nn
 from stream_ml.core.base import Model as CoreModel
 from stream_ml.core.data import Data
 from stream_ml.core.params import Params
-from stream_ml.pytorch._typing import Array
 from stream_ml.pytorch.prior.bounds import PriorBounds, SigmoidBounds
+from stream_ml.pytorch.typing import Array
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.pytorch._typing import FlatParsT
+    pass
 
 __all__: list[str] = []
 
@@ -48,26 +48,6 @@ class Model(CoreModel[Array], Protocol):
     # ========================================================================
 
     @abstractmethod
-    def unpack_params(self, packed_pars: FlatParsT) -> Params[Array]:
-        """Unpack parameters into a dictionary.
-
-        This function takes a parameter array and unpacks it into a dictionary
-        with the parameter names as keys.
-
-        Parameters
-        ----------
-        packed_pars : Array
-            Flat dictionary of parameters.
-
-        Returns
-        -------
-        Params
-            Nested dictionary of parameters wth parameters grouped by coordinate
-            name.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
     def unpack_params_from_arr(self, p_arr: Array) -> Params[Array]:
         """Unpack parameters into a dictionary.
 
@@ -85,13 +65,14 @@ class Model(CoreModel[Array], Protocol):
         """
         raise NotImplementedError
 
-    def pack_params_to_arr(self, pars: Params[Array]) -> Array:
+    def pack_params_to_arr(self, mpars: Params[Array], /) -> Array:
         """Pack parameters into an array.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameter dictionary.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
 
         Returns
         -------
@@ -101,7 +82,7 @@ class Model(CoreModel[Array], Protocol):
         # ie, that if elt is a string, then pars[elt] is a 1D array
         # and if elt is a tuple, then pars[elt] is a dict.
         return xp.concatenate(
-            [xp.atleast_1d(pars[elt]) for elt in self.param_names.flats]
+            [xp.atleast_1d(mpars[elt]) for elt in self.param_names.flats]
         )
 
     # ========================================================================
@@ -109,14 +90,15 @@ class Model(CoreModel[Array], Protocol):
 
     @abstractmethod
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: Data[Array], **kwargs: Array
+        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Elementwise log-likelihood of the model.
 
         Parameters
         ----------
-        pars : Params
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data.
         **kwargs : Array
@@ -129,13 +111,14 @@ class Model(CoreModel[Array], Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
+    def ln_prior_arr(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Elementwise log prior.
 
         Parameters
         ----------
-        pars : Params
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data
             Data.
 

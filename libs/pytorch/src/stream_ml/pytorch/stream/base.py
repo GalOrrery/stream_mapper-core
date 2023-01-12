@@ -10,8 +10,8 @@ from dataclasses import KW_ONLY, dataclass
 from stream_ml.core.data import Data
 from stream_ml.core.params import Params
 from stream_ml.core.stream.base import StreamModel as CoreStreamModel
-from stream_ml.pytorch._typing import Array
 from stream_ml.pytorch.core import ModelBase
+from stream_ml.pytorch.typing import Array
 
 __all__: list[str] = []
 
@@ -28,14 +28,15 @@ class StreamModel(ModelBase, CoreStreamModel[Array]):
 
     @abc.abstractmethod
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: Data[Array], **kwargs: Array
+        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log-likelihood of the stream.
 
         Parameters
         ----------
-        pars : Params
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data.
         **kwargs : Array
@@ -48,13 +49,14 @@ class StreamModel(ModelBase, CoreStreamModel[Array]):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
+    def ln_prior_arr(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
-        pars : Params
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data.
 

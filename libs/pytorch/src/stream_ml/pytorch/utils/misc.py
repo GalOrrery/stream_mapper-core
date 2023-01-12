@@ -6,7 +6,7 @@ from __future__ import annotations
 import torch as xp
 
 # LOCAL
-from stream_ml.pytorch._typing import Array
+from stream_ml.pytorch.typing import Array
 
 __all__: list[str] = []
 

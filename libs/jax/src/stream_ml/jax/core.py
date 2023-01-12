@@ -14,9 +14,9 @@ import jax.numpy as xp
 # LOCAL
 from stream_ml.core.core import ModelBase as CoreModelBase
 from stream_ml.core.data import Data
-from stream_ml.core.params import MutableParams, Params
-from stream_ml.jax._typing import Array
+from stream_ml.core.params import Params, freeze_params, set_param
 from stream_ml.jax.base import Model
+from stream_ml.jax.typing import Array
 from stream_ml.jax.utils.misc import within_bounds
 
 __all__: list[str] = []
@@ -26,11 +26,14 @@ __all__: list[str] = []
 class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
     """Model base class."""
 
-    @abstractmethod
-    def setup(self) -> None:
-        """Setup."""
+    def __post_init__(self) -> None:
+        CoreModelBase.__post_init__(self)
+        # Needs to be done after, otherwise nn.Module freezes the dataclass.
+        super().__post_init__()
 
-    def unpack_pars_to_arr(self, p_arr: Array) -> Params[Array]:
+    # ========================================================================
+
+    def unpack_params_from_arr(self, p_arr: Array) -> Params[Array]:
         """Unpack parameters into a dictionary.
 
         This function takes a parameter array and unpacks it into a dictionary
@@ -43,40 +46,42 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
 
         Returns
         -------
-        Params[Array]
+        Params
         """
-        pars = MutableParams[Array]()
+        pars: dict[str, Array | dict[str, Array]] = {}
         for i, k in enumerate(self.param_names.flats):
-            pars[k] = p_arr[:, i]
-        return Params(pars)
+            set_param(pars, k, p_arr[:, i : i + 1])
+        return freeze_params(pars)
 
-    def pack_params_to_arr(self, pars: Params[Array]) -> Array:
+    def pack_params_to_arr(self, mpars: Params[Array], /) -> Array:
         """Pack parameters into an array.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameter dictionary.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
 
         Returns
         -------
         Array
         """
-        return Model.pack_params_to_arr(self, pars)
+        return Model.pack_params_to_arr(self, mpars)
 
     # ========================================================================
     # Statistics
 
     @abstractmethod
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: Data[Array], **kwargs: Array
+        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log-likelihood of the model.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data.
         **kwargs : Array
@@ -88,13 +93,14 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
         """
         raise NotImplementedError
 
-    def _ln_prior_coord_bnds(self, pars: Params[Array], data: Data[Array]) -> Array:
+    def _ln_prior_coord_bnds(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Elementwise log prior for coordinate bounds.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data.
 
@@ -113,13 +119,14 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
         return lnp  # noqa: RET504
 
     @abstractmethod
-    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
+    def ln_prior_arr(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data.
 

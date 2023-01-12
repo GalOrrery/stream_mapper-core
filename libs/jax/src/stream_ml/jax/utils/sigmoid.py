@@ -10,7 +10,7 @@ import flax.linen as nn
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.jax._typing import Array
+    from stream_ml.jax.typing import Array
 
 __all__: list[str] = []
 

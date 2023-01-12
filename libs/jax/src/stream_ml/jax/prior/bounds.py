@@ -13,7 +13,7 @@ import jax.numpy as xp
 # LOCAL
 from stream_ml.core.data import Data
 from stream_ml.core.prior.bounds import PriorBounds as CorePriorBounds
-from stream_ml.jax._typing import Array
+from stream_ml.jax.typing import Array
 from stream_ml.jax.utils.misc import within_bounds
 from stream_ml.jax.utils.sigmoid import scaled_sigmoid
 
@@ -31,7 +31,7 @@ class PriorBounds(CorePriorBounds[Array]):
 
     def logpdf(
         self,
-        pars: Params[Array],
+        mpars: Params[Array],
         data: Data[Array],
         model: Model[Array],
         current_lnpdf: Array | None = None,
@@ -42,8 +42,8 @@ class PriorBounds(CorePriorBounds[Array]):
             msg = "locator is None"
             raise ValueError(msg)
 
-        bp = xp.zeros_like(pars[self.param_name])
-        bp[~within_bounds(pars[self.param_name], self.lower, self.upper)] = -xp.inf
+        bp = xp.zeros_like(mpars[self.param_name])
+        bp[~within_bounds(mpars[self.param_name], self.lower, self.upper)] = -xp.inf
         return bp
 
     @abstractmethod

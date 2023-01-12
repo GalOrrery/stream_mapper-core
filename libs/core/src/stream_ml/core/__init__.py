@@ -4,7 +4,7 @@
 from stream_ml.core import background, params, prior, stream
 from stream_ml.core.mixture import MixtureModelBase
 from stream_ml.core.params import ParamBounds, ParamNames, Params
-from stream_ml.core.utils.hashdict import FrozenDict
+from stream_ml.core.utils.frozen_dict import FrozenDict
 
 __all__ = [
     # modules

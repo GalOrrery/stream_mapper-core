@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 # STDLIB
-import functools
-import operator
 from dataclasses import KW_ONLY, dataclass
+from typing import Any
 
 # THIRD-PARTY
 import flax.linen as nn
@@ -13,20 +12,20 @@ import jax.numpy as xp
 from jax.scipy.stats import norm
 
 # LOCAL
-from stream_ml.core._typing import BoundsT
 from stream_ml.core.data import Data
 from stream_ml.core.params import ParamBounds, ParamBoundsField, ParamNames, Params
 from stream_ml.core.params.names import ParamNamesField
-from stream_ml.core.utils.hashdict import FrozenDict, FrozenDictField
-from stream_ml.jax._typing import Array
+from stream_ml.core.typing import BoundsT
+from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 from stream_ml.jax.prior.bounds import PriorBounds
 from stream_ml.jax.stream.base import StreamModel
+from stream_ml.jax.typing import Array
 from stream_ml.jax.utils.tanh import Tanh
 
 __all__: list[str] = []
 
 
-@dataclass()
+@dataclass
 class Normal(StreamModel):
     """Stream Model.
 
@@ -56,37 +55,6 @@ class Normal(StreamModel):
         if len(self.coord_names) != 1:
             msg = "Only one coordinate is supported, e.g ('phi2',)"
             raise ValueError(msg)
-
-        cn = self.coord_names[0]
-
-        # Validate the param_names
-        if self.param_names != ("weight", (cn, ("mu", "sigma"))):
-            msg = (
-                f"param_names must be ('weight', ({cn}, ('mu', 'sigma'))),"
-                f" gott {self.param_names}"
-            )
-            raise ValueError(msg)
-
-        # Validate the param_bounds
-        for pn in self.param_names:
-            # "in X" ignores __contains__ & __getitem__ signatures
-            if not self.param_bounds.__contains__(pn):
-                msg = f"param_bounds must contain {pn}."
-                raise ValueError(msg)
-            # TODO: recursively check for all sub-parameters
-
-    def setup(self) -> None:
-        """Setup."""
-        self.layers = nn.Sequential(
-            nn.Dense(self.n_features),
-            Tanh(),
-            *functools.reduce(
-                operator.add,
-                ((nn.Dense(self.n_features), Tanh()) for _ in range(self.n_layers - 2)),
-            ),
-            nn.Dense(3),
-            name=self.name,
-        )
 
     @classmethod
     def from_simpler_inputs(
@@ -145,14 +113,15 @@ class Normal(StreamModel):
     # Statistics
 
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: Data[Array], **kwargs: Array
+        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log-likelihood of the stream.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data (phi1, phi2).
         **kwargs : Array
@@ -163,19 +132,20 @@ class Normal(StreamModel):
         Array
         """
         c = self.coord_names[0]
-        min_ = xp.finfo(pars[("weight",)].dtype).eps  # TOOD: or tiny?
+        min_ = xp.finfo(mpars[("weight",)].dtype).eps  # TOOD: or tiny?
 
-        return xp.log(xp.clip(pars[("weight",)], min_)) + norm.logpdf(
-            data[c], pars[(c, "mu")], xp.clip(pars[(c, "sigma")], a_min=min_)
+        return xp.log(xp.clip(mpars[("weight",)], min_)) + norm.logpdf(
+            data[c], mpars[(c, "mu")], xp.clip(mpars[(c, "sigma")], a_min=min_)
         )
 
-    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
+    def ln_prior_arr(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
-        pars : Params[Array]
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data (phi1, phi2).
 
@@ -183,28 +153,38 @@ class Normal(StreamModel):
         -------
         Array
         """
-        lnp = xp.zeros_like(pars[("weight",)])  # 100%
+        lnp = xp.zeros_like(mpars[("weight",)])  # 100%
 
         # Bounds
-        lnp += self._ln_prior_coord_bnds(pars, data)
+        lnp += self._ln_prior_coord_bnds(mpars, data)
         for bounds in self.param_bounds.flatvalues():
-            lnp += bounds.logpdf(pars, data, self, lnp)
+            lnp += bounds.logpdf(mpars, data, self, lnp)
         return lnp
 
     # ========================================================================
     # ML
 
-    def __call__(self, *args: Array) -> Array:
+    @nn.compact  # type: ignore[misc]
+    def __call__(self, *args: Array, **kwargs: Any) -> Array:
         """Forward pass.
 
         Parameters
         ----------
-        args : Array
+        *args : Array
             Input. Only uses the first argument.
+        **kwargs : Any
+            Keyword arguments.
 
         Returns
         -------
         Array
             fraction, mean, sigma
         """
-        return self._forward_prior(self.layers(args[0]), args[0])
+        x = nn.Dense(self.n_features)(args[0])
+        x = Tanh()(x)
+        for _ in range(self.n_layers - 2):
+            x = nn.Dense(self.n_features)(x)
+            x = Tanh()(x)
+        x = nn.Dense(3)(x)
+
+        return self._forward_prior(x, x)

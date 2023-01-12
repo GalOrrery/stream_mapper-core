@@ -9,16 +9,16 @@ from dataclasses import KW_ONLY, dataclass
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, TypeVar
 
 # LOCAL
-from stream_ml.core._typing import Array, BoundsT
 from stream_ml.core.base import Model
-from stream_ml.core.params import MutableParams, ParamBounds, ParamNames, Params
+from stream_ml.core.params import ParamBounds, ParamNames, Params
 from stream_ml.core.prior.base import PriorBase
-from stream_ml.core.utils.hashdict import FrozenDict, FrozenDictField
+from stream_ml.core.typing import Array, BoundsT
+from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.core._typing import FlatParsT
     from stream_ml.core.data import Data
+    from stream_ml.core.typing import FlatParsT
 
 __all__: list[str] = []
 
@@ -82,13 +82,13 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
         # TODO: make sure duplicates have the same bounds
         cbs: FrozenDict[str, BoundsT] = FrozenDict()
         for m in self.components.values():
-            cbs._mapping.update(m.coord_bounds)
+            cbs._dict.update(m.coord_bounds)
         self._coord_bounds = cbs
 
         # Add the param_bounds
         cps: ParamBounds[Array] = ParamBounds()
         for n, m in self.components.items():
-            cps._mapping.update({f"{n}_{k}": v for k, v in m.param_bounds.items()})
+            cps._dict.update({f"{n}_{k}": v for k, v in m.param_bounds.items()})
         self._param_bounds = cps
 
         super().__post_init__()
@@ -155,7 +155,7 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
 
     # ===============================================================
 
-    def unpack_params(self, packed_pars: FlatParsT[Array]) -> Params[Array]:
+    def unpack_params(self, packed_pars: FlatParsT[Array], /) -> Params[Array]:
         """Unpack parameters into a dictionary.
 
         Unpack a flat dictionary of parameters -- where keys have coordinate name,
@@ -164,7 +164,7 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
 
         Parameters
         ----------
-        packed_pars : Array
+        packed_pars : Array, positional-only
             Flat dictionary of parameters.
 
         Returns
@@ -173,21 +173,7 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
             Nested dictionary of parameters wth parameters grouped by coordinate
             name.
         """
-        # FIXME! this doesn't work with the model components.
-        pars = MutableParams[Array]()
-
-        for k in packed_pars:
-            # Find the non-coordinate-specific parameters.
-            if k in self.param_bounds:
-                pars[k] = packed_pars[k]
-                continue
-
-            # separate the coordinate and parameter names.
-            coord_name, par_name = k.split("_", maxsplit=1)
-            # Add the parameter to the coordinate-specific dict.
-            pars[coord_name, par_name] = packed_pars[k]
-
-        return Params(pars)
+        return super().unpack_params(packed_pars)
 
     def unpack_params_from_arr(self, p_arr: Array) -> Params[Array]:
         """Unpack parameters into a dictionary.
@@ -218,27 +204,26 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
                 continue
 
             # Add the component's parameters, prefixed with the component name
-            pars._mapping.update(
-                m.unpack_params_from_arr(mp_arr).add_prefix(n + ".", inplace=True)
-            )
+            pars._dict.update(m.unpack_params_from_arr(mp_arr).add_prefix(n + "."))
 
             # Increment the index
             j += len(m.param_names.flat)
 
         # Add the dependent parameters
         for name, tie in self.tied_params.items():
-            pars._mapping[name] = tie(pars)
+            pars._dict[name] = tie(pars)
 
         return pars
 
     @abstractmethod
-    def pack_params_to_arr(self, pars: Params[Array]) -> Array:
+    def pack_params_to_arr(self, mpars: Params[Array], /) -> Array:
         """Pack parameters into an array.
 
         Parameters
         ----------
-        pars : Params
-            Parameter dictionary.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
 
         Returns
         -------
@@ -270,7 +255,7 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
 
     @abstractmethod
     def ln_likelihood_arr(
-        self, pars: Params[Array], data: Data[Array], **kwargs: Array
+        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log likelihood.
 
@@ -278,8 +263,9 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
 
         Parameters
         ----------
-        pars : Params
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data.
         **kwargs : Array
@@ -292,13 +278,14 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
         raise NotImplementedError
 
     @abstractmethod
-    def ln_prior_arr(self, pars: Params[Array], data: Data[Array]) -> Array:
+    def ln_prior_arr(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
         ----------
-        pars : Params
-            Parameters.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
         data : Data[Array]
             Data.
 
