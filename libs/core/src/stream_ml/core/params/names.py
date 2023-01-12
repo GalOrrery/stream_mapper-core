@@ -241,6 +241,9 @@ class ParamNamesField:
     default : ParamNames or MISSING, optional
         Default value, by default MISSING.
         Coordinate-specific parameters can contain 'sub'-names.
+    requires_all_coordinates : bool, optional
+        Whether all coordinates are required, by default True.
+        If False, coordinates can be a subset of the coordinate names.
     """
 
     def __init__(
@@ -249,6 +252,8 @@ class ParamNamesField:
         | IncompleteParamNames
         | Sequence[IncompleteParamNameGroupT]
         | Literal[Sentinel.MISSING] = MISSING,
+        *,
+        requires_all_coordinates: bool = True,
     ) -> None:
         dft: ParamNames | IncompleteParamNames | Literal[Sentinel.MISSING]
         if default is MISSING:
@@ -261,6 +266,8 @@ class ParamNamesField:
             dft = IncompleteParamNames(default)
         self._default: ParamNames | IncompleteParamNames | Literal[Sentinel.MISSING]
         self._default = dft
+
+        self.requires_all_coordinates = requires_all_coordinates
 
     def __set_name__(self, owner: type, name: str) -> None:
         self._name = "_" + name
@@ -288,22 +295,31 @@ class ParamNamesField:
             raise AttributeError(msg)
 
     def __set__(
-        self, obj: SupportsCoordNames, value: ParamNames | IncompleteParamNames
+        self, model: SupportsCoordNames, value: ParamNames | IncompleteParamNames
     ) -> None:
         if isinstance(value, IncompleteParamNames):
-            value = value.complete(obj.coord_names)
+            value = value.complete(model.coord_names)
 
         # Validate against the default value, if it exists
         if self._default is not MISSING:
             default = self._default
             if isinstance(default, IncompleteParamNames):
-                default = default.complete(obj.coord_names)
+                default = default.complete(model.coord_names)
 
-            if value != default:
+            # Some(/most) param_names must be over the full set of coordinate
+            # names, but not all, so we can't just check for equality.
+            if self.requires_all_coordinates:
+                if value != default:
+                    msg = (
+                        f"invalid value for {type(model).__name__}.{self._name[1:]}:"
+                        f" expected {default}, got {value}"
+                    )
+                    raise ValueError(msg)
+            elif not set(value).issubset(default):
                 msg = (
-                    f"invalid value for {obj.__class__.__name__}.{self._name[1:]}:"
-                    f" expected {default}, got {value}"
+                    f"invalid value for {type(model).__name__}.{self._name[1:]}:"
+                    f" expected a subset of {default}, got {value}"
                 )
                 raise ValueError(msg)
 
-        object.__setattr__(obj, self._name, ParamNames(value))
+        object.__setattr__(model, self._name, ParamNames(value))
