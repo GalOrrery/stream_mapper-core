@@ -26,6 +26,12 @@ __all__: list[str] = []
 class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
     """Model base class."""
 
+    def __post_init__(self) -> None:
+        super().__post_init__()
+
+        # Validate param bounds.
+        self.param_bounds.validate(self.param_names)
+
     # ========================================================================
 
     def unpack_params_from_arr(self, p_arr: Array) -> Params[Array]:

@@ -62,9 +62,6 @@ class Normal(StreamModel):
     def __post_init__(self) -> None:
         super().__post_init__()
 
-        # Validate param bounds.
-        self.param_bounds.validate(self.param_names)
-
         # Validate the coord_names
         if len(self.coord_names) != 1:
             msg = "Only one coordinate is supported, e.g ('phi2',)"

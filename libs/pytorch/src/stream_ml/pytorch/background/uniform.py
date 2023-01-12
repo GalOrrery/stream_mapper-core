@@ -35,11 +35,6 @@ class Uniform(BackgroundModel):
     def __post_init__(self) -> None:
         super().__post_init__()
 
-        # Validate the n_features
-        if self.n_features != 0:
-            msg = "n_features must be 0 for the uniform background"
-            raise ValueError(msg)
-
         # Pre-compute the log-difference
         self._ln_diffs = xp.asarray(
             [xp.log(xp.asarray([b - a])) for a, b in self.coord_bounds.values()]
