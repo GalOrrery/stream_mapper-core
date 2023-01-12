@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 # STDLIB
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from types import EllipsisType
 from typing import (
     Any,
@@ -41,7 +41,7 @@ FlatParamNames: TypeAlias = tuple[FlatParamName, ...]
 
 
 class ParamNamesBase(
-    tuple[str | tuple[str, CoordParamNamesT] | tuple[T, CoordParamNamesT], ...]
+    Sequence[str | tuple[str, CoordParamNamesT] | tuple[T, CoordParamNamesT]]
 ):
     """Base class for parameter names."""
 
@@ -49,9 +49,50 @@ class ParamNamesBase(
         """Create a new ParamNames instance."""
         super().__init__()
 
+        self._data = tuple(iterable)
+
         # hint property types
         self._flat: tuple[str | T, ...]
         self._flats: tuple[tuple[str] | tuple[str | T, str], ...]
+
+    @property
+    def top_level(self) -> tuple[str | T, ...]:
+        """Top-level parameter names."""
+        return tuple((k[0] if isinstance(k, tuple) else k) for k in self)
+
+    # ========================================================================
+    # Concretizing abstract methods
+
+    def __contains__(self, value: object) -> bool:
+        return value in self._data
+
+    def __iter__(
+        self,
+    ) -> Iterator[str | tuple[str, CoordParamNamesT] | tuple[T, CoordParamNamesT]]:
+        return iter(self._data)
+
+    def __len__(self) -> int:
+        return len(self._data)
+
+    @overload
+    def __getitem__(self, index: int) -> str | tuple[str, CoordParamNamesT]:
+        ...
+
+    @overload
+    def __getitem__(
+        self, index: slice
+    ) -> tuple[str | tuple[str, CoordParamNamesT], ...]:
+        ...
+
+    def __getitem__(
+        self, index: int | slice
+    ) -> str | tuple[str, CoordParamNamesT] | tuple[
+        str | tuple[str, CoordParamNamesT], ...
+    ]:
+        return self._data[index]
+
+    # ========================================================================
+    # Flat
 
     @property
     def flat(self) -> tuple[str | T, ...]:
@@ -72,6 +113,7 @@ class ParamNamesBase(
     @property
     def flats(self) -> tuple[tuple[str] | tuple[str | T, str], ...]:
         """Flattened parameter names as tuples."""
+        # ParamNamesBase is immutable, so we can cache this safely.
         if not hasattr(self, "_flats"):
 
             names: list[tuple[str] | tuple[str | T, str]] = []
@@ -85,6 +127,12 @@ class ParamNamesBase(
             object.__setattr__(self, "_flats", tuple(names))
 
         return self._flats
+
+    # ========================================================================
+
+    def __repr__(self) -> str:
+        """Get representation."""
+        return f"{type(self).__name__}({self._data!r})"
 
 
 @final
