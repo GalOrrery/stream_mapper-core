@@ -268,16 +268,16 @@ def freeze(m: dict[K, V], /) -> FrozenDict[K, V]:
     return FrozenDict(m)
 
 
-def _recursive_unfreeze(x: Mapping[K, V], /) -> dict[K, V]:
+def _recursive_unfreeze(x: Mapping[K, V], /, *, deep: bool) -> dict[K, V]:
     ys = {}
     for k, v in x.items():
-        if isinstance(v, dict):
-            v = _recursive_unfreeze(v)  # type: ignore[assignment]
+        if isinstance(v, dict) or (deep and isinstance(v, FrozenDict)):
+            v = _recursive_unfreeze(v, deep=deep)  # type: ignore[assignment]
         ys[k] = v
     return ys
 
 
-def unfreeze(x: FrozenDict[K, V]) -> dict[K, V]:
+def unfreeze(x: FrozenDict[K, V], *, deep: bool = False) -> dict[K, V]:
     """Unfreeze a FrozenDict.
 
     Makes a mutable copy of a `FrozenDict` mutable by transforming
@@ -288,12 +288,15 @@ def unfreeze(x: FrozenDict[K, V]) -> dict[K, V]:
     x: FrozenDict
         Frozen dictionary to unfreeze.
 
+    deep : bool, optional keyword-only
+        Whether to unfreeze FrozenDict recursively. Defaults to False.
+
     Returns
     -------
     dict
         The unfrozen dictionary.
     """
-    return _recursive_unfreeze(x)
+    return _recursive_unfreeze(x, deep=deep)
 
 
 ###############################################################################
