@@ -157,8 +157,8 @@ class Data(Generic[Array]):
 
     def values(self) -> tuple[Array, ...]:
         """Get the values as an iterator of the columns."""
-        return tuple(self[k] for k in self.keys())
+        return tuple(self[k] for k in self.names)
 
     def items(self) -> tuple[tuple[str, Array], ...]:
         """Get the items as an iterator over the names and columns."""
-        return tuple((k, self[k]) for k in self.keys())
+        return tuple((k, self[k]) for k in self.names)
