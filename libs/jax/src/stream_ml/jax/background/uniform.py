@@ -18,6 +18,8 @@ from stream_ml.jax.typing import Array
 
 __all__: list[str] = []
 
+_eps = float(xp.finfo(xp.float32).eps)
+
 
 @dataclass()
 class Uniform(BackgroundModel):
@@ -33,7 +35,7 @@ class Uniform(BackgroundModel):
     _: KW_ONLY
     param_names: ParamNamesField = ParamNamesField(ParamNames(("weight",)))
     param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array](
-        {"weight": SigmoidBounds(0.0, 1.0, param_name=("weight",))}
+        {"weight": SigmoidBounds(_eps, 1.0, param_name=("weight",))}
     )
 
     def setup(self) -> None:

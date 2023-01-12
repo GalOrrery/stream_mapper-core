@@ -31,9 +31,14 @@ if TYPE_CHECKING:
 __all__: list[str] = []
 
 
+_eps = float(xp.finfo(xp.float32).eps)
+
+
 @dataclass(unsafe_hash=True)
 class Normal(StreamModel):
-    """Stream Model.
+    r"""2D Gaussian with mixture weight.
+
+    :math:`(weight, \mu, \sigma)(\phi1)`
 
     Parameters
     ----------
@@ -88,9 +93,9 @@ class Normal(StreamModel):
         *,
         coord_name: str,
         coord_bounds: BoundsT = (-inf, inf),
-        weight_bounds: PriorBounds | BoundsT = SigmoidBounds(0, 1),  # noqa: B008
+        weight_bounds: PriorBounds | BoundsT = SigmoidBounds(_eps, 1),  # noqa: B_eps008
         mu_bounds: PriorBounds | BoundsT | None | NoBounds = None,
-        sigma_bounds: PriorBounds | BoundsT = SigmoidBounds(0, 0.3),  # noqa: B008
+        sigma_bounds: PriorBounds | BoundsT = SigmoidBounds(_eps, 0.3),  # noqa: B008
     ) -> Normal:
         """Create a Normal from a simpler set of inputs.
 
