@@ -12,7 +12,6 @@ import torch as xp
 
 # LOCAL
 from stream_ml.core.data import Data
-from stream_ml.core.prior.bounds import NoBounds  # noqa: F401
 from stream_ml.core.prior.bounds import PriorBounds as CorePriorBounds
 from stream_ml.pytorch.typing import Array
 from stream_ml.pytorch.utils.misc import within_bounds
@@ -64,5 +63,5 @@ class SigmoidBounds(PriorBounds):
         col = model.param_names.flats.index(self.param_name)
         nn[:, col] = scaled_sigmoid(
             nn[:, col], lower=xp.asarray([self.lower]), upper=xp.asarray([self.upper])
-        )
+        )  # TODO: pre-store lower, upper as torch tensors
         return nn
