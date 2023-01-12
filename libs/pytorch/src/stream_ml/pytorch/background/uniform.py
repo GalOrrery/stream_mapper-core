@@ -36,9 +36,11 @@ class Uniform(BackgroundModel):
         super().__post_init__()
 
         # Pre-compute the log-difference
-        self._ln_diffs = xp.asarray(
-            [xp.log(xp.asarray([b - a])) for a, b in self.coord_bounds.values()]
-        )[None, :]
+        # self._ln_diffs = xp.asarray(
+        # )[None, :]
+        self._ln_diffs = xp.log(
+            xp.asarray([b - a for a, b in self.coord_bounds.values()])[None, :]
+        )
 
     # ========================================================================
     # Statistics
