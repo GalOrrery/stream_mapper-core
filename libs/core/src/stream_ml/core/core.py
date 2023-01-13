@@ -78,7 +78,7 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
             raise ValueError(msg)
 
         # Make coord bounds if not provided
-        crnt_cbs = self.coord_bounds._dict
+        crnt_cbs = dict(self.coord_bounds)
         cbs = {n: crnt_cbs.pop(n, (-inf, inf)) for n in self.coord_names}
         if crnt_cbs:  # Error if there are extra keys
             msg = f"coord_bounds contains invalid keys {crnt_cbs.keys()}."
@@ -93,8 +93,7 @@ class ModelBase(Model[Array], metaclass=ABCMeta):
             ParamBounds.from_names(self.param_names, default=self.DEFAULT_BOUNDS)
             | self.param_bounds
         )
-        param_bounds._fixup_param_names()  # TODO: better method name
-        self.param_bounds = param_bounds
+        self.param_bounds = param_bounds._fixup_param_names()
 
     # ========================================================================
 

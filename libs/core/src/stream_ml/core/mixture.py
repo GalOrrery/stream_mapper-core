@@ -58,7 +58,7 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
     _: KW_ONLY
     name: str | None = None  # the name of the model
     tied_params: FrozenDictField[
-        str, Callable[[Params[Array]], Array]
+        str, Callable[[Mapping[str, Array | Mapping[str, Array]]], Array]
     ] = FrozenDictField({})
     priors: tuple[PriorBase[Array], ...] = ()
 
@@ -191,7 +191,7 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
         Params[Array]
         """
         # Unpack the parameters
-        pars = Params[Array]()
+        pars = dict[str, Array | Mapping[str, Array]]()
         j = 0
         for n, m in self.components.items():  # iter thru models
             # Get relevant parameters by index
@@ -204,16 +204,16 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
                 continue
 
             # Add the component's parameters, prefixed with the component name
-            pars._dict.update(m.unpack_params_from_arr(mp_arr).add_prefix(n + "."))
+            pars.update(m.unpack_params_from_arr(mp_arr).add_prefix(n + "."))
 
             # Increment the index
             j += len(m.param_names.flat)
 
-        # Add the dependent parameters
+        # Add / update the dependent parameters
         for name, tie in self.tied_params.items():
-            pars._dict[name] = tie(pars)
+            pars[name] = tie(pars)
 
-        return pars
+        return Params[Array](pars)
 
     @abstractmethod
     def pack_params_to_arr(self, mpars: Params[Array], /) -> Array:

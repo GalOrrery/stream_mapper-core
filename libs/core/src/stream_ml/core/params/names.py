@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 # STDLIB
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from types import EllipsisType
 from typing import (
     Any,
@@ -41,7 +41,7 @@ FlatParamNames: TypeAlias = tuple[FlatParamName, ...]
 
 
 class ParamNamesBase(
-    tuple[str | tuple[str, CoordParamNamesT] | tuple[T, CoordParamNamesT], ...]
+    Sequence[str | tuple[str, CoordParamNamesT] | tuple[T, CoordParamNamesT]]
 ):
     """Base class for parameter names."""
 
@@ -49,9 +49,68 @@ class ParamNamesBase(
         """Create a new ParamNames instance."""
         super().__init__()
 
+        self._data = tuple(iterable)
+
         # hint property types
+        self._top_level: tuple[str | T, ...]
         self._flat: tuple[str | T, ...]
         self._flats: tuple[tuple[str] | tuple[str | T, str], ...]
+
+    @property
+    def top_level(self) -> tuple[str | T, ...]:
+        """Top-level parameter names."""
+        if not hasattr(self, "_top_level"):
+            object.__setattr__(
+                self,
+                "_top_level",
+                tuple(k[0] if isinstance(k, tuple) else k for k in self),
+            )
+        return self._top_level
+
+    # ========================================================================
+    # Concretizing abstract methods
+
+    def __contains__(self, value: object) -> bool:
+        return value in self._data
+
+    def __iter__(
+        self,
+    ) -> Iterator[str | tuple[str, CoordParamNamesT] | tuple[T, CoordParamNamesT]]:
+        return iter(self._data)
+
+    def __len__(self) -> int:
+        return len(self._data)
+
+    @overload
+    def __getitem__(self, index: int) -> str | tuple[str, CoordParamNamesT]:
+        ...
+
+    @overload
+    def __getitem__(
+        self, index: slice
+    ) -> tuple[str | tuple[str, CoordParamNamesT], ...]:
+        ...
+
+    def __getitem__(
+        self, index: int | slice
+    ) -> str | tuple[str, CoordParamNamesT] | tuple[
+        str | tuple[str, CoordParamNamesT], ...
+    ]:
+        return self._data[index]
+
+    # ========================================================================
+    # Comparison
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, ParamNamesBase):
+            return NotImplemented
+        return self._data == other._data
+
+    def __hash__(self) -> int:
+        return hash(self._data)
+
+    # ========================================================================
+    # Flat
 
     @property
     def flat(self) -> tuple[str | T, ...]:
@@ -72,6 +131,7 @@ class ParamNamesBase(
     @property
     def flats(self) -> tuple[tuple[str] | tuple[str | T, str], ...]:
         """Flattened parameter names as tuples."""
+        # ParamNamesBase is immutable, so we can cache this safely.
         if not hasattr(self, "_flats"):
 
             names: list[tuple[str] | tuple[str | T, str]] = []
@@ -85,6 +145,12 @@ class ParamNamesBase(
             object.__setattr__(self, "_flats", tuple(names))
 
         return self._flats
+
+    # ========================================================================
+
+    def __repr__(self) -> str:
+        """Get representation."""
+        return f"{type(self).__name__}({self._data!r})"
 
 
 @final
@@ -193,6 +259,9 @@ class ParamNamesField:
     default : ParamNames or MISSING, optional
         Default value, by default MISSING.
         Coordinate-specific parameters can contain 'sub'-names.
+    requires_all_coordinates : bool, optional
+        Whether all coordinates are required, by default True.
+        If False, coordinates can be a subset of the coordinate names.
     """
 
     def __init__(
@@ -201,6 +270,8 @@ class ParamNamesField:
         | IncompleteParamNames
         | Sequence[IncompleteParamNameGroupT]
         | Literal[Sentinel.MISSING] = MISSING,
+        *,
+        requires_all_coordinates: bool = True,
     ) -> None:
         dft: ParamNames | IncompleteParamNames | Literal[Sentinel.MISSING]
         if default is MISSING:
@@ -213,6 +284,8 @@ class ParamNamesField:
             dft = IncompleteParamNames(default)
         self._default: ParamNames | IncompleteParamNames | Literal[Sentinel.MISSING]
         self._default = dft
+
+        self.requires_all_coordinates = requires_all_coordinates
 
     def __set_name__(self, owner: type, name: str) -> None:
         self._name = "_" + name
@@ -240,22 +313,31 @@ class ParamNamesField:
             raise AttributeError(msg)
 
     def __set__(
-        self, obj: SupportsCoordNames, value: ParamNames | IncompleteParamNames
+        self, model: SupportsCoordNames, value: ParamNames | IncompleteParamNames
     ) -> None:
         if isinstance(value, IncompleteParamNames):
-            value = value.complete(obj.coord_names)
+            value = value.complete(model.coord_names)
 
         # Validate against the default value, if it exists
         if self._default is not MISSING:
             default = self._default
             if isinstance(default, IncompleteParamNames):
-                default = default.complete(obj.coord_names)
+                default = default.complete(model.coord_names)
 
-            if value != default:
+            # Some(/most) param_names must be over the full set of coordinate
+            # names, but not all, so we can't just check for equality.
+            if self.requires_all_coordinates:
+                if value != default:
+                    msg = (
+                        f"invalid value for {type(model).__name__}.{self._name[1:]}:"
+                        f" expected {default}, got {value}"
+                    )
+                    raise ValueError(msg)
+            elif not set(value).issubset(default):
                 msg = (
-                    f"invalid value for {obj.__class__.__name__}.{self._name[1:]}:"
-                    f" expected {default}, got {value}"
+                    f"invalid value for {type(model).__name__}.{self._name[1:]}:"
+                    f" expected a subset of {default}, got {value}"
                 )
                 raise ValueError(msg)
 
-        object.__setattr__(obj, self._name, ParamNames(value))
+        object.__setattr__(model, self._name, ParamNames(value))
