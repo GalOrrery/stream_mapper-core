@@ -5,7 +5,7 @@ from __future__ import annotations
 # STDLIB
 from collections.abc import Iterable, Mapping
 from dataclasses import replace
-from typing import TYPE_CHECKING, Any, Generic, Literal, cast, overload
+from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar, cast, overload
 
 # LOCAL
 from stream_ml.core.prior.bounds import NoBounds, PriorBounds
@@ -16,6 +16,8 @@ from stream_ml.core.utils.sentinel import MISSING, Sentinel
 if TYPE_CHECKING:
     # LOCAL
     from stream_ml.core.params.names import ParamNames
+
+    Self = TypeVar("Self", bound="ParamBounds[Array]")  # type: ignore[valid-type]
 
 __all__: list[str] = []
 
@@ -164,29 +166,16 @@ class ParamBounds(
     # =========================================================================
     # Misc
 
-    def _fixup_param_names(self) -> None:
+    # TODO: better method name
+    def _fixup_param_names(self: Self) -> Self:
         """Set the parameter name in the prior bounds."""
-        for key, bound in self.flatitems():
-            k0 = key[0]
-            v = self._dict[k0]
-            if len(key) == 1:
-                if not isinstance(v, PriorBounds):
-                    msg = f"cannot set param_name for {key}"
-                    raise ValueError(msg)
-                self._dict[k0] = replace(bound, param_name=key)
-            elif len(key) == 2:
-                k1 = key[1]  # type: ignore[misc]
-                if not isinstance(v, FrozenDict):
-                    msg = f"cannot set param_name for {key}"
-                    raise ValueError(msg)
-                vv = v._dict[k1]
-                if not isinstance(vv, PriorBounds):
-                    msg = f"cannot set param_name for {key}"  # type: ignore[unreachable]  # noqa: E501
-                    raise ValueError(msg)
-                v._dict[k1] = replace(bound, param_name=key)
+        new = dict[str, PriorBounds[Array] | dict[str, PriorBounds[Array]]]()
+        for k, v in self.items():
+            if isinstance(v, PriorBounds):
+                new[k] = replace(v, param_name=(k,))
             else:
-                msg = "somehow this key has more than 2 elements"
-                raise ValueError(msg)
+                new[k] = {kk: replace(vv, param_name=(k, kk)) for kk, vv in v.items()}
+        return type(self)(new)
 
     def validate(self, names: ParamNames, *, error: bool = False) -> bool | None:
         """Check that the paramter bounds are consistendt with the model."""
