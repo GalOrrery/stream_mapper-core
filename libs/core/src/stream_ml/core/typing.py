@@ -15,6 +15,11 @@ Self = TypeVar("Self", bound="ArrayLike")
 class ArrayLike(Protocol):
     """Protocol for array addition."""
 
+    @property
+    def dtype(self) -> Any:
+        """Data type."""
+        ...
+
     # ========================================================================
     # Properties
 
