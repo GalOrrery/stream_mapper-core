@@ -11,7 +11,7 @@ from typing import Any, ClassVar, Protocol
 import jax.numpy as xp
 
 # LOCAL
-from stream_ml.core.base import Model as CoreModel
+from stream_ml.core.api import Model as CoreModel
 from stream_ml.core.data import Data
 from stream_ml.core.params import Params
 from stream_ml.jax.prior.bounds import PriorBounds, SigmoidBounds
@@ -31,7 +31,7 @@ class Model(CoreModel[Array], Protocol):
     name : str or None, optional keyword-only
         The (internal) name of the model, e.g. 'stream' or 'background'. Note
         that this can be different from the name of the model when it is used in
-        a mixture model (see :class:`~stream_ml.core.core.MixtureModelBase`).
+        a mixture model (see :class:`~stream_ml.core.core.MixtureModel`).
     """
 
     DEFAULT_BOUNDS: ClassVar[PriorBounds] = SigmoidBounds(-inf, inf)

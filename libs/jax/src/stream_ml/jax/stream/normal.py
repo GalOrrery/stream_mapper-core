@@ -12,6 +12,7 @@ import jax.numpy as xp
 from jax.scipy.stats import norm
 
 # LOCAL
+from stream_ml.core.api import WEIGHT_NAME
 from stream_ml.core.data import Data
 from stream_ml.core.params import ParamBounds, ParamBoundsField, ParamNames, Params
 from stream_ml.core.params.names import ParamNamesField
@@ -45,7 +46,9 @@ class Normal(StreamModel):
     n_layers: int = 3
     _: KW_ONLY
     coord_bounds: FrozenDictField[str, BoundsT] = FrozenDictField()
-    param_names: ParamNamesField = ParamNamesField(("weight", (..., ("mu", "sigma"))))
+    param_names: ParamNamesField = ParamNamesField(
+        (WEIGHT_NAME, (..., ("mu", "sigma")))
+    )
     param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array](ParamBounds())
 
     def __post_init__(self) -> None:
@@ -96,11 +99,11 @@ class Normal(StreamModel):
             n_features=n_features,
             n_layers=n_layers,
             coord_names=(coord_name,),
-            param_names=ParamNames(("weight", (coord_name, ("mu", "sigma")))),  # type: ignore[arg-type] # noqa: E501
+            param_names=ParamNames((WEIGHT_NAME, (coord_name, ("mu", "sigma")))),  # type: ignore[arg-type] # noqa: E501
             coord_bounds=FrozenDict({coord_name: coord_bounds}),  # type: ignore[arg-type] # noqa: E501
             param_bounds=ParamBounds(  # type: ignore[arg-type]
                 {
-                    "weight": cls._make_bounds(weight_bounds, ("weight",)),
+                    WEIGHT_NAME: cls._make_bounds(weight_bounds, (WEIGHT_NAME,)),
                     coord_name: FrozenDict(
                         mu=cls._make_bounds(mu_bounds, (coord_name, "mu")),
                         sigma=cls._make_bounds(sigma_bounds, (coord_name, "sigma")),
@@ -132,9 +135,9 @@ class Normal(StreamModel):
         Array
         """
         c = self.coord_names[0]
-        min_ = xp.finfo(mpars[("weight",)].dtype).eps  # TOOD: or tiny?
+        min_ = xp.finfo(mpars[(WEIGHT_NAME,)].dtype).eps  # TOOD: or tiny?
 
-        return xp.log(xp.clip(mpars[("weight",)], min_)) + norm.logpdf(
+        return xp.log(xp.clip(mpars[(WEIGHT_NAME,)], min_)) + norm.logpdf(
             data[c], mpars[(c, "mu")], xp.clip(mpars[(c, "sigma")], a_min=min_)
         )
 
@@ -153,7 +156,7 @@ class Normal(StreamModel):
         -------
         Array
         """
-        lnp = xp.zeros_like(mpars[("weight",)])  # 100%
+        lnp = xp.zeros_like(mpars[(WEIGHT_NAME,)])  # 100%
 
         # Bounds
         lnp += self._ln_prior_coord_bnds(mpars, data)

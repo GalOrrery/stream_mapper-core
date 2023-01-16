@@ -16,6 +16,7 @@ import torch as xp
 from torch import nn
 
 # LOCAL
+from stream_ml.core.api import WEIGHT_NAME
 from stream_ml.core.data import Data
 from stream_ml.core.params import ParamBoundsField, ParamNamesField, Params
 from stream_ml.pytorch.background.base import BackgroundModel
@@ -45,10 +46,10 @@ class Sloped(BackgroundModel):
 
     _: KW_ONLY
     param_names: ParamNamesField = ParamNamesField(
-        ("weight", (..., ("slope",))), requires_all_coordinates=False
+        (WEIGHT_NAME, (..., ("slope",))), requires_all_coordinates=False
     )
     param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array](
-        {"weight": SigmoidBounds(_eps, 1.0, param_name=("weight",))}
+        {WEIGHT_NAME: SigmoidBounds(_eps, 1.0, param_name=(WEIGHT_NAME,))}
     )
     require_mask: bool = False
 
@@ -103,7 +104,7 @@ class Sloped(BackgroundModel):
         -------
         Array
         """
-        f = mpars[("weight",)]
+        f = mpars[(WEIGHT_NAME,)]
         eps = xp.finfo(f.dtype).eps  # TOOD: or tiny?
 
         # The mask is used to indicate which data points are available. If the

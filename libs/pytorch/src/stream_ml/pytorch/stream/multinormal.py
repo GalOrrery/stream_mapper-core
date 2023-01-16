@@ -14,6 +14,7 @@ from torch import nn
 from torch.distributions import MultivariateNormal as TorchMultivariateNormal
 
 # LOCAL
+from stream_ml.core.api import WEIGHT_NAME
 from stream_ml.core.data import Data
 from stream_ml.core.params import Params
 from stream_ml.core.params.names import ParamNamesField
@@ -49,7 +50,9 @@ class MultivariateNormal(StreamModel):
     n_layers: int = 3
 
     _: KW_ONLY
-    param_names: ParamNamesField = ParamNamesField(("weight", (..., ("mu", "sigma"))))
+    param_names: ParamNamesField = ParamNamesField(
+        (WEIGHT_NAME, (..., ("mu", "sigma")))
+    )
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -96,7 +99,7 @@ class MultivariateNormal(StreamModel):
         -------
         Array
         """
-        eps = xp.finfo(mpars[("weight",)].dtype).eps  # TODO: or tiny?
+        eps = xp.finfo(mpars[(WEIGHT_NAME,)].dtype).eps  # TODO: or tiny?
         datav = data[self.coord_names].array
 
         lik = TorchMultivariateNormal(
@@ -106,7 +109,7 @@ class MultivariateNormal(StreamModel):
             ),
         ).log_prob(datav)
 
-        return xp.log(xp.clip(mpars[("weight",)], eps)) + lik[:, None]
+        return xp.log(xp.clip(mpars[(WEIGHT_NAME,)], eps)) + lik[:, None]
 
     def ln_prior_arr(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
@@ -123,7 +126,7 @@ class MultivariateNormal(StreamModel):
         -------
         Array
         """
-        lnp = xp.zeros_like(mpars[("weight",)])  # 100%
+        lnp = xp.zeros_like(mpars[(WEIGHT_NAME,)])  # 100%
         # Bounds
         lnp += self._ln_prior_coord_bnds(mpars, data)
         for bounds in self.param_bounds.flatvalues():
@@ -216,7 +219,7 @@ class MultivariateMissingNormal(MultivariateNormal):  # (MultivariateNormal)
         cov = indicator * sigma**2  # (N, 4) positive definite  # TODO: add eps
         det = (cov + (1 - indicator)).prod(dim=1, keepdims=True)  # (N, 1)
 
-        return xp.log(xp.clip(mpars[("weight",)], min=eps)) - 0.5 * (
+        return xp.log(xp.clip(mpars[(WEIGHT_NAME,)], min=eps)) - 0.5 * (
             dimensionality * _log2pi  # dim of data
             + xp.log(det)
             + (  # TODO: speed up

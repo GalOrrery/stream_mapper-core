@@ -4,50 +4,43 @@ from __future__ import annotations
 
 # STDLIB
 from abc import abstractmethod
-from math import inf
-from typing import TYPE_CHECKING, Any, ClassVar, Protocol
+from dataclasses import dataclass
+from functools import reduce
 
 # THIRD-PARTY
 import torch as xp
 from torch import nn
 
 # LOCAL
-from stream_ml.core.base import Model as CoreModel
+from stream_ml.core.base import ModelBase as CoreModelBase
 from stream_ml.core.data import Data
-from stream_ml.core.params import Params
-from stream_ml.pytorch.prior.bounds import PriorBounds, SigmoidBounds
+from stream_ml.core.params import Params, freeze_params, set_param
+from stream_ml.pytorch.api import Model
 from stream_ml.pytorch.typing import Array
-
-if TYPE_CHECKING:
-    # LOCAL
-    pass
+from stream_ml.pytorch.utils.misc import within_bounds
 
 __all__: list[str] = []
 
 
-class Model(CoreModel[Array], Protocol):
-    """Pytorch model base class.
-
-    Parameters
-    ----------
-    n_features : int
-        The number off features used by the NN.
-
-    name : str or None, optional keyword-only
-        The (internal) name of the model, e.g. 'stream' or 'background'. Note
-        that this can be different from the name of the model when it is used in
-        a mixture model (see :class:`~stream_ml.core.core.MixtureModelBase`).
-    """
-
-    DEFAULT_BOUNDS: ClassVar[PriorBounds] = SigmoidBounds(-inf, inf)
+@dataclass(unsafe_hash=True)
+class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
+    """Model base class."""
 
     def __post_init__(self) -> None:
-        nn.Module.__init__(self)  # Needed for PyTorch
         super().__post_init__()
+
+        # Validate param bounds.
+        self.param_bounds.validate(self.param_names)
+
+        self._ndim: int = len(self.coord_names)
 
     # ========================================================================
 
-    @abstractmethod
+    @property
+    def ndim(self) -> int:
+        """Number of dimensions."""
+        return self._ndim
+
     def unpack_params_from_arr(self, p_arr: Array) -> Params[Array]:
         """Unpack parameters into a dictionary.
 
@@ -63,7 +56,10 @@ class Model(CoreModel[Array], Protocol):
         -------
         Params[Array]
         """
-        raise NotImplementedError
+        pars: dict[str, Array | dict[str, Array]] = {}
+        for i, k in enumerate(self.param_names.flats):
+            set_param(pars, k, p_arr[:, i : i + 1])
+        return freeze_params(pars)
 
     def pack_params_to_arr(self, mpars: Params[Array], /) -> Array:
         """Pack parameters into an array.
@@ -78,12 +74,7 @@ class Model(CoreModel[Array], Protocol):
         -------
         Array
         """
-        # TODO: check that structure of pars matches self.param_names
-        # ie, that if elt is a string, then pars[elt] is a 1D array
-        # and if elt is a tuple, then pars[elt] is a dict.
-        return xp.concatenate(
-            [xp.atleast_1d(mpars[elt]) for elt in self.param_names.flats]
-        )
+        return Model.pack_params_to_arr(self, mpars)
 
     # ========================================================================
     # Statistics
@@ -92,7 +83,7 @@ class Model(CoreModel[Array], Protocol):
     def ln_likelihood_arr(
         self, mpars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
-        """Elementwise log-likelihood of the model.
+        """Log-likelihood of the model.
 
         Parameters
         ----------
@@ -110,16 +101,41 @@ class Model(CoreModel[Array], Protocol):
         """
         raise NotImplementedError
 
-    @abstractmethod
-    def ln_prior_arr(self, mpars: Params[Array], data: Data[Array]) -> Array:
-        """Elementwise log prior.
+    def _ln_prior_coord_bnds(self, mpars: Params[Array], data: Data[Array]) -> Array:
+        """Elementwise log prior for coordinate bounds.
 
         Parameters
         ----------
         mpars : Params[Array], positional-only
             Model parameters. Note that these are different from the ML
             parameters.
-        data : Data
+        data : Data[Array]
+            Data.
+
+        Returns
+        -------
+        Array
+            Zero everywhere except where the data are outside the
+            coordinate bounds, where it is -inf.
+        """
+        lnp = xp.zeros((len(data), 1))
+        where = reduce(
+            xp.logical_or,
+            (~within_bounds(data[k], *v) for k, v in self.coord_bounds.items()),
+        )
+        lnp[where] = -xp.inf
+        return lnp
+
+    @abstractmethod
+    def ln_prior_arr(self, mpars: Params[Array], data: Data[Array]) -> Array:
+        """Log prior.
+
+        Parameters
+        ----------
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
+        data : Data[Array]
             Data.
 
         Returns
@@ -146,7 +162,3 @@ class Model(CoreModel[Array], Protocol):
             fraction, mean, sigma
         """
         raise NotImplementedError
-
-    def __call__(self, *args: Any, **kwargs: Any) -> Array:
-        """Pytoch call method."""
-        ...

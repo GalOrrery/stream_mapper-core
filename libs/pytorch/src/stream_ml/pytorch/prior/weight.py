@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 import torch as xp
 
 # LOCAL
+from stream_ml.core.api import WEIGHT_NAME
 from stream_ml.core.data import Data
 from stream_ml.core.prior.base import PriorBase
 from stream_ml.pytorch.typing import Array
@@ -18,7 +19,7 @@ from stream_ml.pytorch.utils.misc import within_bounds
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.core.base import Model
+    from stream_ml.core.api import Model
     from stream_ml.core.params.core import Params
 
 __all__: list[str] = []
@@ -76,10 +77,10 @@ class BoundedHardThreshold(PriorBase[Array]):
         Array
             The logpdf.
         """
-        lnp = xp.zeros_like(mpars[("weight",)])
+        lnp = xp.zeros_like(mpars[(WEIGHT_NAME,)])
         lnp[
             within_bounds(data[self.coord_name], self.lower, self.upper)
-            & (mpars[("weight",)] < self.threshold)
+            & (mpars[(WEIGHT_NAME,)] < self.threshold)
         ] = -inf
         return lnp
 
@@ -99,7 +100,7 @@ class BoundedHardThreshold(PriorBase[Array]):
         -------
         Array
         """
-        im1 = model.param_names.flat.index("weight")
+        im1 = model.param_names.flat.index(WEIGHT_NAME)
         where = within_bounds(data[self.coord_name][:, 0], self.lower, self.upper)
 
         out = nn.clone()

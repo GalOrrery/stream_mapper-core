@@ -7,7 +7,7 @@ from abc import abstractmethod
 from dataclasses import dataclass
 
 # LOCAL
-from stream_ml.core.core import ModelBase
+from stream_ml.core.base import ModelBase
 from stream_ml.core.data import Data
 from stream_ml.core.params import Params
 from stream_ml.core.typing import Array

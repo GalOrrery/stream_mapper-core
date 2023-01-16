@@ -12,7 +12,7 @@ from jax.scipy.special import logsumexp
 
 # LOCAL
 from stream_ml.core.data import Data
-from stream_ml.core.mixture import MixtureModelBase
+from stream_ml.core.mixture import MixtureModel as CoreMixtureModel
 from stream_ml.core.params import Params
 from stream_ml.core.utils.frozen_dict import FrozenDictField
 from stream_ml.jax.base import Model
@@ -22,7 +22,7 @@ __all__: list[str] = []
 
 
 @dataclass
-class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[misc]
+class MixtureModel(nn.Module, CoreMixtureModel[Array], Model):  # type: ignore[misc]
     """Full Model.
 
     Parameters
@@ -38,7 +38,7 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
     components: FrozenDictField[str, Model] = FrozenDictField()  # type: ignore[assignment]  # noqa: E501
 
     def __post_init__(self) -> None:
-        MixtureModelBase.__post_init__(self)
+        CoreMixtureModel.__post_init__(self)
         # Needs to be done after, otherwise nn.Module freezes the dataclass.
         super().__post_init__()
 

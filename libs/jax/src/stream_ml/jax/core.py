@@ -12,7 +12,7 @@ import flax.linen as nn
 import jax.numpy as xp
 
 # LOCAL
-from stream_ml.core.core import ModelBase as CoreModelBase
+from stream_ml.core.base import ModelBase as CoreModelBase
 from stream_ml.core.data import Data
 from stream_ml.core.params import Params, freeze_params, set_param
 from stream_ml.jax.base import Model

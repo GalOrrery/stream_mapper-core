@@ -7,7 +7,7 @@ from abc import abstractmethod
 from collections.abc import Iterator
 from dataclasses import KW_ONLY, dataclass
 from math import inf
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 # LOCAL
 from stream_ml.core.data import Data
@@ -17,7 +17,7 @@ from stream_ml.core.typing import Array, BoundsT
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.core.base import Model
+    from stream_ml.core.api import Model
     from stream_ml.core.params.core import Params
 
 __all__: list[str] = []
@@ -103,7 +103,7 @@ class NoBounds(PriorBounds[Any]):
         model: Model[Array],
         current_lnpdf: Array | None = None,
         /,
-    ) -> Array | float:
+    ) -> Array | Literal[0]:
         """Evaluate the logpdf."""
         if self.param_name is None:
             msg = "need to set param_name"

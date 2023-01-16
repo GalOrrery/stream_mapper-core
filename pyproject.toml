@@ -77,4 +77,9 @@ ignore = [
   "I001",
   "PD",
   "RET505", "RET506", "RET507",
+
+  # flake8-commas (COM)
+  "COM812",  # TrailingCommaMissing
+  "COM818",  # TrailingCommaOnBareTupleProhibited
+  "COM819",  # TrailingCommaProhibited
 ]

@@ -19,7 +19,7 @@ from stream_ml.pytorch.utils.sigmoid import scaled_sigmoid
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.core.base import Model
+    from stream_ml.core.api import Model
     from stream_ml.core.params.core import Params
 
 __all__: list[str] = []
