@@ -170,7 +170,7 @@ class MultivariateMissingNormal(MultivariateNormal):  # (MultivariateNormal)
     n_layers: int = 4
 
     _: KW_ONLY
-    require_mask: bool = False
+    require_mask: bool = True
 
     def ln_likelihood_arr(
         self,
