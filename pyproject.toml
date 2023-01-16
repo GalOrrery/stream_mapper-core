@@ -1,8 +1,8 @@
 [tool.coverage.run]
   omit = [
-    "*/overload_numpy/conftest.py",
+    "*/stream_ml/conftest.py",
     "*setup_package*",
-    "*/overload_numpy/tests/*",
+    "*/stream_ml/tests/*",
   ]
 
 [tool.coverage.report]
