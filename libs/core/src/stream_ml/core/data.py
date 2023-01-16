@@ -4,16 +4,23 @@ from __future__ import annotations
 
 # STDLIB
 from dataclasses import KW_ONLY, dataclass
-from typing import Any, Generic, TypeGuard, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Any, Generic, TypeGuard, TypeVar, cast, overload
 
 # THIRD-PARTY
 import numpy as np
-from numpy.typing import NDArray
+from numpy.lib.recfunctions import structured_to_unstructured
 
 # LOCAL
 from stream_ml.core.typing import Array
 
-Self = TypeVar("Self", bound="Data[Array]")  # type: ignore[valid-type]
+if TYPE_CHECKING:
+    # THIRD-PARTY
+    from numpy.typing import NDArray
+
+    Self = TypeVar("Self", bound="Data[Array]")  # type: ignore[valid-type]
+
+
+LEN_INDEXING_TUPLE = 2
 
 
 def _all_strs(seq: tuple[Any, ...]) -> TypeGuard[tuple[str, ...]]:
@@ -129,7 +136,7 @@ class Data(Generic[Array]):
         elif isinstance(key, (list, np.ndarray)):
             return type(self)(self.array[key], names=self.names)  # type: ignore[index]
 
-        elif isinstance(key, tuple) and len(key) >= 2:
+        elif isinstance(key, tuple) and len(key) >= LEN_INDEXING_TUPLE:
             if _all_strs(key):
                 names = key
                 key = (slice(None), tuple(self._name_to_index[k] for k in key))
@@ -162,3 +169,22 @@ class Data(Generic[Array]):
     def items(self) -> tuple[tuple[str, Array], ...]:
         """Get the items as an iterator over the names and columns."""
         return tuple((k, self[k]) for k in self.names)
+
+    # =========================================================================
+    # Alternate constructors
+
+    @classmethod
+    def from_structured_array(cls: type[Self], array: Array, /) -> Self:
+        """Create a `Data` instance from a structured array.
+
+        Parameters
+        ----------
+        array : Array
+            The structured array.
+
+        Returns
+        -------
+        Data
+            The data instance.
+        """
+        return cls(structured_to_unstructured(array), names=array.dtype.names)
