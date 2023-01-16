@@ -80,7 +80,7 @@ class Sloped(BackgroundModel):
         mpars: Params[Array],
         data: Data[Array],
         *,
-        mask: Array | None = None,
+        mask: Data[Array] | None = None,
         **kwargs: Array,
     ) -> Array:
         """Log-likelihood of the background.
@@ -91,10 +91,11 @@ class Sloped(BackgroundModel):
             Model parameters. Note that these are different from the ML
             parameters.
         data : Data[Array]
-            Data.
+            Labelled data.
 
-        mask : (N, 1) Array[bool], keyword-only
+        mask : (N, 1) Data[Array[bool]], keyword-only
             Data availability. True if data is available, False if not.
+            Should have the same keys as `data`.
         **kwargs : Array
             Additional arguments.
 
@@ -109,12 +110,13 @@ class Sloped(BackgroundModel):
         # mask is not provided, then all data points are assumed to be
         # available.
         if mask is not None:
-            indicator = mask.int()
+            indicator = mask[tuple(self.coord_bounds.keys())].array.int()
         elif self.require_mask:
             msg = "mask is required"
             raise ValueError(msg)
         else:
-            indicator = xp.ones_like(f)
+            indicator = xp.ones_like(f, dtype=xp.int)
+            # This has shape (N, 1) so will broadcast correctly.
 
         # Compute the log-likelihood, columns are coordinates.
         lnliks = xp.zeros((len(f), 4))

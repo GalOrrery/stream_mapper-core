@@ -174,7 +174,7 @@ class MultivariateMissingNormal(MultivariateNormal):  # (MultivariateNormal)
         mpars: Params[Array],
         data: Data[Array],
         *,
-        mask: Array | None = None,
+        mask: Data[Array] | None = None,
         **kwargs: Array,
     ) -> Array:
         """Negative log-likelihood.
@@ -185,9 +185,10 @@ class MultivariateMissingNormal(MultivariateNormal):  # (MultivariateNormal)
             Model parameters. Note that these are different from the ML
             parameters.
         data : Data[Array]
-            Data.
-        mask : Array
-            Mask.
+            Labelled data.
+        mask : Data[Array[bool]] | None, optional
+            Data availability. `True` if data is available, `False` if not.
+            Should have the same keys as `data`.
         **kwargs : Array
             Additional arguments.
         """
@@ -195,13 +196,14 @@ class MultivariateMissingNormal(MultivariateNormal):  # (MultivariateNormal)
         mu = xp.hstack([mpars[c, "mu"] for c in self.coord_names])
         sigma = xp.hstack([mpars[c, "sigma"] for c in self.coord_names])
 
-        if mask is None:
-            if self.require_mask:
-                msg = "mask is required"
-                raise ValueError(msg)
-            indicator = xp.ones_like(datav)
+        if mask is not None:
+            indicator = mask[tuple(self.coord_bounds.keys())].array.int()
+        elif self.require_mask:
+            msg = "mask is required"
+            raise ValueError(msg)
         else:
-            indicator = mask.int()
+            indicator = xp.ones_like(datav, dtype=xp.int)
+            # shape (1, F) so that it can broadcast with (N, F)
 
         # misc
         eps = xp.finfo(datav.dtype).eps  # TODO: or tiny?

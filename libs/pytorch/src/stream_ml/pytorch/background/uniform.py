@@ -35,9 +35,7 @@ class Uniform(BackgroundModel):
     def __post_init__(self) -> None:
         super().__post_init__()
 
-        # Pre-compute the log-difference
-        # self._ln_diffs = xp.asarray(
-        # )[None, :]
+        # Pre-compute the log-difference, shape (1, F)
         self._ln_diffs = xp.log(
             xp.asarray([b - a for a, b in self.coord_bounds.values()])[None, :]
         )
@@ -50,7 +48,7 @@ class Uniform(BackgroundModel):
         mpars: Params[Array],
         data: Data[Array],
         *,
-        mask: Array | None = None,
+        mask: Data[Array] | None = None,
         **kwargs: Array,
     ) -> Array:
         """Log-likelihood of the background.
@@ -61,10 +59,11 @@ class Uniform(BackgroundModel):
             Model parameters. Note that these are different from the ML
             parameters.
         data : Data[Array]
-            Data.
+            Labelled data.
 
-        mask : (N, 1) Array[bool], keyword-only
-            Data availability. True if data is available, False if not.
+        mask : (N, 1) Data[Array[bool]], keyword-only
+            Data availability. `True` if data is available, `False` if not.
+            Should have the same keys as `data`.
         **kwargs : Array
             Additional arguments.
 
@@ -76,12 +75,13 @@ class Uniform(BackgroundModel):
         eps = xp.finfo(f.dtype).eps  # TOOD: or tiny?
 
         if mask is not None:
-            indicator = mask.int()
+            indicator = mask[tuple(self.coord_bounds.keys())].array.int()
         elif self.require_mask:
             msg = "mask is required"
             raise ValueError(msg)
         else:
-            indicator = xp.ones_like(self._ln_diffs)
+            indicator = xp.ones_like(self._ln_diffs, dtype=xp.int)
+            # shape (1, F) so that it can broadcast with (N, F)
 
         return xp.log(xp.clip(f, eps)) - (indicator * self._ln_diffs).sum(
             dim=1, keepdim=True
