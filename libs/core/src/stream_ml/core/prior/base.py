@@ -26,6 +26,9 @@ class PriorBase(Generic[Array], metaclass=ABCMeta):
     _: KW_ONLY
     name: str | None = None  # the name of the prior
 
+    def __post_init__(self) -> None:
+        """Post-init."""
+
     @abstractmethod
     def logpdf(
         self,
@@ -62,12 +65,12 @@ class PriorBase(Generic[Array], metaclass=ABCMeta):
         ...
 
     @abstractmethod
-    def __call__(self, nn: Array, data: Data[Array], model: Model[Array], /) -> Array:
+    def __call__(self, pred: Array, data: Data[Array], model: Model[Array], /) -> Array:
         """Evaluate the forward step in the prior.
 
         Parameters
         ----------
-        nn : Array, position-only
+        pred : Array, position-only
             The input to evaluate the prior at.
         data : Array, position-only
             The data to evaluate the prior at.

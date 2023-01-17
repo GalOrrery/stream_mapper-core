@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     Self = TypeVar("Self", bound="Data[Array]")  # type: ignore[valid-type]
 
 
-LEN_INDEXING_TUPLE = 2
+LEN_INDEXING_TUPLE = 1
 
 
 def _all_strs(seq: tuple[Any, ...]) -> TypeGuard[tuple[str, ...]]:

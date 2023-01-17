@@ -63,12 +63,12 @@ class Prior(PriorBase[Array]):
         """
         return self.logpdf_hook(mpars, data, model, current_lnpdf)
 
-    def __call__(self, nn: Array, data: Data[Array], model: Model[Array], /) -> Array:
+    def __call__(self, pred: Array, data: Data[Array], model: Model[Array], /) -> Array:
         """Evaluate the forward step in the prior.
 
         Parameters
         ----------
-        nn : Array
+        pred : Array
             The input to evaluate the prior at.
         data : Data[Array]
             The data to evaluate the prior at.
@@ -79,4 +79,4 @@ class Prior(PriorBase[Array]):
         -------
         Array
         """
-        return self.forward_hook(nn, model)
+        return self.forward_hook(pred, model)

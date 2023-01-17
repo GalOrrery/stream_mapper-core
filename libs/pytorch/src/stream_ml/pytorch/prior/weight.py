@@ -84,12 +84,12 @@ class BoundedHardThreshold(PriorBase[Array]):
         ] = -inf
         return lnp
 
-    def __call__(self, nn: Array, data: Data[Array], model: Model[Array], /) -> Array:
+    def __call__(self, pred: Array, data: Data[Array], model: Model[Array], /) -> Array:
         """Evaluate the forward step in the prior.
 
         Parameters
         ----------
-        nn : Array, position-only
+        pred : Array, position-only
             The input to evaluate the prior at.
         data : Data[Array], position-only
             The data to evaluate the prior at.
@@ -103,7 +103,7 @@ class BoundedHardThreshold(PriorBase[Array]):
         im1 = model.param_names.flat.index(WEIGHT_NAME)
         where = within_bounds(data[self.coord_name][:, 0], self.lower, self.upper)
 
-        out = nn.clone()
-        out[where, im1] = xp.threshold(nn[where, im1], self.threshold, 0)
+        out = pred.clone()
+        out[where, im1] = xp.threshold(pred[where, im1], self.threshold, 0)
 
         return out

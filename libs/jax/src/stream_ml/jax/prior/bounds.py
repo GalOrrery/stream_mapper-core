@@ -47,7 +47,7 @@ class PriorBounds(CorePriorBounds[Array]):
         return bp
 
     @abstractmethod
-    def __call__(self, nn: Array, data: Array, model: Model[Array], /) -> Array:
+    def __call__(self, pred: Array, data: Array, model: Model[Array], /) -> Array:
         """Evaluate the forward step in the prior."""
         ...
 
@@ -56,9 +56,9 @@ class PriorBounds(CorePriorBounds[Array]):
 class SigmoidBounds(PriorBounds):
     """Base class for prior bounds."""
 
-    def __call__(self, nn: Array, data: Array, model: Model[Array], /) -> Array:
+    def __call__(self, pred: Array, data: Array, model: Model[Array], /) -> Array:
         """Evaluate the forward step in the prior."""
         col = model.param_names.flats.index(self.param_name)
-        return nn.at[:, col].set(
-            scaled_sigmoid(nn[:, col], lower=self.lower, upper=self.upper)
+        return pred.at[:, col].set(
+            scaled_sigmoid(pred[:, col], lower=self.lower, upper=self.upper)
         )

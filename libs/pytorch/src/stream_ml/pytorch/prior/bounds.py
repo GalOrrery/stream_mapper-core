@@ -47,7 +47,7 @@ class PriorBounds(CorePriorBounds[Array]):
         return bp
 
     @abstractmethod
-    def __call__(self, nn: Array, data: Data[Array], model: Model[Array], /) -> Array:
+    def __call__(self, pred: Array, data: Data[Array], model: Model[Array], /) -> Array:
         """Evaluate the forward step in the prior."""
         ...
 
@@ -56,12 +56,12 @@ class PriorBounds(CorePriorBounds[Array]):
 class SigmoidBounds(PriorBounds):
     """Base class for prior bounds."""
 
-    def __call__(self, nn: Array, data: Data[Array], model: Model[Array], /) -> Array:
+    def __call__(self, pred: Array, data: Data[Array], model: Model[Array], /) -> Array:
         """Evaluate the forward step in the prior."""
-        nn = nn.clone()
+        pred = pred.clone()
 
         col = model.param_names.flats.index(self.param_name)
-        nn[:, col] = scaled_sigmoid(
-            nn[:, col], lower=xp.asarray([self.lower]), upper=xp.asarray([self.upper])
+        pred[:, col] = scaled_sigmoid(
+            pred[:, col], lower=xp.asarray([self.lower]), upper=xp.asarray([self.upper])
         )  # TODO: pre-store lower, upper as torch tensors
-        return nn
+        return pred

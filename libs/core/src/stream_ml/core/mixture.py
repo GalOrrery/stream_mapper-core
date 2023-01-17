@@ -9,6 +9,7 @@ from dataclasses import KW_ONLY, dataclass
 from typing import TYPE_CHECKING, Callable, Literal, cast
 
 # LOCAL
+from stream_ml.core.api import WEIGHT_NAME
 from stream_ml.core.bases import ModelsBase
 from stream_ml.core.params import ParamNames, Params
 from stream_ml.core.typing import Array
@@ -130,6 +131,11 @@ class MixtureModel(ModelsBase[Array]):
 
             # Increment the index
             j += len(m.param_names.flat)
+
+        # Always add the combined weight
+        pars[WEIGHT_NAME] = sum(
+            cast("Array", pars[f"{k}.weight"]) for k in self.components
+        )
 
         # Add / update the dependent parameters
         for name, tie in self.tied_params.items():
