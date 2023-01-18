@@ -85,7 +85,6 @@ class IndependentModels(ModelsBase[Array]):
         pars = dict[str, Array | Mapping[str, Array]]()
 
         # Do the weight first. This is shared across all components.
-        # FIXME! should pass the weight even to the background model.
         pars[WEIGHT_NAME] = p_arr[:, :1]
 
         # Iterate through the components
@@ -110,6 +109,8 @@ class IndependentModels(ModelsBase[Array]):
 
         return Params[Array](pars)
 
+    # TODO or make abstract and remove here, becuase it's abstract in the base
+    # class
     def pack_params_to_arr(self, mpars: Params[Array], /) -> Array:  # noqa: D102
         raise NotImplementedError
 

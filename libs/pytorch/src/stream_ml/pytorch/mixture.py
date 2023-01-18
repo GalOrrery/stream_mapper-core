@@ -40,12 +40,6 @@ class MixtureModel(ModelsBase, CoreMixtureModel[Array]):
             weight = xp.zeros((len(mp_arr), 1), dtype=mp_arr.dtype)
         return xp.hstack((weight, mp_arr))
 
-    def unpack_params_from_arr(self, p_arr: Array) -> Params[Array]:  # noqa: D102
-        return CoreMixtureModel.unpack_params_from_arr(self, p_arr)
-
-    def pack_params_to_arr(self, mpars: Params[Array]) -> Array:  # noqa: D102
-        return CoreMixtureModel.pack_params_to_arr(self, mpars)
-
     # ===============================================================
     # Statistics
 

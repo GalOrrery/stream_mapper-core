@@ -61,45 +61,8 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
             set_param(pars, k, p_arr[:, i : i + 1])
         return freeze_params(pars)
 
-    def pack_params_to_arr(self, mpars: Params[Array], /) -> Array:
-        """Pack parameters into an array.
-
-        Parameters
-        ----------
-        mpars : Params[Array], positional-only
-            Model parameters. Note that these are different from the ML
-            parameters.
-
-        Returns
-        -------
-        Array
-        """
-        return Model.pack_params_to_arr(self, mpars)
-
     # ========================================================================
     # Statistics
-
-    @abstractmethod
-    def ln_likelihood_arr(
-        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
-    ) -> Array:
-        """Log-likelihood of the model.
-
-        Parameters
-        ----------
-        mpars : Params[Array], positional-only
-            Model parameters. Note that these are different from the ML
-            parameters.
-        data : Data[Array]
-            Data.
-        **kwargs : Array
-            Additional arguments.
-
-        Returns
-        -------
-        Array
-        """
-        raise NotImplementedError
 
     def _ln_prior_coord_bnds(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Elementwise log prior for coordinate bounds.
@@ -118,6 +81,7 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
             Zero everywhere except where the data are outside the
             coordinate bounds, where it is -inf.
         """
+        # TODO! move this to be a method on coord_bounds
         lnp = xp.zeros((len(data), 1))
         where = reduce(
             xp.logical_or,

@@ -43,24 +43,6 @@ class Model(CoreModel[Array], Protocol):
 
     # ========================================================================
 
-    @abstractmethod
-    def unpack_params_from_arr(self, p_arr: Array) -> Params[Array]:
-        """Unpack parameters into a dictionary.
-
-        This function takes a parameter array and unpacks it into a dictionary
-        with the parameter names as keys.
-
-        Parameters
-        ----------
-        p_arr : Array
-            Parameter array.
-
-        Returns
-        -------
-        Params[Array]
-        """
-        raise NotImplementedError
-
     def pack_params_to_arr(self, mpars: Params[Array], /) -> Array:
         """Pack parameters into an array.
 
@@ -77,49 +59,6 @@ class Model(CoreModel[Array], Protocol):
         return xp.concatenate(
             [xp.atleast_1d(mpars[elt]) for elt in self.param_names.flats]
         )
-
-    # ========================================================================
-    # Statistics
-
-    @abstractmethod
-    def ln_likelihood_arr(
-        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
-    ) -> Array:
-        """Elementwise log-likelihood of the model.
-
-        Parameters
-        ----------
-        mpars : Params[Array], positional-only
-            Model parameters. Note that these are different from the ML
-            parameters.
-        data : Data[Array]
-            Data.
-        **kwargs : Array
-            Additional arguments.
-
-        Returns
-        -------
-        Array
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def ln_prior_arr(self, mpars: Params[Array], data: Data[Array]) -> Array:
-        """Elementwise log prior.
-
-        Parameters
-        ----------
-        mpars : Params[Array], positional-only
-            Model parameters. Note that these are different from the ML
-            parameters.
-        data : Data
-            Data.
-
-        Returns
-        -------
-        Array
-        """
-        raise NotImplementedError
 
     # ========================================================================
     # ML

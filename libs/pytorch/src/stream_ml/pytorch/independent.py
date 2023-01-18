@@ -6,9 +6,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 # LOCAL
-from stream_ml.core.data import Data
 from stream_ml.core.independent import IndependentModels as CoreIndependentModels
-from stream_ml.core.params.core import Params
 from stream_ml.pytorch.bases import ModelsBase
 from stream_ml.pytorch.typing import Array
 
@@ -44,14 +42,3 @@ class IndependentModels(ModelsBase, CoreIndependentModels[Array]):
         on parameters across models, e.g. the background and stream models in a
         mixture model.
     """
-
-    def unpack_params_from_arr(self, p_arr: Array) -> Params[Array]:  # noqa: D102
-        return CoreIndependentModels.unpack_params_from_arr(self, p_arr)
-
-    def pack_params_to_arr(self, mpars: Params[Array]) -> Array:  # noqa: D102
-        return CoreIndependentModels.pack_params_to_arr(self, mpars)
-
-    def ln_likelihood_arr(  # noqa: D102
-        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
-    ) -> Array:
-        return CoreIndependentModels.ln_likelihood_arr(self, mpars, data, **kwargs)

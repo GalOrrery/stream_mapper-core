@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 # STDLIB
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 from collections.abc import Iterator, Mapping
 from dataclasses import KW_ONLY, dataclass
 from typing import TYPE_CHECKING, Any, ClassVar, TypeVar
@@ -35,7 +35,7 @@ class ModelsBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMeta):
     name: str | None = None  # the name of the model
     priors: tuple[PriorBase[Array], ...] = ()
 
-    DEFAULT_BOUNDS: ClassVar = None
+    DEFAULT_BOUNDS: ClassVar[Any] = None  # TODO: ClassVar[PriorBase[Array]]
 
     def __post_init__(self) -> None:
         """Post-init validation."""
@@ -149,40 +149,6 @@ class ModelsBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMeta):
         """
         return super().unpack_params(packed_pars)
 
-    @abstractmethod
-    def unpack_params_from_arr(self, p_arr: Array) -> Params[Array]:
-        """Unpack parameters into a dictionary.
-
-        This function takes a parameter array and unpacks it into a dictionary
-        with the parameter names as keys.
-
-        Parameters
-        ----------
-        p_arr : Array
-            Parameter array.
-
-        Returns
-        -------
-        Params[Array]
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def pack_params_to_arr(self, mpars: Params[Array], /) -> Array:
-        """Pack parameters into an array.
-
-        Parameters
-        ----------
-        mpars : Params[Array], positional-only
-            Model parameters. Note that these are different from the ML
-            parameters.
-
-        Returns
-        -------
-        Array
-        """
-        raise NotImplementedError
-
     @staticmethod
     def _get_prefixed_kwargs(prefix: str, kwargs: dict[str, V]) -> dict[str, V]:
         """Get the kwargs with a given prefix.
@@ -204,13 +170,6 @@ class ModelsBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMeta):
 
     # ===============================================================
     # Statistics
-
-    @abstractmethod
-    def ln_likelihood_arr(
-        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
-    ) -> Array:
-        """Log likelihood."""
-        raise NotImplementedError
 
     def ln_prior_arr(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
@@ -241,7 +200,7 @@ class ModelsBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMeta):
             # Add to the total
             lnp = lnp + mlnp
 
-        # Plugin for priors
+        # Plugin for priors  # TODO: use super().ln_prior_arr here
         for prior in self.priors:
             lnp = lnp + prior.logpdf(mpars, data, self, lnp)
 

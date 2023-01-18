@@ -49,16 +49,6 @@ class ModelsBase(nn.Module, CoreModelsBase[Array], Model):  # type: ignore[misc]
         return self.components[key]
 
     # ===============================================================
-
-    @abstractmethod
-    def unpack_params_from_arr(self, p_arr: Array) -> Params[Array]:  # noqa: D102
-        raise NotImplementedError
-
-    @abstractmethod
-    def pack_params_to_arr(self, mpars: Params[Array], /) -> Array:  # noqa: D102
-        raise NotImplementedError
-
-    # ===============================================================
     # Statistics
 
     @abstractmethod

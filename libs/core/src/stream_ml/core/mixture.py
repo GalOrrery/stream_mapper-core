@@ -17,7 +17,7 @@ from stream_ml.core.utils.frozen_dict import FrozenDictField
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.core.data import Data
+    pass
 
 __all__: list[str] = []
 
@@ -133,8 +133,8 @@ class MixtureModel(ModelsBase[Array]):
             j += len(m.param_names.flat)
 
         # Always add the combined weight
-        pars[WEIGHT_NAME] = sum(
-            cast("Array", pars[f"{k}.weight"]) for k in self.components
+        pars[WEIGHT_NAME] = cast(
+            "Array", sum(pars[f"{k}.weight"] for k in self.components)
         )
 
         # Add / update the dependent parameters
@@ -142,34 +142,3 @@ class MixtureModel(ModelsBase[Array]):
             pars[name] = tie(pars)
 
         return Params[Array](pars)
-
-    @abstractmethod
-    def pack_params_to_arr(self, mpars: Params[Array], /) -> Array:  # noqa: D102
-        raise NotImplementedError
-
-    # ===============================================================
-    # Statistics
-
-    @abstractmethod
-    def ln_likelihood_arr(
-        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
-    ) -> Array:
-        """Log likelihood.
-
-        Just the log-sum-exp of the individual log-likelihoods.
-
-        Parameters
-        ----------
-        mpars : Params[Array], positional-only
-            Model parameters. Note that these are different from the ML
-            parameters.
-        data : Data[Array]
-            Data.
-        **kwargs : Array
-            Additional arguments.
-
-        Returns
-        -------
-        Array
-        """
-        raise NotImplementedError

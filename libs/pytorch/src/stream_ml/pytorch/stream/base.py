@@ -3,12 +3,10 @@
 from __future__ import annotations
 
 # STDLIB
-import abc
 from dataclasses import KW_ONLY, dataclass
 
 # LOCAL
 from stream_ml.core.data import Data
-from stream_ml.core.params import Params
 from stream_ml.core.stream.base import StreamModel as CoreStreamModel
 from stream_ml.pytorch.base import ModelBase
 from stream_ml.pytorch.typing import Array
@@ -22,49 +20,6 @@ class StreamModel(ModelBase, CoreStreamModel[Array]):
 
     _: KW_ONLY
     indep_coord_name: str = "phi1"  # TODO: move up class hierarchy
-
-    # ========================================================================
-    # Statistics
-
-    @abc.abstractmethod
-    def ln_likelihood_arr(
-        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
-    ) -> Array:
-        """Log-likelihood of the stream.
-
-        Parameters
-        ----------
-        mpars : Params[Array], positional-only
-            Model parameters. Note that these are different from the ML
-            parameters.
-        data : Data[Array]
-            Data.
-        **kwargs : Array
-            Additional arguments.
-
-        Returns
-        -------
-        Array
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def ln_prior_arr(self, mpars: Params[Array], data: Data[Array]) -> Array:
-        """Log prior.
-
-        Parameters
-        ----------
-        mpars : Params[Array], positional-only
-            Model parameters. Note that these are different from the ML
-            parameters.
-        data : Data[Array]
-            Data.
-
-        Returns
-        -------
-        Array
-        """
-        raise NotImplementedError
 
     # ========================================================================
     # ML
@@ -88,19 +43,3 @@ class StreamModel(ModelBase, CoreStreamModel[Array]):
         for bnd in self.param_bounds.flatvalues():
             out = bnd(out, data, self)
         return out
-
-    @abc.abstractmethod
-    def forward(self, data: Data[Array]) -> Array:
-        """Forward pass.
-
-        Parameters
-        ----------
-        data : Data
-            Input.
-
-        Returns
-        -------
-        Array
-            fraction, mean, sigma
-        """
-        raise NotImplementedError

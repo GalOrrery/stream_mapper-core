@@ -4,7 +4,7 @@ from __future__ import annotations
 
 # STDLIB
 from abc import abstractmethod
-from typing import TYPE_CHECKING, ClassVar, Protocol
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol
 
 # LOCAL
 from stream_ml.core.data import Data
@@ -41,7 +41,7 @@ class Model(Protocol[Array]):
     # Priors on the parameters.
     priors: tuple[PriorBase[Array], ...] = ()
 
-    DEFAULT_BOUNDS: ClassVar  # TODO: PriorBounds[Any]
+    DEFAULT_BOUNDS: ClassVar[Any]  # TODO: PriorBounds[Any]
 
     def __post_init__(self) -> None:
         # TODO: have ``xp`` be a property of the model.

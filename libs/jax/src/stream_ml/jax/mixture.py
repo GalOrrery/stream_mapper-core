@@ -49,21 +49,6 @@ class MixtureModel(nn.Module, CoreMixtureModel[Array], Model):  # type: ignore[m
         for name, model in self.components.items():
             setattr(self, "_model_" + name, model)
 
-    def pack_params_to_arr(self, mpars: Params[Array], /) -> Array:
-        """Pack parameters into an array.
-
-        Parameters
-        ----------
-        mpars : Params[Array], positional-only
-            Model parameters. Note that these are different from the ML
-            parameters.
-
-        Returns
-        -------
-        Array
-        """
-        return Model.pack_params_to_arr(self, mpars)
-
     # ===============================================================
     # Statistics
 
