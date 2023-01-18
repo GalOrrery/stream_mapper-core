@@ -90,24 +90,6 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
         lnp[where] = -xp.inf
         return lnp
 
-    @abstractmethod
-    def ln_prior_arr(self, mpars: Params[Array], data: Data[Array]) -> Array:
-        """Log prior.
-
-        Parameters
-        ----------
-        mpars : Params[Array], positional-only
-            Model parameters. Note that these are different from the ML
-            parameters.
-        data : Data[Array]
-            Data.
-
-        Returns
-        -------
-        Array
-        """
-        raise NotImplementedError
-
     # ========================================================================
     # ML
 

@@ -131,6 +131,12 @@ class MultivariateNormal(StreamModel):
         lnp += self._ln_prior_coord_bnds(mpars, data)
         for bounds in self.param_bounds.flatvalues():
             lnp += bounds.logpdf(mpars, data, self, lnp)
+
+        # TODO: use super().ln_prior_arr(mpars, data, current_lnp) once
+        #       the last argument is added to the signature.
+        for prior in self.priors:
+            lnp += prior.logpdf(mpars, data, self, lnp)
+
         return lnp
 
     # ========================================================================

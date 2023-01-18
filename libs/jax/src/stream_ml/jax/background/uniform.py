@@ -101,7 +101,14 @@ class Uniform(BackgroundModel):
         Array
         """
         lnp = xp.zeros_like(mpars[(WEIGHT_NAME,)])
-        return lnp + self._ln_prior_coord_bnds(mpars, data)
+        lnp = lnp + self._ln_prior_coord_bnds(mpars, data)
+
+        # TODO: use super().ln_prior_arr(mpars, data, current_lnp) once
+        #       the last argument is added to the signature.
+        for prior in self.priors:
+            lnp = lnp + prior.logpdf(mpars, data, self, lnp)
+
+        return lnp
 
     # ========================================================================
     # ML
