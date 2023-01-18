@@ -266,3 +266,10 @@ class Model(Protocol[Array]):
         Array
         """
         return self.ln_likelihood(mpars, data, **kw) + self.ln_prior(mpars, data)
+
+    # ------------------------------------------------------------------------
+    # Misc
+
+    def __call__(self, *args: Any, **kwds: Any) -> Any:
+        """Call the model."""
+        ...

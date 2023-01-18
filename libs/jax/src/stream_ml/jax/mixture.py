@@ -35,7 +35,7 @@ class MixtureModel(nn.Module, CoreMixtureModel[Array], Model):  # type: ignore[m
     """
 
     # Need to override this because of the type hinting
-    components: FrozenDictField[str, Model] = FrozenDictField()  # type: ignore[assignment]  # noqa: E501
+    components: FrozenDictField[str, Model] = FrozenDictField()
 
     def __post_init__(self) -> None:
         CoreMixtureModel.__post_init__(self)
