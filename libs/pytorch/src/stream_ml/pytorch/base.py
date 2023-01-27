@@ -5,7 +5,6 @@ from __future__ import annotations
 # STDLIB
 from abc import abstractmethod
 from dataclasses import dataclass
-from functools import reduce
 
 # THIRD-PARTY
 import torch as xp
@@ -17,7 +16,6 @@ from stream_ml.core.data import Data
 from stream_ml.core.params import Params, freeze_params, set_param
 from stream_ml.pytorch.api import Model
 from stream_ml.pytorch.typing import Array
-from stream_ml.pytorch.utils.misc import within_bounds
 
 __all__: list[str] = []
 
@@ -67,6 +65,16 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
     def _ln_prior_coord_bnds(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Elementwise log prior for coordinate bounds.
 
+        TODO: this is returning NaN for some reason
+
+        .. code-block:: python
+
+            where = reduce(
+                xp.logical_or,
+                (~within_bounds(data[k], *v) for k, v in self.coord_bounds.items()),
+            )
+            lnp[where] = -xp.inf
+
         Parameters
         ----------
         mpars : Params[Array], positional-only
@@ -83,12 +91,7 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
         """
         # TODO! move this to be a method on coord_bounds
         lnp = xp.zeros((len(data), 1))
-        where = reduce(
-            xp.logical_or,
-            (~within_bounds(data[k], *v) for k, v in self.coord_bounds.items()),
-        )
-        lnp[where] = -xp.inf
-        return lnp
+        return lnp  # noqa: RET504
 
     # ========================================================================
     # ML
