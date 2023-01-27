@@ -1,15 +1,9 @@
-"""Built-in background models.
-
-.. todo::
-
-    A bivariate tilted background model.
-
-"""
+"""Built-in background models."""
 
 from __future__ import annotations
 
 # STDLIB
-from dataclasses import KW_ONLY, dataclass
+from dataclasses import KW_ONLY, InitVar, dataclass
 
 # THIRD-PARTY
 import torch as xp
@@ -44,7 +38,10 @@ class Sloped(ModelBase):
         f(x) = m(x - \frac{a + b}{2}) + \frac{1}{b-a}
     """
 
+    net: InitVar[nn.Module | None] = None
+
     _: KW_ONLY
+    indep_coord_name: str = "phi1"  # TODO: move up class hierarchy
     param_names: ParamNamesField = ParamNamesField(
         (WEIGHT_NAME, (..., ("slope",))), requires_all_coordinates=False
     )
@@ -53,16 +50,19 @@ class Sloped(ModelBase):
     )
     require_mask: bool = False
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, net: nn.Module | None) -> None:  # type: ignore[override]
         super().__post_init__()
-
         # Initialize the parameter, making sure the slope isn't quite 0
         # for the gradient calculation.
         n_slopes = len(self.param_names) - 1  # (don't count the weight)
-        self.slope_params = nn.Parameter(xp.zeros(n_slopes) + 1e-5)
-        # TODO: need to ensure that the slope isn't too steep s.t. f(x) < 0
-        # I suppose this is a prior, but we might as well hard-code it here.
-        # TODO: ensure the starting weight is below the slope limit.
+
+        # Initialize the network
+        if net is None:
+            self.nn = nn.Linear(1, n_slopes)
+            # Note; would prefer nn.Parameter(xp.zeros((1, n_slopes)) + 1e-5)
+            # as that has 1/2 as many params, but it's not callable.
+        else:
+            self.nn = net
 
         # Pre-compute the associated constant factors
         self._bma = xp.asarray(
@@ -176,12 +176,7 @@ class Sloped(ModelBase):
         Array
             fraction, mean, sigma
         """
-        # TODO!
-        pred = (
-            (xp.sigmoid(self.slope_params) - 0.5)
-            / self._bma
-            * xp.ones((len(data), len(self.slope_params)))
-        )
+        pred = (xp.sigmoid(self.nn(data[self.indep_coord_name])) - 0.5) / self._bma
 
         # Call the prior to limit the range of the parameters
         # TODO: a better way to do the order of the priors.
