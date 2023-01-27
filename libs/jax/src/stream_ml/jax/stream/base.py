@@ -7,7 +7,6 @@ from dataclasses import dataclass
 
 # LOCAL
 from stream_ml.core.data import Data
-from stream_ml.core.stream.base import StreamModel as CoreStreamModel
 from stream_ml.jax.core import ModelBase
 from stream_ml.jax.typing import Array
 
@@ -15,8 +14,10 @@ __all__: list[str] = []
 
 
 @dataclass()
-class StreamModel(ModelBase, CoreStreamModel[Array]):
+class StreamModel(ModelBase):
     """Stream Model."""
+
+    n_features: int
 
     # ========================================================================
     # ML

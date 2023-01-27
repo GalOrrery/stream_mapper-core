@@ -7,7 +7,6 @@ from dataclasses import KW_ONLY, dataclass
 
 # LOCAL
 from stream_ml.core.data import Data
-from stream_ml.core.stream.base import StreamModel as CoreStreamModel
 from stream_ml.pytorch.base import ModelBase
 from stream_ml.pytorch.typing import Array
 
@@ -15,8 +14,10 @@ __all__: list[str] = []
 
 
 @dataclass(unsafe_hash=True)
-class StreamModel(ModelBase, CoreStreamModel[Array]):
+class StreamModel(ModelBase):
     """Stream Model."""
+
+    n_features: int
 
     _: KW_ONLY
     indep_coord_name: str = "phi1"  # TODO: move up class hierarchy
