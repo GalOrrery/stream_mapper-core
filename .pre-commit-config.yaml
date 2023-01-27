@@ -37,10 +37,6 @@ repos:
       - id: isort
         name: isort (python)
         additional_dependencies: [toml]
-      - id: isort
-        name: isort (pyi)
-        types: [pyi]
-        additional_dependencies: [toml]
 
   - repo: https://github.com/psf/black
     rev: 22.12.0
