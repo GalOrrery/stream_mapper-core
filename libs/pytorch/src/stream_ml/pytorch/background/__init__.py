@@ -1,8 +1,8 @@
 """Background models."""
 
 # LOCAL
-from .base import BackgroundModel
+from .exponential import Exponential
 from .sloped import Sloped
 from .uniform import Uniform
 
-__all__ = ["BackgroundModel", "Uniform", "Sloped"]
+__all__ = ["Uniform", "Sloped", "Exponential"]

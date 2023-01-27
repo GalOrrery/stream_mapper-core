@@ -12,7 +12,7 @@ import torch as xp
 from stream_ml.core.api import WEIGHT_NAME
 from stream_ml.core.data import Data
 from stream_ml.core.params import ParamBoundsField, ParamNamesField, Params
-from stream_ml.pytorch.background.base import BackgroundModel
+from stream_ml.pytorch.base import ModelBase
 from stream_ml.pytorch.prior.bounds import SigmoidBounds
 from stream_ml.pytorch.typing import Array
 
@@ -23,7 +23,7 @@ _eps = float(xp.finfo(xp.float32).eps)
 
 
 @dataclass(unsafe_hash=True)
-class Uniform(BackgroundModel):
+class Uniform(ModelBase):
     """Uniform background model."""
 
     _: KW_ONLY
