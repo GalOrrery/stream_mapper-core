@@ -6,9 +6,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, TypeVar, overload
 
-# THIRD-PARTY
 import numpy as np
+
+# THIRD-PARTY
+import torch as xp
 from numpy.typing import NDArray
+
+from stream_ml.core.data import TO_FORMAT_REGISTRY
 
 # LOCAL
 from stream_ml.core.data import Data as CoreData
@@ -80,3 +84,14 @@ class Data(CoreData[Array]):
             out = out[:, None]
 
         return out  # noqa: RET504
+
+
+# --------  Register  ------------------------------------------------------
+
+
+def _from_ndarray_to_tensor(data: CoreData[np.ndarray[Any, Any]], /) -> Data:
+    """Convert from numpy.ndarray to torch.Tensor."""
+    return Data(xp.from_numpy(data.array).float(), names=data.names)
+
+
+TO_FORMAT_REGISTRY[(np.ndarray, xp.Tensor)] = _from_ndarray_to_tensor

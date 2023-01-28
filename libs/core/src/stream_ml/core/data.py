@@ -4,7 +4,16 @@ from __future__ import annotations
 
 # STDLIB
 from dataclasses import KW_ONLY, dataclass
-from typing import TYPE_CHECKING, Any, Generic, TypeGuard, TypeVar, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Generic,
+    TypeGuard,
+    TypeVar,
+    cast,
+    overload,
+)
 
 # THIRD-PARTY
 import numpy as np
@@ -17,10 +26,21 @@ if TYPE_CHECKING:
     # THIRD-PARTY
     from numpy.typing import NDArray
 
+    from stream_ml.core.typing import ArrayLike
+
     Self = TypeVar("Self", bound="Data[Array]")  # type: ignore[valid-type]
+
+    ArrayT = TypeVar("ArrayT", bound=ArrayLike)
+
+
+#####################################################################
+# PARAMETERS
 
 
 LEN_INDEXING_TUPLE = 1
+
+
+#####################################################################
 
 
 def _all_strs(seq: tuple[Any, ...]) -> TypeGuard[tuple[str, ...]]:
@@ -188,3 +208,24 @@ class Data(Generic[Array]):
             The data instance.
         """
         return cls(structured_to_unstructured(array), names=array.dtype.names)
+
+    # =========================================================================
+    # I/O
+
+    def to_format(self, fmt: type[ArrayT], /) -> Data[ArrayT]:
+        """Convert the data to a different format.
+
+        Parameters
+        ----------
+        fmt : type
+            The format to convert to.
+
+        Returns
+        -------
+        Data
+            The converted data.
+        """
+        return cast("Data[ArrayT]", TO_FORMAT_REGISTRY[(type(self.array), fmt)](self))
+
+
+TO_FORMAT_REGISTRY: dict[tuple[type, type], Callable[[Data[Any]], Data[ArrayLike]]] = {}
