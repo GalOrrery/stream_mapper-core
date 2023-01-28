@@ -24,6 +24,8 @@ __all__: list[str] = []
 class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
     """Model base class."""
 
+    indep_coord_name: str = "phi1"  # TODO: move up class hierarchy?s
+
     def __post_init__(self) -> None:
         super().__post_init__()
 

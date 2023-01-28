@@ -25,17 +25,25 @@ _1 = xp.asarray(1)
 
 
 @dataclass(unsafe_hash=True)
-class Sloped(ModelBase):
+class Exponential(ModelBase):
     r"""Tilted separately in each dimension.
 
-    In each dimension the background is a sloped straight line between points
-    ``a`` and ``b``. The slope is ``m``.
+    In each dimension the background is an exponential distribution between
+    points ``a`` and ``b``. The rate parameter is ``m``.
 
     The non-zero portion of the PDF, where :math:`a < x < b` is
 
     .. math::
 
-        f(x) = m(x - \frac{a + b}{2}) + \frac{1}{b-a}
+        f(x) = \frac{m * e^{-m * (x -a)}}{1 - e^{-m * (b - a)}}
+
+    However, we use the order-3 Taylor expansion of the exponential function
+    around m=0, to avoid the m=0 indeterminancy.
+
+    .. math::
+
+        f(x) = \frac{1}{b-a} + m * (0.5 - \frac{x-a}{b-a}) + \frac{m^2}{2} *
+        (\frac{b-a}{6} - (x-a) + \frac{(x-a)^2}{b-a})
     """
 
     net: InitVar[nn.Module | None] = None
@@ -125,8 +133,20 @@ class Sloped(ModelBase):
             # slope is a parameter. If it is not, then we assume it is 0.
             # When the slope is 0, the log-likelihood reduces to a Uniform.
             m = mpars[(k, "slope")] if (k, "slope") in self.param_names.flats else 0
-            lnliks[:, i] = (
-                xp.log(m * (data[k] - (b[0] + b[1]) / 2) + 1 / (b[1] - b[0]))
+
+            # TODO! rewrite to better use logs
+            lnliks[:, i] = xp.log(
+                1 / (b[1] - b[0])
+                + (m * (0.5 - (data[k] - b[0]) / (b[1] - b[0])))
+                + (
+                    m**2
+                    * (
+                        (b[1] - b[0]) / 6
+                        - (data[k] - b[0])
+                        + (data[k] - b[0]) ** 2 / (b[1] - b[0])
+                    )
+                    / 2
+                )
             )[:, 0]
 
         return xp.log(xp.clip(f, eps)) + (indicator * lnliks).sum(dim=1, keepdim=True)
@@ -147,7 +167,6 @@ class Sloped(ModelBase):
         Array
         """
         lnp = xp.zeros((len(data), 1))
-
         # Bounds
         lnp += self._ln_prior_coord_bnds(mpars, data)
         for bounds in self.param_bounds.flatvalues():
