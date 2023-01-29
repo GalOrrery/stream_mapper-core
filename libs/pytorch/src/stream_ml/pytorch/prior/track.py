@@ -1,4 +1,11 @@
-"""Core feature."""
+"""Track priors.
+
+.. todo::
+
+    - Add a ControlRegions prior that is an equiprobability region centered on a
+      point. This is a lot less informative than the ControlPoints.
+
+"""
 
 from __future__ import annotations
 
@@ -94,9 +101,10 @@ class ControlPoints(PriorBase[Array]):
         )
 
         # For each control point, add the squared distance to the logpdf.
-        return -self.lamda * (  # (C, F) -> 1
-            (cmp_arr - self._control_point_deps.array) ** 2
-        ).sum(dim=0, keepdim=True)
+        return (
+            -self.lamda
+            * ((cmp_arr - self._control_point_deps.array) ** 2).sum()  # (C, F) -> 1
+        )
 
     def __call__(self, pred: Array, data: Data[Array], model: Model[Array], /) -> Array:
         """Evaluate the forward step in the prior.
