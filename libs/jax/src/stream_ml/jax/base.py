@@ -11,6 +11,7 @@ import jax.numpy as xp
 
 # LOCAL
 from stream_ml.core.api import Model as CoreModel
+from stream_ml.core.data import Data
 from stream_ml.core.params import Params
 from stream_ml.jax.prior.bounds import PriorBounds, SigmoidBounds
 from stream_ml.jax.typing import Array
@@ -58,6 +59,25 @@ class Model(CoreModel[Array], Protocol):
 
     # ========================================================================
     # ML
+
+    def _forward_prior(self, out: Array, data: Data[Array]) -> Array:
+        """Forward pass.
+
+        Parameters
+        ----------
+        out : Array
+            Input.
+        data : Data[Array]
+            Data.
+
+        Returns
+        -------
+        Array
+            Same as input.
+        """
+        for bnd in self.param_bounds.flatvalues():
+            out = bnd(out, data, self)
+        return out
 
     def __call__(self, *args: Array, **kwds: Any) -> Array:
         """Pytoch call method."""

@@ -22,8 +22,8 @@ from stream_ml.core.params.names import ParamNamesField
 from stream_ml.core.prior.bounds import NoBounds
 from stream_ml.core.typing import BoundsT
 from stream_ml.core.utils.frozen_dict import FrozenDict
+from stream_ml.pytorch.base import ModelBase
 from stream_ml.pytorch.prior.bounds import PriorBounds, SigmoidBounds
-from stream_ml.pytorch.stream.base import StreamModel
 
 if TYPE_CHECKING:
     # LOCAL
@@ -36,7 +36,7 @@ _eps = float(xp.finfo(xp.float32).eps)
 
 
 @dataclass(unsafe_hash=True)
-class Normal(StreamModel):
+class Normal(ModelBase):
     r"""2D Gaussian with mixture weight.
 
     :math:`(weight, \mu, \sigma)(\phi1)`

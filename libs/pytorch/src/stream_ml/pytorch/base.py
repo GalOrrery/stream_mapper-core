@@ -98,6 +98,25 @@ class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
     # ========================================================================
     # ML
 
+    def _forward_prior(self, out: Array, data: Data[Array]) -> Array:
+        """Forward pass.
+
+        Parameters
+        ----------
+        out : Array
+            Input.
+        data : Data[Array]
+            Data.
+
+        Returns
+        -------
+        Array
+            Same as input.
+        """
+        for bnd in self.param_bounds.flatvalues():
+            out = bnd(out, data, self)
+        return out
+
     @abstractmethod
     def forward(self, data: Data[Array]) -> Array:
         """Forward pass.

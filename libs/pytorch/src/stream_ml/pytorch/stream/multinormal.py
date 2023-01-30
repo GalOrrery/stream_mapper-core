@@ -18,7 +18,7 @@ from stream_ml.core.api import WEIGHT_NAME
 from stream_ml.core.data import Data
 from stream_ml.core.params import Params
 from stream_ml.core.params.names import ParamNamesField
-from stream_ml.pytorch.stream.base import StreamModel
+from stream_ml.pytorch.base import ModelBase
 
 if TYPE_CHECKING:
     # LOCAL
@@ -31,7 +31,7 @@ _log2pi = xp.log(xp.asarray(2 * xp.pi))
 
 
 @dataclass(unsafe_hash=True)
-class MultivariateNormal(StreamModel):
+class MultivariateNormal(ModelBase):
     """Stream Model.
 
     Parameters
