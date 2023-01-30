@@ -31,6 +31,7 @@ if TYPE_CHECKING:
     Self = TypeVar("Self", bound="Data[Array]")  # type: ignore[valid-type]
 
     ArrayT = TypeVar("ArrayT", bound=ArrayLike)
+    T = TypeVar("T")
 
 
 #####################################################################
@@ -38,6 +39,9 @@ if TYPE_CHECKING:
 
 
 LEN_INDEXING_TUPLE = 1
+
+DATA_HOOK: dict[type, Callable[[Data[Array]], Data[Array]]] = {}
+ARRAY_HOOK: dict[type, Callable[[Array], Array]] = {}
 
 
 #####################################################################
@@ -144,25 +148,24 @@ class Data(Generic[Array]):
         | tuple[int | slice | str | tuple[int | str, ...], ...],
         /,
     ) -> Array | Self:
+        out: Array | Self
         if isinstance(key, str):
-            return cast("Array", self.array[:, self._name_to_index[key]])  # type: ignore[index] # noqa: E501
+            out = cast("Array", self.array[:, self._name_to_index[key]])  # type: ignore[index] # noqa: E501
 
         elif isinstance(key, int):
-            return type(self)(self.array[None, key], names=self.names)  # type: ignore[index] # noqa: E501
+            out = type(self)(self.array[None, key], names=self.names)  # type: ignore[index] # noqa: E501
 
-        elif isinstance(key, slice):
-            return type(self)(self.array[key], names=self.names)  # type: ignore[index]
-
-        elif isinstance(key, (list, np.ndarray)):
-            return type(self)(self.array[key], names=self.names)  # type: ignore[index]
+        elif isinstance(key, (slice, list, np.ndarray)):
+            out = type(self)(self.array[key], names=self.names)  # type: ignore[index]
 
         elif isinstance(key, tuple) and len(key) >= LEN_INDEXING_TUPLE:
             if _all_strs(key):
                 names = key
                 key = (slice(None), tuple(self._name_to_index[k] for k in key))
-                return type(self)(self.array[key], names=names)  # type: ignore[index]
+                out = type(self)(self.array[key], names=names)  # type: ignore[index]
             elif isinstance(key[1], str):
                 key = (key[0], self._name_to_index[key[1]], *key[2:])
+                out = cast("Array", self.array[key])  # type: ignore[index]
             elif isinstance(key[1], tuple):
                 key = (
                     key[0],
@@ -172,8 +175,19 @@ class Data(Generic[Array]):
                     ),
                     *key[2:],
                 )
+                out = cast("Array", self.array[key])  # type: ignore[index]
+            else:
+                out = cast("Array", self.array[key])  # type: ignore[index]
 
-        return cast("Array", self.array[key])  # type: ignore[index]
+        else:
+            out = cast("Array", self.array[key])  # type: ignore[index]
+
+        if isinstance(out, Data) and type(out.array) in DATA_HOOK:
+            return cast("Self", DATA_HOOK[type(out.array)](out))
+        elif type(out) in ARRAY_HOOK:
+            return ARRAY_HOOK[type(out)](out)
+
+        return out
 
     # =========================================================================
     # Mapping methods
@@ -211,6 +225,10 @@ class Data(Generic[Array]):
 
     # =========================================================================
     # I/O
+
+    def __jax_array__(self) -> Array:
+        """Convert to a JAX array."""
+        return self.array
 
     def to_format(self, fmt: type[ArrayT], /) -> Data[ArrayT]:
         """Convert the data to a different format.
