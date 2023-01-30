@@ -13,7 +13,7 @@ import jax.numpy as xp
 from stream_ml.core.api import WEIGHT_NAME
 from stream_ml.core.data import Data
 from stream_ml.core.params import ParamBoundsField, ParamNames, ParamNamesField, Params
-from stream_ml.jax.core import ModelBase
+from stream_ml.jax.base import ModelBase
 from stream_ml.jax.prior.bounds import SigmoidBounds
 from stream_ml.jax.typing import Array
 

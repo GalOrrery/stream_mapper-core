@@ -15,7 +15,7 @@ from stream_ml.core.data import Data
 from stream_ml.core.mixture import MixtureModel as CoreMixtureModel
 from stream_ml.core.params import Params
 from stream_ml.core.utils.frozen_dict import FrozenDictField
-from stream_ml.jax.base import Model
+from stream_ml.jax.api import Model
 from stream_ml.jax.typing import Array
 
 __all__: list[str] = []

@@ -18,7 +18,7 @@ from stream_ml.core.params import ParamBounds, ParamBoundsField, ParamNames, Par
 from stream_ml.core.params.names import ParamNamesField
 from stream_ml.core.typing import BoundsT
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
-from stream_ml.jax.core import ModelBase
+from stream_ml.jax.base import ModelBase
 from stream_ml.jax.prior.bounds import PriorBounds
 from stream_ml.jax.typing import Array
 from stream_ml.jax.utils.tanh import Tanh

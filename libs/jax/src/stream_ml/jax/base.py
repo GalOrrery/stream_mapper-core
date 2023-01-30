@@ -3,82 +3,99 @@
 from __future__ import annotations
 
 # STDLIB
-from math import inf
-from typing import Any, ClassVar, Protocol
+from abc import abstractmethod
+from dataclasses import dataclass
+from functools import reduce
 
 # THIRD-PARTY
+import flax.linen as nn
 import jax.numpy as xp
 
 # LOCAL
-from stream_ml.core.api import Model as CoreModel
+from stream_ml.core.base import ModelBase as CoreModelBase
 from stream_ml.core.data import Data
-from stream_ml.core.params import Params
-from stream_ml.jax.prior.bounds import PriorBounds, SigmoidBounds
+from stream_ml.core.params import Params, freeze_params, set_param
+from stream_ml.jax.api import Model
 from stream_ml.jax.typing import Array
+from stream_ml.jax.utils.misc import within_bounds
 
 __all__: list[str] = []
 
 
-class Model(CoreModel[Array], Protocol):
-    """Pytorch model base class.
+@dataclass()
+class ModelBase(nn.Module, CoreModelBase[Array], Model):  # type: ignore[misc]
+    """Model base class."""
 
-    Parameters
-    ----------
-    n_features : int
-        The number off features used by the NN.
-
-    name : str or None, optional keyword-only
-        The (internal) name of the model, e.g. 'stream' or 'background'. Note
-        that this can be different from the name of the model when it is used in
-        a mixture model (see :class:`~stream_ml.core.core.MixtureModel`).
-    """
-
-    DEFAULT_BOUNDS: ClassVar[PriorBounds] = SigmoidBounds(-inf, inf)
+    def __post_init__(self) -> None:
+        CoreModelBase.__post_init__(self)
+        # Needs to be done after, otherwise nn.Module freezes the dataclass.
+        super().__post_init__()
 
     # ========================================================================
 
-    def pack_params_to_arr(self, mpars: Params[Array], /) -> Array:
-        """Pack parameters into an array.
+    def unpack_params_from_arr(self, p_arr: Array) -> Params[Array]:
+        """Unpack parameters into a dictionary.
+
+        This function takes a parameter array and unpacks it into a dictionary
+        with the parameter names as keys.
+
+        Parameters
+        ----------
+        p_arr : Array
+            Parameter array.
+
+        Returns
+        -------
+        Params
+        """
+        pars: dict[str, Array | dict[str, Array]] = {}
+        for i, k in enumerate(self.param_names.flats):
+            set_param(pars, k, p_arr[:, i : i + 1])
+        return freeze_params(pars)
+
+    # ========================================================================
+    # Statistics
+
+    def _ln_prior_coord_bnds(self, mpars: Params[Array], data: Data[Array]) -> Array:
+        """Elementwise log prior for coordinate bounds.
 
         Parameters
         ----------
         mpars : Params[Array], positional-only
             Model parameters. Note that these are different from the ML
             parameters.
-
-        Returns
-        -------
-        Array
-        """
-        # TODO: check that structure of pars matches self.param_names
-        # ie, that if elt is a string, then pars[elt] is a 1D array
-        # and if elt is a tuple, then pars[elt] is a dict.
-        return xp.concatenate(
-            [xp.atleast_1d(mpars[elt]) for elt in self.param_names.flats]
-        )
-
-    # ========================================================================
-    # ML
-
-    def _forward_prior(self, out: Array, data: Data[Array]) -> Array:
-        """Forward pass.
-
-        Parameters
-        ----------
-        out : Array
-            Input.
         data : Data[Array]
             Data.
 
         Returns
         -------
         Array
-            Same as input.
+            Zero everywhere except where the data are outside the
+            coordinate bounds, where it is -inf.
         """
-        for bnd in self.param_bounds.flatvalues():
-            out = bnd(out, data, self)
-        return out
+        lnp = xp.zeros(len(data))
+        where = reduce(
+            xp.logical_or,
+            (~within_bounds(data[k], *v) for k, v in self.coord_bounds.items()),
+        )
+        lnp = lnp.at[where].set(-xp.inf)
+        return lnp  # noqa: RET504
 
-    def __call__(self, *args: Array, **kwds: Any) -> Array:
-        """Pytoch call method."""
-        ...
+    # ========================================================================
+    # ML
+
+    @abstractmethod
+    def __call__(self, *args: Array) -> Array:
+        """Forward pass.
+
+        Parameters
+        ----------
+        *args : Array
+            Input.
+
+        Returns
+        -------
+        Array
+            fraction, mean, sigma
+        """
+        raise NotImplementedError
