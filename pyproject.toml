@@ -1,8 +1,8 @@
 [tool.coverage.run]
   omit = [
-    "*/overload_numpy/conftest.py",
+    "*/stream_ml/conftest.py",
     "*setup_package*",
-    "*/overload_numpy/tests/*",
+    "*/stream_ml/tests/*",
   ]
 
 [tool.coverage.report]
@@ -24,19 +24,6 @@
     # Don't complain about IPython completion helper
     "def _ipython_key_completions_",
   ]
-
-
-[tool.isort]
-  profile = "black"
-  include_trailing_comma = "True"
-  use_parentheses = "True"
-  ensure_newline_before_comments = "True"
-  known_localfolder = ["stream_ml", "stream_ml.jax"]
-  known_third_party = ["numpy", "pytest"]
-  import_heading_stdlib = "STDLIB"
-  import_heading_firstparty = "FIRST-PARTY"
-  import_heading_thirdparty = "THIRD-PARTY"
-  import_heading_localfolder = "LOCAL"
 
 
 [tool.mypy]
@@ -67,6 +54,7 @@
 
 
 [tool.ruff]
+target-version = "py310"
 line-length = 88
 select = ["ALL"]
 ignore = [
@@ -74,7 +62,16 @@ ignore = [
   "ARG001", "ARG002",
   "D105", "D107", "D203", "D213",
   "FBT003",
-  "I001",
   "PD",
   "RET505", "RET506", "RET507",
+
+  # flake8-commas (COM)
+  "COM812",  # TrailingCommaMissing
+  "COM818",  # TrailingCommaOnBareTupleProhibited
+  "COM819",  # TrailingCommaProhibited
 ]
+
+
+[tool.ruff.isort]
+known-first-party = ["stream_ml"]
+known-third-party = ["numpy", "pytest", "torch", "flax", "jax"]

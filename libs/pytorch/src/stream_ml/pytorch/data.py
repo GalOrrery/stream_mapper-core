@@ -3,80 +3,42 @@
 from __future__ import annotations
 
 # STDLIB
-from dataclasses import dataclass
-from typing import Any, TypeVar, overload
+from typing import Any
+
+import numpy as np
 
 # THIRD-PARTY
-import numpy as np
-from numpy.typing import NDArray
+import torch as xp
+
+from stream_ml.core.data import ARRAY_HOOK, DATA_HOOK, TO_FORMAT_REGISTRY, Data
 
 # LOCAL
-from stream_ml.core.data import Data as CoreData
 from stream_ml.pytorch.typing import Array
 
-Self = TypeVar("Self", bound="Data[Array]")  # type: ignore[type-arg]
+# --------  Register  ------------------------------------------------------
 
 
-@dataclass(frozen=True)
-class Data(CoreData[Array]):
-    """Data."""
+def _data_hook(data: Data[Array], /) -> Data[Array]:
+    if isinstance(data, Data) and data.array.ndim == 1:
+        object.__setattr__(data, "array", data.array[:, None])
+    return data
 
-    # -----------------------------------------------------------------------
 
-    @overload
-    def __getitem__(self, key: str, /) -> Array:  # get a column
-        ...
+DATA_HOOK[Array] = _data_hook
 
-    @overload
-    def __getitem__(self: Self, key: int, /) -> Self:  # get a row
-        ...
 
-    @overload
-    def __getitem__(self: Self, key: slice, /) -> Self:  # get a slice of rows
-        ...
+def _array_hook(array: Array, /) -> Array:
+    if isinstance(array, Array) and array.ndim == 1:
+        return array[:, None]
+    return array
 
-    @overload
-    def __getitem__(
-        self: Self, key: list[int] | NDArray[np.integer[Any]], /
-    ) -> Self:  # get rows
-        ...
 
-    @overload
-    def __getitem__(self: Self, key: tuple[str, ...], /) -> Self:  # get columns
-        ...
+ARRAY_HOOK[Array] = _array_hook
 
-    @overload
-    def __getitem__(self, key: tuple[int, ...], /) -> Array:  # get element
-        ...
 
-    @overload
-    def __getitem__(self, key: tuple[slice, ...], /) -> Array:  # get elements
-        ...
+def _from_ndarray_to_tensor(data: Data[np.ndarray[Any, Any]], /) -> Data[xp.Tensor]:
+    """Convert from numpy.ndarray to torch.Tensor."""
+    return Data(xp.from_numpy(data.array).float(), names=data.names)
 
-    @overload
-    def __getitem__(
-        self, key: tuple[int | slice | str | tuple[int | str, ...], ...], /
-    ) -> Array:
-        ...
 
-    def __getitem__(
-        self: Self,
-        key: str
-        | int
-        | slice
-        | list[int]
-        | NDArray[np.integer[Any]]
-        | tuple[int, ...]
-        | tuple[str, ...]
-        | tuple[slice, ...]
-        | tuple[int | slice | str | tuple[int | str, ...], ...],
-        /,
-    ) -> Array | Self:
-        out = super().__getitem__(key)
-
-        if isinstance(out, type(self)) and self.array.ndim == 1:
-            object.__setattr__(out, "array", out.array[:, None])
-        elif isinstance(out, Array) and out.ndim == 1:
-            out = out[:, None]
-
-        return out  # noqa: RET504
+TO_FORMAT_REGISTRY[(np.ndarray, xp.Tensor)] = _from_ndarray_to_tensor

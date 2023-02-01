@@ -14,10 +14,11 @@ from torch import nn
 from torch.distributions import MultivariateNormal as TorchMultivariateNormal
 
 # LOCAL
+from stream_ml.core.api import WEIGHT_NAME
 from stream_ml.core.data import Data
 from stream_ml.core.params import Params
 from stream_ml.core.params.names import ParamNamesField
-from stream_ml.pytorch.stream.base import StreamModel
+from stream_ml.pytorch.base import ModelBase
 
 if TYPE_CHECKING:
     # LOCAL
@@ -30,7 +31,7 @@ _log2pi = xp.log(xp.asarray(2 * xp.pi))
 
 
 @dataclass(unsafe_hash=True)
-class MultivariateNormal(StreamModel):
+class MultivariateNormal(ModelBase):
     """Stream Model.
 
     Parameters
@@ -49,7 +50,9 @@ class MultivariateNormal(StreamModel):
     n_layers: int = 3
 
     _: KW_ONLY
-    param_names: ParamNamesField = ParamNamesField(("weight", (..., ("mu", "sigma"))))
+    param_names: ParamNamesField = ParamNamesField(
+        (WEIGHT_NAME, (..., ("mu", "sigma")))
+    )
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -96,7 +99,7 @@ class MultivariateNormal(StreamModel):
         -------
         Array
         """
-        eps = xp.finfo(mpars[("weight",)].dtype).eps  # TODO: or tiny?
+        eps = xp.finfo(mpars[(WEIGHT_NAME,)].dtype).eps  # TODO: or tiny?
         datav = data[self.coord_names].array
 
         lik = TorchMultivariateNormal(
@@ -106,7 +109,7 @@ class MultivariateNormal(StreamModel):
             ),
         ).log_prob(datav)
 
-        return xp.log(xp.clip(mpars[("weight",)], eps)) + lik[:, None]
+        return xp.log(xp.clip(mpars[(WEIGHT_NAME,)], eps)) + lik[:, None]
 
     def ln_prior_arr(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
@@ -123,11 +126,17 @@ class MultivariateNormal(StreamModel):
         -------
         Array
         """
-        lnp = xp.zeros_like(mpars[("weight",)])  # 100%
+        lnp = xp.zeros_like(mpars[(WEIGHT_NAME,)])  # 100%
         # Bounds
         lnp += self._ln_prior_coord_bnds(mpars, data)
         for bounds in self.param_bounds.flatvalues():
             lnp += bounds.logpdf(mpars, data, self, lnp)
+
+        # TODO: use super().ln_prior_arr(mpars, data, current_lnp) once
+        #       the last argument is added to the signature.
+        for prior in self.priors:
+            lnp += prior.logpdf(mpars, data, self, lnp)
+
         return lnp
 
     # ========================================================================
@@ -167,14 +176,14 @@ class MultivariateMissingNormal(MultivariateNormal):  # (MultivariateNormal)
     n_layers: int = 4
 
     _: KW_ONLY
-    require_mask: bool = False
+    require_mask: bool = True
 
     def ln_likelihood_arr(
         self,
         mpars: Params[Array],
         data: Data[Array],
         *,
-        mask: Array | None = None,
+        mask: Data[Array] | None = None,
         **kwargs: Array,
     ) -> Array:
         """Negative log-likelihood.
@@ -185,9 +194,10 @@ class MultivariateMissingNormal(MultivariateNormal):  # (MultivariateNormal)
             Model parameters. Note that these are different from the ML
             parameters.
         data : Data[Array]
-            Data.
-        mask : Array
-            Mask.
+            Labelled data.
+        mask : Data[Array[bool]] | None, optional
+            Data availability. `True` if data is available, `False` if not.
+            Should have the same keys as `data`.
         **kwargs : Array
             Additional arguments.
         """
@@ -195,13 +205,14 @@ class MultivariateMissingNormal(MultivariateNormal):  # (MultivariateNormal)
         mu = xp.hstack([mpars[c, "mu"] for c in self.coord_names])
         sigma = xp.hstack([mpars[c, "sigma"] for c in self.coord_names])
 
-        if mask is None:
-            if self.require_mask:
-                msg = "mask is required"
-                raise ValueError(msg)
-            indicator = xp.ones_like(datav)
+        if mask is not None:
+            indicator = mask[tuple(self.coord_bounds.keys())].array.int()
+        elif self.require_mask:
+            msg = "mask is required"
+            raise ValueError(msg)
         else:
-            indicator = mask.int()
+            indicator = xp.ones_like(datav, dtype=xp.int)
+            # shape (1, F) so that it can broadcast with (N, F)
 
         # misc
         eps = xp.finfo(datav.dtype).eps  # TODO: or tiny?
@@ -214,7 +225,7 @@ class MultivariateMissingNormal(MultivariateNormal):  # (MultivariateNormal)
         cov = indicator * sigma**2  # (N, 4) positive definite  # TODO: add eps
         det = (cov + (1 - indicator)).prod(dim=1, keepdims=True)  # (N, 1)
 
-        return xp.log(xp.clip(mpars[("weight",)], min=eps)) - 0.5 * (
+        return xp.log(xp.clip(mpars[(WEIGHT_NAME,)], min=eps)) - 0.5 * (
             dimensionality * _log2pi  # dim of data
             + xp.log(det)
             + (  # TODO: speed up

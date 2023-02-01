@@ -3,30 +3,60 @@
 from __future__ import annotations
 
 # STDLIB
-from abc import abstractmethod
-from typing import TYPE_CHECKING, ClassVar, Protocol
+from abc import ABCMeta, abstractmethod
+from dataclasses import KW_ONLY, dataclass, replace
+from math import inf
+from typing import TYPE_CHECKING, ClassVar
 
 # LOCAL
+from stream_ml.core.api import Model
 from stream_ml.core.data import Data
-from stream_ml.core.params.bounds import ParamBounds, ParamBoundsField
-from stream_ml.core.params.core import Params, freeze_params, set_param
-from stream_ml.core.params.names import ParamNamesField
-from stream_ml.core.typing import Array
+from stream_ml.core.params import ParamBounds, ParamNamesField, Params
+from stream_ml.core.params.bounds import ParamBoundsField
+from stream_ml.core.params.names import FlatParamName
+from stream_ml.core.prior.base import PriorBase
+from stream_ml.core.prior.bounds import NoBounds, PriorBounds
+from stream_ml.core.typing import Array, BoundsT
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.core.typing import BoundsT, FlatParsT
+    pass
 
 __all__: list[str] = []
 
 
-class Model(Protocol[Array]):
-    """Model base class."""
+@dataclass(unsafe_hash=True)
+class ModelBase(Model[Array], metaclass=ABCMeta):
+    """Single-model base class.
 
-    name: str | None
+    Parameters
+    ----------
+    name : str or None, optional keyword-only
+        The (internal) name of the model, e.g. 'stream' or 'background'. Note
+        that this can be different from the name of the model when it is used in
+        a mixture model (see :class:`~stream_ml.core.core.MixtureModel`).
 
-    # Name of the coordinates and parameters.
+    coord_names : tuple[str, ...], keyword-only
+        The names of the coordinates, not including the 'independent' variable.
+        E.g. for independent variable 'phi1' this might be ('phi2', 'prlx',
+        ...).
+    param_names : `~stream_ml.core.params.ParamNames`, keyword-only
+        The names of the parameters. Parameters dependent on the coordinates are
+        grouped by the coordinate name.
+        E.g. ('weight', ('phi1', ('mu', 'sigma'))).
+
+    coord_bounds : Mapping[str, tuple[float, float]], keyword-only
+        The bounds on the coordinates. If not provided, the bounds are
+        (-inf, inf) for all coordinates.
+
+    param_bounds : `~stream_ml.core.params.ParamBounds`, keyword-only
+        The bounds on the parameters.
+    """
+
+    _: KW_ONLY
+    name: str | None = None  # the name of the model
+
     coord_names: tuple[str, ...]
     param_names: ParamNamesField = ParamNamesField()
 
@@ -34,115 +64,43 @@ class Model(Protocol[Array]):
     coord_bounds: FrozenDictField[str, BoundsT] = FrozenDictField(FrozenDict())
     param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array](ParamBounds())
 
-    DEFAULT_BOUNDS: ClassVar  # TODO: PriorBounds[Any]
+    priors: tuple[PriorBase[Array], ...] = ()
+
+    DEFAULT_BOUNDS: ClassVar  # TODO: [PriorBounds[Any]]
 
     def __post_init__(self) -> None:
-        pass
+        """Post-init validation."""
+        super().__post_init__()
 
-    # ========================================================================
+        # Validate the param_names
+        if not self.param_names:
+            msg = "param_names must be specified"
+            raise ValueError(msg)
 
-    @property
-    def ndim(self) -> int:
-        """Number of dimensions."""
-        return len(self.coord_names)
+        # Make coord bounds if not provided
+        crnt_cbs = dict(self.coord_bounds)
+        cbs = {n: crnt_cbs.pop(n, (-inf, inf)) for n in self.coord_names}
+        if crnt_cbs:  # Error if there are extra keys
+            msg = f"coord_bounds contains invalid keys {crnt_cbs.keys()}."
+            raise ValueError(msg)
+        self.coord_bounds = FrozenDict(cbs)
 
-    def unpack_params(self, packed_pars: FlatParsT[Array], /) -> Params[Array]:
-        """Unpack parameters into a dictionary.
-
-        This function takes a parameter array and unpacks it into a dictionary
-        with the parameter names as keys.
-
-        Parameters
-        ----------
-        packed_pars : Array, positional-only
-            Flat dictionary of parameters.
-
-        Returns
-        -------
-        Params[Array]
-            Nested dictionary of parameters wth parameters grouped by coordinate
-            name.
-        """
-        pars: dict[str, Array | dict[str, Array]] = {}
-
-        for k in packed_pars:
-            # Find the non-coordinate-specific parameters.
-            if k in self.param_bounds:
-                pars[k] = packed_pars[k]
-                continue
-
-            # separate the coordinate and parameter names.
-            coord_name, par_name = k.split("_", maxsplit=1)
-            # Add the parameter to the coordinate-specific dict.
-            set_param(pars, (coord_name, par_name), packed_pars[k])
-
-        return freeze_params(pars)
-
-    @abstractmethod
-    def unpack_params_from_arr(self, p_arr: Array) -> Params[Array]:
-        """Unpack parameters into a dictionary.
-
-        This function takes a parameter array and unpacks it into a dictionary
-        with the parameter names as keys.
-
-        Parameters
-        ----------
-        p_arr : Array
-            Parameter array.
-
-        Returns
-        -------
-        Params[Array]
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def pack_params_to_arr(self, mpars: Params[Array], /) -> Array:
-        """Pack model parameters into an array.
-
-        Parameters
-        ----------
-        mpars : Params[Array], positional-only
-            Model parameters. Note that these are different from the ML
-            parameters.
-
-        Returns
-        -------
-        Array
-        """
-        raise NotImplementedError
+        # Make parameter bounds
+        # 1) Make the default bounds for all parameters.
+        # 2) Update from the user-specified bounds.
+        # 3) Fix up the names so each bound references its parameter.
+        param_bounds: ParamBounds[Array] = (
+            ParamBounds.from_names(self.param_names, default=self.DEFAULT_BOUNDS)
+            | self.param_bounds
+        )
+        self.param_bounds = param_bounds._fixup_param_names()
 
     # ========================================================================
     # Statistics
 
-    # ------------------------------------------------------------------------
-    # Elementwise versions
-
     @abstractmethod
-    def ln_likelihood_arr(
-        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
-    ) -> Array:
-        """Elementwise log-likelihood of the model.
-
-        Parameters
-        ----------
-        mpars : Params[Array], positional-only
-            Model parameters. Note that these are different from the ML
-            parameters.
-        data : Data[Array]
-            Data.
-        **kwargs : Array
-            Additional arguments.
-
-        Returns
-        -------
-        Array
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def ln_prior_arr(self, mpars: Params[Array], data: Data[Array]) -> Array:
-        """Elementwise log prior.
+    def _ln_prior_coord_bnds(self, mpars: Params[Array], data: Data[Array]) -> Array:
+        """Elementwise log prior for coordinate bounds.
 
         Parameters
         ----------
@@ -158,89 +116,22 @@ class Model(Protocol[Array]):
         """
         raise NotImplementedError
 
-    def ln_posterior_arr(
-        self, mpars: Params[Array], data: Data[Array], **kw: Array
-    ) -> Array:
-        """Elementwise log posterior.
+    # ========================================================================
+    # Misc
 
-        Parameters
-        ----------
-        mpars : Params[Array], positional-only
-            Model parameters. Note that these are different from the ML
-            parameters.
-        data : Data
-            Data.
-        **kw : Array
-            Arguments.
+    @classmethod
+    def _make_bounds(
+        cls, bounds: PriorBounds[Array] | BoundsT | None, param_name: FlatParamName
+    ) -> PriorBounds[Array]:
+        """Make bounds."""
+        if isinstance(bounds, PriorBounds):
+            return bounds
+        elif bounds is None:
+            return NoBounds()
 
-        Returns
-        -------
-        Array
-        """
-        return self.ln_likelihood_arr(mpars, data, **kw) + self.ln_prior_arr(
-            mpars, data
+        return replace(
+            cls.DEFAULT_BOUNDS,
+            lower=bounds[0],
+            upper=bounds[1],
+            param_name=param_name,
         )
-
-    # ------------------------------------------------------------------------
-    # Scalar versions
-
-    def ln_likelihood(
-        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
-    ) -> Array:
-        """Log-likelihood of the model.
-
-        This is evaluated over the entire data set.
-
-        Parameters
-        ----------
-        mpars : Params[Array], positional-only
-            Model parameters. Note that these are different from the ML
-            parameters.
-        data : Data
-            Data.
-        **kwargs : Array
-            Additional arguments.
-
-        Returns
-        -------
-        Array
-        """
-        return self.ln_likelihood_arr(mpars, data, **kwargs).sum()
-
-    def ln_prior(self, mpars: Params[Array], data: Data[Array]) -> Array:
-        """Log prior.
-
-        Parameters
-        ----------
-        mpars : Params[Array], positional-only
-            Model parameters. Note that these are different from the ML
-            parameters.
-        data : Data
-            Data.
-
-        Returns
-        -------
-        Array
-        """
-        return self.ln_prior_arr(mpars, data).sum()
-
-    def ln_posterior(
-        self, mpars: Params[Array], data: Data[Array], **kw: Array
-    ) -> Array:
-        """Log posterior.
-
-        Parameters
-        ----------
-        mpars : Params[Array], positional-only
-            Model parameters. Note that these are different from the ML
-            parameters.
-        data : Data[Array]
-            Data.
-        **kw : Array
-            Keyword arguments. These are passed to the likelihood function.
-
-        Returns
-        -------
-        Array
-        """
-        return self.ln_likelihood(mpars, data, **kw) + self.ln_prior(mpars, data)

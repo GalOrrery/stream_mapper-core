@@ -4,16 +4,47 @@ from __future__ import annotations
 
 # STDLIB
 from dataclasses import KW_ONLY, dataclass
-from typing import Any, Generic, TypeGuard, TypeVar, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Generic,
+    TypeGuard,
+    TypeVar,
+    cast,
+    overload,
+)
 
 # THIRD-PARTY
 import numpy as np
-from numpy.typing import NDArray
+from numpy.lib.recfunctions import structured_to_unstructured
 
 # LOCAL
 from stream_ml.core.typing import Array
 
-Self = TypeVar("Self", bound="Data[Array]")  # type: ignore[valid-type]
+if TYPE_CHECKING:
+    # THIRD-PARTY
+    from numpy.typing import NDArray
+
+    from stream_ml.core.typing import ArrayLike
+
+    Self = TypeVar("Self", bound="Data[Array]")  # type: ignore[valid-type]
+
+    ArrayT = TypeVar("ArrayT", bound=ArrayLike)
+    T = TypeVar("T")
+
+
+#####################################################################
+# PARAMETERS
+
+
+LEN_INDEXING_TUPLE = 1
+
+DATA_HOOK: dict[type, Callable[[Data[Array]], Data[Array]]] = {}
+ARRAY_HOOK: dict[type, Callable[[Array], Array]] = {}
+
+
+#####################################################################
 
 
 def _all_strs(seq: tuple[Any, ...]) -> TypeGuard[tuple[str, ...]]:
@@ -117,25 +148,24 @@ class Data(Generic[Array]):
         | tuple[int | slice | str | tuple[int | str, ...], ...],
         /,
     ) -> Array | Self:
+        out: Array | Self
         if isinstance(key, str):
-            return cast("Array", self.array[:, self._name_to_index[key]])  # type: ignore[index] # noqa: E501
+            out = cast("Array", self.array[:, self._name_to_index[key]])  # type: ignore[index] # noqa: E501
 
         elif isinstance(key, int):
-            return type(self)(self.array[None, key], names=self.names)  # type: ignore[index] # noqa: E501
+            out = type(self)(self.array[None, key], names=self.names)  # type: ignore[index] # noqa: E501
 
-        elif isinstance(key, slice):
-            return type(self)(self.array[key], names=self.names)  # type: ignore[index]
+        elif isinstance(key, (slice, list, np.ndarray)):
+            out = type(self)(self.array[key], names=self.names)  # type: ignore[index]
 
-        elif isinstance(key, (list, np.ndarray)):
-            return type(self)(self.array[key], names=self.names)  # type: ignore[index]
-
-        elif isinstance(key, tuple) and len(key) >= 2:
+        elif isinstance(key, tuple) and len(key) >= LEN_INDEXING_TUPLE:
             if _all_strs(key):
                 names = key
                 key = (slice(None), tuple(self._name_to_index[k] for k in key))
-                return type(self)(self.array[key], names=names)  # type: ignore[index]
+                out = type(self)(self.array[key], names=names)  # type: ignore[index]
             elif isinstance(key[1], str):
                 key = (key[0], self._name_to_index[key[1]], *key[2:])
+                out = cast("Array", self.array[key])  # type: ignore[index]
             elif isinstance(key[1], tuple):
                 key = (
                     key[0],
@@ -145,8 +175,19 @@ class Data(Generic[Array]):
                     ),
                     *key[2:],
                 )
+                out = cast("Array", self.array[key])  # type: ignore[index]
+            else:
+                out = cast("Array", self.array[key])  # type: ignore[index]
 
-        return cast("Array", self.array[key])  # type: ignore[index]
+        else:
+            out = cast("Array", self.array[key])  # type: ignore[index]
+
+        if isinstance(out, Data) and type(out.array) in DATA_HOOK:
+            return cast("Self", DATA_HOOK[type(out.array)](out))
+        elif type(out) in ARRAY_HOOK:
+            return ARRAY_HOOK[type(out)](out)
+
+        return out
 
     # =========================================================================
     # Mapping methods
@@ -162,3 +203,47 @@ class Data(Generic[Array]):
     def items(self) -> tuple[tuple[str, Array], ...]:
         """Get the items as an iterator over the names and columns."""
         return tuple((k, self[k]) for k in self.names)
+
+    # =========================================================================
+    # Alternate constructors
+
+    @classmethod
+    def from_structured_array(cls: type[Self], array: Array, /) -> Self:
+        """Create a `Data` instance from a structured array.
+
+        Parameters
+        ----------
+        array : Array
+            The structured array.
+
+        Returns
+        -------
+        Data
+            The data instance.
+        """
+        return cls(structured_to_unstructured(array), names=array.dtype.names)
+
+    # =========================================================================
+    # I/O
+
+    def __jax_array__(self) -> Array:
+        """Convert to a JAX array."""
+        return self.array
+
+    def to_format(self, fmt: type[ArrayT], /) -> Data[ArrayT]:
+        """Convert the data to a different format.
+
+        Parameters
+        ----------
+        fmt : type
+            The format to convert to.
+
+        Returns
+        -------
+        Data
+            The converted data.
+        """
+        return cast("Data[ArrayT]", TO_FORMAT_REGISTRY[(type(self.array), fmt)](self))
+
+
+TO_FORMAT_REGISTRY: dict[tuple[type, type], Callable[[Data[Any]], Data[ArrayLike]]] = {}

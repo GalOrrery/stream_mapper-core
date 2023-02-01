@@ -3,31 +3,30 @@
 from __future__ import annotations
 
 # STDLIB
-from abc import ABCMeta, abstractmethod
-from collections.abc import Iterator, Mapping
+from abc import abstractmethod
+from collections.abc import Mapping
 from dataclasses import KW_ONLY, dataclass
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, TypeVar
+from typing import TYPE_CHECKING, Callable, Literal, cast
 
 # LOCAL
-from stream_ml.core.base import Model
-from stream_ml.core.params import ParamBounds, ParamNames, Params
-from stream_ml.core.prior.base import PriorBase
-from stream_ml.core.typing import Array, BoundsT
-from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
+from stream_ml.core.api import WEIGHT_NAME
+from stream_ml.core.bases import ModelsBase
+from stream_ml.core.params import ParamNames, Params
+from stream_ml.core.typing import Array
+from stream_ml.core.utils.frozen_dict import FrozenDictField
 
 if TYPE_CHECKING:
     # LOCAL
-    from stream_ml.core.data import Data
-    from stream_ml.core.typing import FlatParsT
+    pass
 
 __all__: list[str] = []
 
 
-V = TypeVar("V")
+BACKGROUND_KEY = "background"
 
 
 @dataclass
-class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMeta):
+class MixtureModel(ModelsBase[Array]):
     """Full Model.
 
     Parameters
@@ -39,7 +38,7 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
     name : str or None, optional keyword-only
         The (internal) name of the model, e.g. 'stream' or 'background'. Note
         that this can be different from the name of the model when it is used in
-        a mixture model (see :class:`~stream_ml.core.core.MixtureModelBase`).
+        a mixture model (see :class:`~stream_ml.core.core.MixtureModel`).
 
     tied_params : Mapping[str, Callable[[Params], Array]], optional keyword-only
         Mapping of parameter names to functions that take the parameters of the
@@ -53,24 +52,12 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
         mixture model.
     """
 
-    components: FrozenDictField[str, Model[Array]] = FrozenDictField()
-
     _: KW_ONLY
-    name: str | None = None  # the name of the model
     tied_params: FrozenDictField[
         str, Callable[[Mapping[str, Array | Mapping[str, Array]]], Array]
     ] = FrozenDictField({})
-    priors: tuple[PriorBase[Array], ...] = ()
-
-    DEFAULT_BOUNDS: ClassVar = None
 
     def __post_init__(self) -> None:
-        # Add the coord_names
-        cns: list[str] = []
-        for m in self.components.values():
-            cns.extend(c for c in m.coord_names if c not in cns)
-        self._coord_names: tuple[str, ...] = tuple(cns)
-
         # Add the param_names  # TODO: make sure no duplicates
         self._param_names: ParamNames = ParamNames(
             (f"{c}.{p[0]}", p[1]) if isinstance(p, tuple) else f"{c}.{p}"
@@ -78,102 +65,27 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
             for p in m.param_names
         )
 
-        # Add the coord_bounds
-        # TODO: make sure duplicates have the same bounds
-        cbs: FrozenDict[str, BoundsT] = FrozenDict()
-        for m in self.components.values():
-            cbs._dict.update(m.coord_bounds)
-        self._coord_bounds = cbs
-
-        # Add the param_bounds
-        cps: ParamBounds[Array] = ParamBounds()
-        for n, m in self.components.items():
-            cps._dict.update({f"{n}_{k}": v for k, v in m.param_bounds.items()})
-        self._param_bounds = cps
+        # Check if the model has a background component.
+        # If it does, then it must be the last component.
+        includes_bkg = BACKGROUND_KEY in self.components
+        if includes_bkg and tuple(self.components.keys())[-1] != BACKGROUND_KEY:
+            msg = "the background model must be the last component."
+            raise KeyError(msg)
+        self._includes_bkg: bool = includes_bkg
 
         super().__post_init__()
 
-    @property
-    def coord_names(self) -> tuple[str, ...]:
-        """Coordinate names."""
-        return self._coord_names
-
-    @coord_names.setter  # hack to match the Protocol
-    def coord_names(self, value: Any) -> None:
-        """Set the coordinate names."""
-        msg = "cannot set coord_names"
-        raise AttributeError(msg)
-
-    @property  # type: ignore[override]
-    def param_names(self) -> ParamNames:
-        """Parameter names."""
-        return self._param_names
-
-    @param_names.setter  # hack to match the Protocol
-    def param_names(self, value: Any) -> None:
-        """Set the parameter names."""
-        msg = "cannot set param_names"
-        raise AttributeError(msg)
-
-    @property  # type: ignore[override]
-    def coord_bounds(self) -> FrozenDict[str, BoundsT]:
-        """Coordinate names."""
-        return self._coord_bounds
-
-    @coord_bounds.setter  # hack to match the Protocol
-    def coord_bounds(self, value: Any) -> None:
-        """Set the coordinate bounds."""
-        msg = "cannot set coord_bounds"
-        raise AttributeError(msg)
-
-    @property  # type: ignore[override]
-    def param_bounds(self) -> ParamBounds[Array]:
-        """Coordinate names."""
-        return self._param_bounds
-
-    @param_bounds.setter  # hack to match the Protocol
-    def param_bounds(self, value: Any) -> None:
-        """Set the parameter bounds."""
-        msg = "cannot set param_bounds"
-        raise AttributeError(msg)
-
-    # ===============================================================
-    # Mapping
-
-    def __getitem__(self, key: str) -> Model[Array]:
-        c: Model[Array] = self.components[key]
-        return c
-
-    def __iter__(self) -> Iterator[str]:
-        return iter(self.components)
-
-    def __len__(self) -> int:
-        return len(self.components)
-
-    def __hash__(self) -> int:
-        return hash(tuple(self.keys()))
-
     # ===============================================================
 
-    def unpack_params(self, packed_pars: FlatParsT[Array], /) -> Params[Array]:
-        """Unpack parameters into a dictionary.
+    @abstractmethod
+    def _hook_unpack_bkg_weight(
+        self, weight: Array | Literal[1], mp_arr: Array
+    ) -> Array:
+        """Hook to unpack the background weight.
 
-        Unpack a flat dictionary of parameters -- where keys have coordinate name,
-        parameter name, and model component name -- into a nested dictionary with
-        parameters grouped by coordinate name.
-
-        Parameters
-        ----------
-        packed_pars : Array, positional-only
-            Flat dictionary of parameters.
-
-        Returns
-        -------
-        Params
-            Nested dictionary of parameters wth parameters grouped by coordinate
-            name.
+        This is necessary because JAX doesn't support assignment to a slice.
         """
-        return super().unpack_params(packed_pars)
+        raise NotImplementedError
 
     def unpack_params_from_arr(self, p_arr: Array) -> Params[Array]:
         """Unpack parameters into a dictionary.
@@ -196,8 +108,19 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
         for n, m in self.components.items():  # iter thru models
             # Get relevant parameters by index
             mp_arr = p_arr[:, slice(j, j + len(m.param_names.flat))]
+            if n == BACKGROUND_KEY:  # include the weight
+                weight = sum(
+                    cast("Array", pars[f"{k}.weight"])
+                    for k in tuple(self.components.keys())[:-1]
+                    # skipping the background, which is the last component
+                )
+                bkg_weight: Array | Literal[1] = (
+                    1 - weight if not isinstance(weight, int) else 1
+                )
 
-            # TODO: what to do about tied parameters?
+                # The background weight is 1 - the other weights
+                # it is the index-0 column of the array
+                mp_arr = self._hook_unpack_bkg_weight(bkg_weight, mp_arr)
 
             # Skip empty (and incrementing the index)
             if mp_arr.shape[1] == 0:
@@ -209,88 +132,13 @@ class MixtureModelBase(Model[Array], Mapping[str, Model[Array]], metaclass=ABCMe
             # Increment the index
             j += len(m.param_names.flat)
 
+        # Always add the combined weight
+        pars[WEIGHT_NAME] = cast(
+            "Array", sum(pars[f"{k}.weight"] for k in self.components)
+        )
+
         # Add / update the dependent parameters
         for name, tie in self.tied_params.items():
             pars[name] = tie(pars)
 
         return Params[Array](pars)
-
-    @abstractmethod
-    def pack_params_to_arr(self, mpars: Params[Array], /) -> Array:
-        """Pack parameters into an array.
-
-        Parameters
-        ----------
-        mpars : Params[Array], positional-only
-            Model parameters. Note that these are different from the ML
-            parameters.
-
-        Returns
-        -------
-        Array
-        """
-        raise NotImplementedError
-
-    @staticmethod
-    def _get_prefixed_kwargs(prefix: str, kwargs: dict[str, V]) -> dict[str, V]:
-        """Get the kwargs with a given prefix.
-
-        Parameters
-        ----------
-        prefix : str
-            Prefix.
-        kwargs : dict[str, V]
-            Keyword arguments.
-
-        Returns
-        -------
-        dict[str, V]
-        """
-        prefix = prefix + "_" if not prefix.endswith("_") else prefix
-        lp = len(prefix)
-        return {k[lp:]: v for k, v in kwargs.items() if k.startswith(prefix)}
-
-    # ===============================================================
-    # Statistics
-
-    @abstractmethod
-    def ln_likelihood_arr(
-        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
-    ) -> Array:
-        """Log likelihood.
-
-        Just the log-sum-exp of the individual log-likelihoods.
-
-        Parameters
-        ----------
-        mpars : Params[Array], positional-only
-            Model parameters. Note that these are different from the ML
-            parameters.
-        data : Data[Array]
-            Data.
-        **kwargs : Array
-            Additional arguments.
-
-        Returns
-        -------
-        Array
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def ln_prior_arr(self, mpars: Params[Array], data: Data[Array]) -> Array:
-        """Log prior.
-
-        Parameters
-        ----------
-        mpars : Params[Array], positional-only
-            Model parameters. Note that these are different from the ML
-            parameters.
-        data : Data[Array]
-            Data.
-
-        Returns
-        -------
-        Array
-        """
-        raise NotImplementedError

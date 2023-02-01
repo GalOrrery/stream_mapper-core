@@ -7,6 +7,7 @@ from collections.abc import Iterable, Mapping
 from typing import TypeVar, cast, overload
 
 # LOCAL
+from stream_ml.core.params.names import LEN_NAME_TUPLE
 from stream_ml.core.utils.frozen_dict import FrozenDict
 
 __all__: list[str] = []
@@ -60,7 +61,7 @@ class Params(FrozenDict[str, V | FrozenDict[str, V]]):
             value = self._dict[key]
         elif len(key) == 1:
             value = self._dict[key[0]]
-        elif len(key) == 2:
+        elif len(key) == LEN_NAME_TUPLE:
             key = cast("tuple[str, str]", key)  # TODO: remove cast
             cm = self._dict[key[0]]
             if not isinstance(cm, Mapping):

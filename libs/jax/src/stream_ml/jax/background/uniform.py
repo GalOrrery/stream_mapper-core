@@ -10,9 +10,10 @@ from typing import Any
 import jax.numpy as xp
 
 # LOCAL
+from stream_ml.core.api import WEIGHT_NAME
 from stream_ml.core.data import Data
 from stream_ml.core.params import ParamBoundsField, ParamNames, ParamNamesField, Params
-from stream_ml.jax.background.base import BackgroundModel
+from stream_ml.jax.base import ModelBase
 from stream_ml.jax.prior.bounds import SigmoidBounds
 from stream_ml.jax.typing import Array
 
@@ -22,7 +23,7 @@ _eps = float(xp.finfo(xp.float32).eps)
 
 
 @dataclass()
-class Uniform(BackgroundModel):
+class Uniform(ModelBase):
     """Uniform background model.
 
     Raises
@@ -33,9 +34,9 @@ class Uniform(BackgroundModel):
 
     n_features: int = 0
     _: KW_ONLY
-    param_names: ParamNamesField = ParamNamesField(ParamNames(("weight",)))
+    param_names: ParamNamesField = ParamNamesField(ParamNames((WEIGHT_NAME,)))
     param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array](
-        {"weight": SigmoidBounds(_eps, 1.0, param_name=("weight",))}
+        {WEIGHT_NAME: SigmoidBounds(_eps, 1.0, param_name=(WEIGHT_NAME,))}
     )
 
     def __post_init__(self) -> None:
@@ -81,8 +82,8 @@ class Uniform(BackgroundModel):
         Array
         """
         # Need to protect the fraction if < 0
-        eps = xp.finfo(mpars[("weight",)].dtype).eps  # TOOD: or tiny?
-        return xp.log(xp.clip(mpars[("weight",)], eps)) - self._logdiffs.sum()
+        eps = xp.finfo(mpars[(WEIGHT_NAME,)].dtype).eps  # TOOD: or tiny?
+        return xp.log(xp.clip(mpars[(WEIGHT_NAME,)], eps)) - self._logdiffs.sum()
 
     def ln_prior_arr(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
@@ -99,8 +100,15 @@ class Uniform(BackgroundModel):
         -------
         Array
         """
-        lnp = xp.zeros_like(mpars[("weight",)])
-        return lnp + self._ln_prior_coord_bnds(mpars, data)
+        lnp = xp.zeros_like(mpars[(WEIGHT_NAME,)])
+        lnp = lnp + self._ln_prior_coord_bnds(mpars, data)
+
+        # TODO: use super().ln_prior_arr(mpars, data, current_lnp) once
+        #       the last argument is added to the signature.
+        for prior in self.priors:
+            lnp = lnp + prior.logpdf(mpars, data, self, lnp)
+
+        return lnp
 
     # ========================================================================
     # ML

@@ -15,6 +15,11 @@ Self = TypeVar("Self", bound="ArrayLike")
 class ArrayLike(Protocol):
     """Protocol for array addition."""
 
+    @property
+    def dtype(self) -> Any:
+        """Data type."""
+        ...
+
     # ========================================================================
     # Properties
 
@@ -49,6 +54,10 @@ class ArrayLike(Protocol):
         """Multiplication."""
         ...
 
+    def __neg__(self: Self) -> Self:
+        """Negation."""
+        ...
+
     def __sub__(self: Self, other: ArrayLike | int | float) -> Self:
         """Subtraction."""
         ...
@@ -80,7 +89,7 @@ class ArrayLike(Protocol):
 Array = TypeVar("Array", bound="ArrayLike")
 
 
-FlatParsT = Mapping[str, Array]
+FlatParsT: TypeAlias = Mapping[str, Array]
 
 
 BoundsT: TypeAlias = tuple[float, float]

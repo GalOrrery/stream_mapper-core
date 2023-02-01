@@ -1,21 +1,25 @@
-"""Core feature."""
+"""Track priors.
+
+.. todo::
+
+    - Add a ControlRegions prior that is an equiprobability region centered on a
+      point. This is a lot less informative than the ControlPoints.
+
+"""
 
 from __future__ import annotations
 
 # STDLIB
 from dataclasses import KW_ONLY, dataclass
-from math import inf
 from typing import TYPE_CHECKING
 
 # THIRD-PARTY
 import torch as xp
 
 # LOCAL
-from stream_ml.core.api import WEIGHT_NAME
 from stream_ml.core.data import Data
 from stream_ml.core.prior.base import PriorBase
 from stream_ml.pytorch.typing import Array
-from stream_ml.pytorch.utils.misc import within_bounds
 
 if TYPE_CHECKING:
     # LOCAL
@@ -26,24 +30,34 @@ __all__: list[str] = []
 
 
 @dataclass(frozen=True)
-class BoundedHardThreshold(PriorBase[Array]):
-    """Threshold prior.
+class ControlPoints(PriorBase[Array]):
+    """Control points prior.
 
     Parameters
     ----------
-    threshold : float, optional
-        The threshold, by default 0.005
-    lower : float, optional
-        The lower bound in the domain of the prior, by default `-inf`.
-    upper : float, optional
-        The upper bound in the domain of the prior, by default `inf`.
+    control_points : Data[Array]
+        The control points.
+    lamda : float, optional
+        Importance hyperparameter.
     """
 
-    threshold: float = 0.005
+    control_points: Data[Array]
+    lamda: float = 0.05  # TODO? as a trainable Parameter.
     _: KW_ONLY
     coord_name: str = "phi1"
-    lower: float = -inf
-    upper: float = inf
+    component_param_name: str = "mu"
+
+    def __post_init__(self) -> None:
+        """Post-init."""
+        # Pre-store the control points, seprated by indep & dep parameters.
+        self._cpts_indep: Data[Array]
+        object.__setattr__(self, "_cpts_indep", self.control_points[(self.coord_name,)])
+
+        dep_names = tuple(n for n in self.control_points.names if n != self.coord_name)
+        self._control_point_deps: Data[Array]
+        object.__setattr__(self, "_control_point_deps", self.control_points[dep_names])
+
+        super().__post_init__()
 
     def logpdf(
         self,
@@ -77,12 +91,20 @@ class BoundedHardThreshold(PriorBase[Array]):
         Array
             The logpdf.
         """
-        lnp = xp.zeros_like(mpars[(WEIGHT_NAME,)])
-        lnp[
-            within_bounds(data[self.coord_name], self.lower, self.upper)
-            & (mpars[(WEIGHT_NAME,)] < self.threshold)
-        ] = -inf
-        return lnp
+        # Get the model parameters evaluated at the control points. shape (C, 1).
+        cmpars = model.unpack_params_from_arr(model(self._cpts_indep))
+        cmp_arr = xp.hstack(  # (C, F)
+            tuple(
+                cmpars[(n, self.component_param_name)]
+                for n in self._control_point_deps.names
+            )
+        )
+
+        # For each control point, add the squared distance to the logpdf.
+        return (
+            -self.lamda
+            * ((cmp_arr - self._control_point_deps.array) ** 2).sum()  # (C, F) -> 1
+        )
 
     def __call__(self, pred: Array, data: Data[Array], model: Model[Array], /) -> Array:
         """Evaluate the forward step in the prior.
@@ -100,10 +122,4 @@ class BoundedHardThreshold(PriorBase[Array]):
         -------
         Array
         """
-        im1 = model.param_names.flat.index(WEIGHT_NAME)
-        where = within_bounds(data[self.coord_name][:, 0], self.lower, self.upper)
-
-        out = pred.clone()
-        out[where, im1] = xp.threshold(pred[where, im1], self.threshold, 0)
-
-        return out
+        return pred

@@ -12,17 +12,17 @@ from jax.scipy.special import logsumexp
 
 # LOCAL
 from stream_ml.core.data import Data
-from stream_ml.core.mixture import MixtureModelBase
+from stream_ml.core.mixture import MixtureModel as CoreMixtureModel
 from stream_ml.core.params import Params
 from stream_ml.core.utils.frozen_dict import FrozenDictField
-from stream_ml.jax.base import Model
+from stream_ml.jax.api import Model
 from stream_ml.jax.typing import Array
 
 __all__: list[str] = []
 
 
 @dataclass
-class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[misc]
+class MixtureModel(nn.Module, CoreMixtureModel[Array], Model):  # type: ignore[misc]
     """Full Model.
 
     Parameters
@@ -38,7 +38,7 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
     components: FrozenDictField[str, Model] = FrozenDictField()  # type: ignore[assignment]  # noqa: E501
 
     def __post_init__(self) -> None:
-        MixtureModelBase.__post_init__(self)
+        CoreMixtureModel.__post_init__(self)
         # Needs to be done after, otherwise nn.Module freezes the dataclass.
         super().__post_init__()
 
@@ -48,21 +48,6 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
         #  FrozenDictField and adding a register method?
         for name, model in self.components.items():
             setattr(self, "_model_" + name, model)
-
-    def pack_params_to_arr(self, mpars: Params[Array], /) -> Array:
-        """Pack parameters into an array.
-
-        Parameters
-        ----------
-        mpars : Params[Array], positional-only
-            Model parameters. Note that these are different from the ML
-            parameters.
-
-        Returns
-        -------
-        Array
-        """
-        return Model.pack_params_to_arr(self, mpars)
 
     # ===============================================================
     # Statistics

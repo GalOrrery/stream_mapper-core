@@ -40,6 +40,9 @@ FlatParamName: TypeAlias = tuple[str] | tuple[str, str]  # type: ignore[misc]
 FlatParamNames: TypeAlias = tuple[FlatParamName, ...]
 
 
+LEN_NAME_TUPLE = 2
+
+
 class ParamNamesBase(
     Sequence[str | tuple[str, CoordParamNamesT] | tuple[T, CoordParamNamesT]]
 ):
@@ -168,7 +171,7 @@ class ParamNames(ParamNamesBase[str]):
             elif not isinstance(elt, tuple):
                 msg = f"Invalid element type: {type(elt)}"  # type: ignore[unreachable] # noqa: E501
                 raise TypeError(msg)
-            elif len(elt) != 2:
+            elif len(elt) != LEN_NAME_TUPLE:
                 msg = f"Invalid element length: {len(elt)}"
                 raise ValueError(msg)
             elif not isinstance(elt[0], str):
@@ -197,7 +200,7 @@ class IncompleteParamNames(ParamNamesBase[EllipsisType]):
             elif not isinstance(elt, tuple):
                 msg = f"Invalid element type: {type(elt)}"  # type: ignore[unreachable]
                 raise TypeError(msg)
-            elif len(elt) != 2:
+            elif len(elt) != LEN_NAME_TUPLE:
                 msg = f"Invalid element length: {len(elt)}"
                 raise ValueError(msg)
             elif not isinstance(elt[0], (str, EllipsisType)):

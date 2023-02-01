@@ -4,24 +4,23 @@ from __future__ import annotations
 
 # STDLIB
 from dataclasses import dataclass
+from typing import Literal
 
 # THIRD-PARTY
 import torch as xp
-from torch import nn
 
 # LOCAL
 from stream_ml.core.data import Data
-from stream_ml.core.mixture import MixtureModelBase
+from stream_ml.core.mixture import MixtureModel as CoreMixtureModel
 from stream_ml.core.params import Params
-from stream_ml.core.utils.frozen_dict import FrozenDictField
-from stream_ml.pytorch.base import Model
+from stream_ml.pytorch.bases import ModelsBase
 from stream_ml.pytorch.typing import Array
 
 __all__: list[str] = []
 
 
 @dataclass(unsafe_hash=True)
-class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[misc]
+class MixtureModel(ModelsBase, CoreMixtureModel[Array]):
     """Full Model.
 
     Parameters
@@ -33,30 +32,13 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
         Additional Models.
     """
 
-    # Need to override this because of the type hinting
-    components: FrozenDictField[str, Model] = FrozenDictField[str, Model]()  # type: ignore[assignment]  # noqa: E501
-
-    def __post_init__(self) -> None:
-        super().__post_init__()
-
-        # Register the models with pytorch.
-        for name, model in self.components.items():
-            self.add_module(name=name, module=model)
-
-    def pack_params_to_arr(self, mpars: Params[Array], /) -> Array:
-        """Pack parameters into an array.
-
-        Parameters
-        ----------
-        mpars : Params[Array], positional-only
-            Model parameters. Note that these are different from the ML
-            parameters.
-
-        Returns
-        -------
-        Array
-        """
-        return Model.pack_params_to_arr(self, mpars)
+    def _hook_unpack_bkg_weight(
+        self, weight: Array | Literal[1], mp_arr: Array
+    ) -> Array:
+        """Hook to unpack the background weight."""
+        if isinstance(weight, int):
+            weight = xp.zeros((len(mp_arr), 1), dtype=mp_arr.dtype)
+        return xp.hstack((weight, mp_arr))
 
     # ===============================================================
     # Statistics
@@ -94,58 +76,3 @@ class MixtureModel(nn.Module, MixtureModelBase[Array], Model):  # type: ignore[m
         )
         # Sum over the models, keeping the data dimension
         return xp.logsumexp(xp.hstack(liks), dim=1, keepdim=True)
-
-    def ln_prior_arr(self, mpars: Params[Array], data: Data[Array]) -> Array:
-        """Log prior.
-
-        Parameters
-        ----------
-        mpars : Params[Array], positional-only
-            Model parameters. Note that these are different from the ML
-            parameters.
-        data : Data[Array]
-            Data.
-
-        Returns
-        -------
-        Array
-        """
-        # Get the parameters for each model, stripping the model name,
-        # and use that to evaluate the log prior for the model.
-        lps = tuple(
-            model.ln_prior_arr(mpars.get_prefixed(name), data)
-            for name, model in self.components.items()
-        )
-        lp = xp.hstack(lps).sum(dim=1)[:, None]
-
-        # Plugin for priors
-        for prior in self.priors:
-            lp += prior.logpdf(mpars, data, self, lp)
-
-        # Sum over the priors
-        return lp
-
-    # ========================================================================
-    # ML
-
-    def forward(self, data: Data[Array], /) -> Array:
-        """Forward pass.
-
-        Parameters
-        ----------
-        data : Data
-            Input.
-
-        Returns
-        -------
-        Array
-            fraction, mean, sigma
-        """
-        nn = xp.concat([model(data) for model in self.components.values()], dim=1)
-
-        # Call the prior to limit the range of the parameters
-        # TODO: a better way to do the order of the priors.
-        for prior in self.priors:
-            nn = prior(nn, data, self)
-
-        return nn
