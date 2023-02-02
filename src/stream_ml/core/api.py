@@ -151,14 +151,10 @@ class Model(Protocol[Array]):
         """
         raise NotImplementedError
 
-    def ln_prior_arr(self, mpars: Params[Array], data: Data[Array]) -> Array:
+    def ln_prior_arr(
+        self, mpars: Params[Array], data: Data[Array], current_lnp: Array | None = None
+    ) -> Array:
         """Elementwise log prior.
-
-        .. todo::
-
-            Add a private argument ``lnp`` so that we can pass the current
-            value of the log prior to the attached prior objects and
-            accumulate the log prior using `super`.
 
         Parameters
         ----------
@@ -167,21 +163,14 @@ class Model(Protocol[Array]):
             parameters.
         data : Data[Array]
             Data.
+        current_lnp : Array | None, optional
+            Current value of the log prior, by default `None`.
 
         Returns
         -------
         Array
         """
-        # Instead of raising an error, we return the sum of the priors held on
-        # this model.
-        #
-        # TODO: this is a bit of a hack to start with 0. We should use a
-        # ``get_namespace`` method to get ``xp.zeros``.
-        lnp: Array = 0  # type: ignore[assignment]
-        for prior in self.priors:
-            lnp = lnp + prior.logpdf(mpars, data, self, lnp)
-
-        return lnp
+        ...
 
     def ln_posterior_arr(
         self, mpars: Params[Array], data: Data[Array], **kw: Array

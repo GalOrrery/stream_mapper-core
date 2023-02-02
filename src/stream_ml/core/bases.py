@@ -187,7 +187,9 @@ class ModelsBase(
     # ===============================================================
     # Statistics
 
-    def ln_prior_arr(self, mpars: Params[Array], data: Data[Array]) -> Array:
+    def ln_prior_arr(
+        self, mpars: Params[Array], data: Data[Array], current_lnp: Array | None = None
+    ) -> Array:
         """Log prior.
 
         Parameters
@@ -197,18 +199,20 @@ class ModelsBase(
             parameters.
         data : Data[Array]
             Data.
+        current_lnp : Array | None, optional
+            Current value of the log prior, by default `None`.
 
         Returns
         -------
         Array
         """
         # Loop over the components
-        lnp: Array = self.xp.zeros(())
+        lnp: Array = self.xp.zeros(()) if current_lnp is None else current_lnp
         for name, m in self.components.items():
             lnp = lnp + m.ln_prior_arr(mpars.get_prefixed(name + "."), data)
-
-        # Plugin for priors  # TODO: use super().ln_prior_arr here
+        # No need to do the parameter boundss here, since they are already
+        # included in the component priors.
+        # Plugin for priors
         for prior in self.priors:
             lnp = lnp + prior.logpdf(mpars, data, self, lnp)
-
         return lnp
