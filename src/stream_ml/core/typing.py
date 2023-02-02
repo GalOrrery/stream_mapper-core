@@ -6,7 +6,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any, Protocol, TypeAlias, TypeVar
 
-__all__ = ["Array", "FlatParsT"]
+__all__ = ["Array", "FlatParsT", "ArrayNamespace", "BoundsT"]
 
 
 #####################################################################

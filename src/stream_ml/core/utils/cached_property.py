@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, Generic, TypeVar, final
+from typing import Any, Callable, Generic, TypeVar, cast, overload
 
 __all__: list[str] = []
 
@@ -11,7 +11,6 @@ R = TypeVar("R")
 Self = TypeVar("Self", bound="cached_property[R]")  # type: ignore[valid-type]
 
 
-@final
 class cached_property(Generic[R]):  # noqa: N801
     """Emulate PyProperty_Type() in Objects/descrobject.c."""
 
@@ -35,7 +34,17 @@ class cached_property(Generic[R]):  # noqa: N801
         self._name = name
         self._name_private = "_" + name
 
-    def __get__(self, obj: object, objtype: type | None = None) -> Any:
+    @overload
+    def __get__(self: Self, obj: None, objtype: type | None = None) -> Self:
+        ...
+
+    @overload
+    def __get__(self, obj: object, objtype: type | None = None) -> R:
+        ...
+
+    def __get__(
+        self: Self, obj: object | None, objtype: type | None = None
+    ) -> Self | R:
         if obj is None:
             return self
         if self.fget is None:
@@ -43,7 +52,7 @@ class cached_property(Generic[R]):  # noqa: N801
             raise AttributeError()
         elif not hasattr(self, self._name_private):
             object.__setattr__(obj, self._name_private, self.fget(obj))
-        return getattr(obj, self._name_private)
+        return cast("R", getattr(obj, self._name_private))
 
     def __set__(self, obj: object, value: Any) -> None:
         if self.fset is None:

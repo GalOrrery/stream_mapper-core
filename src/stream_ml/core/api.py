@@ -10,7 +10,7 @@ from stream_ml.core.params.bounds import ParamBounds, ParamBoundsField
 from stream_ml.core.params.core import Params, freeze_params, set_param
 from stream_ml.core.params.names import ParamNamesField
 from stream_ml.core.prior.base import PriorBase
-from stream_ml.core.typing import Array
+from stream_ml.core.typing import Array, ArrayNamespace
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
@@ -26,9 +26,7 @@ class Model(Protocol[Array]):
     """Model base class."""
 
     name: str | None
-
-    # # Array namespace.
-    # array_namespace: InitVar[ArrayNamespace]
+    _array_namespace_: ArrayNamespace
 
     # Name of the coordinates and parameters.
     coord_names: tuple[str, ...]
@@ -43,17 +41,13 @@ class Model(Protocol[Array]):
 
     DEFAULT_BOUNDS: ClassVar[Any]  # TODO: PriorBounds[Any]
 
-    def __post_init__(self) -> None:
-        pass
+    def __post_init__(self, *args: Any, **kwargs: Any) -> None:
+        ...
 
-    # def __post_init__(self, array_namespace: ArrayNamespace) -> None:
-    #     # TODO: have ``xp`` be a property of the model.
-    #     self.__array_namespace__: ArrayNamespace = array_namespace
-
-    # @property
-    # def xp(self) -> ArrayNamespace:
-    #     """Array namespace."""
-    #     return self.__array_namespace__
+    @property
+    def xp(self) -> ArrayNamespace:
+        """Array namespace."""
+        return self._array_namespace_
 
     # ========================================================================
 
@@ -125,10 +119,9 @@ class Model(Protocol[Array]):
         -------
         Array
         """
-        # return self.xp.concatenate(
-        #     tuple(self.xp.atleast_1d(mpars[elt]) for elt in self.param_names.flats)
-        # )
-        ...
+        return self.xp.concatenate(
+            tuple(self.xp.atleast_1d(mpars[elt]) for elt in self.param_names.flats)
+        )
 
     # ========================================================================
     # Statistics
@@ -280,6 +273,6 @@ class Model(Protocol[Array]):
     # ------------------------------------------------------------------------
     # Misc
 
-    def __call__(self, *args: Any, **kwds: Any) -> Any:
+    def __call__(self, *args: Any, **kwds: Any) -> Array:
         """Call the model."""
         ...

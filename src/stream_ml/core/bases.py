@@ -13,7 +13,7 @@ from stream_ml.core.api import Model
 from stream_ml.core.params import ParamBounds, ParamNames, Params
 from stream_ml.core.prior.base import PriorBase
 from stream_ml.core.setup_package import CompiledShim
-from stream_ml.core.typing import Array, BoundsT
+from stream_ml.core.typing import Array, ArrayNamespace, BoundsT
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
@@ -24,6 +24,15 @@ if TYPE_CHECKING:
     V = TypeVar("V")
 
 __all__: list[str] = []
+
+
+def _get_namespace(components: FrozenDict[str, Model[Array]]) -> ArrayNamespace:
+    """Get the array namespace."""
+    ns = {v._array_namespace_ for v in components.values()}
+    if len(ns) != 1:
+        msg = "all components must use the same array namespace."
+        raise ValueError(msg)
+    return ns.pop()
 
 
 @dataclass
@@ -42,6 +51,10 @@ class ModelsBase(
 
     def __post_init__(self) -> None:
         """Post-init validation."""
+        self._init_descriptor()  # TODO: Remove this when mypyc is fixed.
+
+        self._array_namespace_: ArrayNamespace = _get_namespace(self.components)
+
         # Check that there is at least one component
         if not self.components:
             msg = "must have at least one component."

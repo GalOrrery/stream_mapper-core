@@ -58,8 +58,6 @@ class MixtureModel(ModelsBase[Array]):
     ] = FrozenDictField({})
 
     def __post_init__(self) -> None:
-        self._init_descriptor()  # TODO: Remove this when mypyc is fixed.
-
         # Add the param_names  # TODO: make sure no duplicates
         self._param_names: ParamNames = ParamNames(
             (f"{c}.{p[0]}", p[1]) if isinstance(p, tuple) else f"{c}.{p}"
