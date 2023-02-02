@@ -182,6 +182,34 @@ class ModelBase(Model[Array], CompiledShim, metaclass=ABCMeta):
         return lnp
 
     # ========================================================================
+    # ML
+
+    def _forward_priors(self, out: Array, data: Data[Array]) -> Array:
+        """Forward pass.
+
+        Parameters
+        ----------
+        out : Array
+            Input.
+        data : Data[Array]
+            Data.
+
+        Returns
+        -------
+        Array
+            Same as input.
+        """
+        # Parameter bounds
+        for bnd in self.param_bounds.flatvalues():
+            out = bnd(out, data, self)
+
+        # Other priors
+        # TODO: a better way to do the order of the priors.
+        for prior in self.priors:
+            out = prior(out, data, self)
+        return out
+
+    # ========================================================================
     # Misc
 
     def __str__(self) -> str:

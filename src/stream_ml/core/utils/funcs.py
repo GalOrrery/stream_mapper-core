@@ -2,29 +2,40 @@
 
 from __future__ import annotations
 
-# STDLIB
+from abc import abstractmethod
+from functools import singledispatch
+from typing import Any, Protocol
 
-# LOCAL
+from stream_ml.core.typing import Array
 
 __all__: list[str] = []
 
 
-# @singledispatch
-# def array_at(array: Array, idx: Any) -> ArrayAt[Array]:
-#     """Get the array at the index.
+@singledispatch
+def array_at(array: Array, idx: Any) -> ArrayAt[Array]:
+    """Get the array at the index.
 
-#     This is to emulate the `jax.numpy.ndarray.at` method.
+    This is to emulate the `jax.numpy.ndarray.at` method.
 
-#     Parameters
+    Parameters
+    ----------
+    array : Array
+        Array to get the value at the index.
+    idx : Any
+        Index to get the value at.
 
-#     """
-#     raise NotImplementedError
+    Returns
+    -------
+    ArrayAt[Array]
+        Setter.
+    """
+    raise NotImplementedError
 
 
-# class ArrayAt(Protocol[Array]):
-#     """Array at index."""
+class ArrayAt(Protocol[Array]):
+    """Array at index."""
 
-#     @abstractmethod
-#     def set(self, value: Array) -> Array:
-#         """Set the value at the index."""
-#         ...
+    @abstractmethod
+    def set(self, value: Array) -> Array:  # noqa: A003
+        """Set the value at the index."""
+        ...

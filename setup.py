@@ -17,7 +17,7 @@ from setuptools import setup
 USE_MYPYC: bool = True
 
 CURRENT_DIR = Path(__file__).parent
-SRC = CURRENT_DIR / "src"
+CORE = CURRENT_DIR / "src" / "stream_ml" / "core"
 
 sys.path.insert(0, str(CURRENT_DIR))  # for setuptools.build_meta
 
@@ -69,17 +69,17 @@ else:
 
     print("BUILDING `stream_ml.core` with MYPYC")  # noqa: T201
 
-    blocklist: list[str] = []  # TODO!
-    discovered: list[Path] = [
-        SRC / "stream_ml" / "core" / "__init__.py",
-        SRC / "stream_ml" / "core" / "typing.py",
-        SRC / "stream_ml" / "core" / "data.py",
-        *find_python_files(SRC / "stream_ml" / "core" / "utils"),
-        *find_python_files(SRC / "stream_ml" / "core" / "params"),
+    blocklist: list[Path] = [  # TODO: not block
+        CORE / "utils" / "funcs.py",
+        *find_python_files(CORE / "prior"),
+        CORE / "api.py",
+        CORE / "base.py",
+        CORE / "bases.py",
+        CORE / "independent.py",
+        CORE / "mixture.py",
     ]
-    mypyc_targets = [
-        str(p) for p in discovered if p.relative_to(SRC).as_posix() not in blocklist
-    ]
+    discovered: list[Path] = [*find_python_files(CORE)]
+    mypyc_targets = [str(p) for p in discovered if p not in blocklist]
 
     opt_level = os.getenv("MYPYC_OPT_LEVEL", "3")
     ext_modules = mypycify(mypyc_targets, opt_level=opt_level, verbose=True)
