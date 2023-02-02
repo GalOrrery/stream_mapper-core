@@ -103,7 +103,7 @@ BoundsT: TypeAlias = tuple[float, float]
 #####################################################################
 
 
-class ArrayNamespace(Protocol):
+class ArrayNamespace(Protocol[Array]):
     """Protocol for array API namespace."""
 
     @staticmethod
@@ -114,4 +114,33 @@ class ArrayNamespace(Protocol):
     @staticmethod
     def atleast_1d(array: Array) -> Array:
         """At least 1D."""
+        ...
+
+    @staticmethod
+    def logsumexp(array: Array, *args: Any, **kwargs: Any) -> Array:
+        """Log-sum-exp.
+
+        First argument must be the axis ("dim" in pytorch, "axis" in jax).
+        """
+        ...
+
+    @staticmethod
+    def zeros(*args: Any, dtype: Any = ..., **kwargs: Any) -> Array:
+        """Zeros.
+
+        First argument must be the shape.
+        """
+        ...
+
+    @staticmethod
+    def ones(*args: Any, dtype: Any = ..., **kwargs: Any) -> Array:
+        """Ones.
+
+        First argument must be the shape.
+        """
+        ...
+
+    @staticmethod
+    def hstack(arrays: tuple[Array, ...]) -> Array:
+        """Horizontal stack."""
         ...

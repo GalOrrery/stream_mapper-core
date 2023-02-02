@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 __all__: list[str] = []
 
 
-def _get_namespace(components: FrozenDict[str, Model[Array]]) -> ArrayNamespace:
+def _get_namespace(components: FrozenDict[str, Model[Array]]) -> ArrayNamespace[Array]:
     """Get the array namespace."""
     ns = {v._array_namespace_ for v in components.values()}
     if len(ns) != 1:
@@ -53,7 +53,7 @@ class ModelsBase(
         """Post-init validation."""
         self._init_descriptor()  # TODO: Remove this when mypyc is fixed.
 
-        self._array_namespace_: ArrayNamespace = _get_namespace(self.components)
+        self._array_namespace_ = _get_namespace(self.components)
 
         # Check that there is at least one component
         if not self.components:
@@ -203,18 +203,9 @@ class ModelsBase(
         Array
         """
         # Loop over the components
-        # TODO: this is a bit of a hack to start with 0. We should use a
-        #       ``get_namespace`` method to get ``xp.zeros``.
-        lnp: Array = 0  # type: ignore[assignment]
+        lnp: Array = self.xp.zeros(())
         for name, m in self.components.items():
-            # Get the relevant parameters
-            mpars_ = mpars.get_prefixed(name + ".")
-
-            # Compute the log-prior
-            mlnp = m.ln_prior_arr(mpars_, data)
-
-            # Add to the total
-            lnp = lnp + mlnp
+            lnp = lnp + m.ln_prior_arr(mpars.get_prefixed(name + "."), data)
 
         # Plugin for priors  # TODO: use super().ln_prior_arr here
         for prior in self.priors:

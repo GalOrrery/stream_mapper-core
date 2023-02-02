@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 # STDLIB
-from abc import abstractmethod
 from collections.abc import Mapping
 from dataclasses import KW_ONLY, dataclass
-from typing import TYPE_CHECKING, Callable, Literal, cast
+from typing import TYPE_CHECKING, Callable, cast
 
 # LOCAL
 from stream_ml.core.api import WEIGHT_NAME
 from stream_ml.core.bases import ModelsBase
+from stream_ml.core.data import Data
 from stream_ml.core.params import ParamNames, Params
 from stream_ml.core.typing import Array
 from stream_ml.core.utils.frozen_dict import FrozenDictField
@@ -77,16 +77,6 @@ class MixtureModel(ModelsBase[Array]):
 
     # ===============================================================
 
-    @abstractmethod
-    def _hook_unpack_bkg_weight(
-        self, weight: Array | Literal[1], mp_arr: Array
-    ) -> Array:
-        """Hook to unpack the background weight.
-
-        This is necessary because JAX doesn't support assignment to a slice.
-        """
-        raise NotImplementedError
-
     def unpack_params_from_arr(self, p_arr: Array) -> Params[Array]:
         """Unpack parameters into a dictionary.
 
@@ -114,13 +104,15 @@ class MixtureModel(ModelsBase[Array]):
                     for k in tuple(self.components.keys())[:-1]
                     # skipping the background, which is the last component
                 )
-                bkg_weight: Array | Literal[1] = (
-                    1 - weight if not isinstance(weight, int) else 1
-                )
-
                 # The background weight is 1 - the other weights
-                # it is the index-0 column of the array
-                mp_arr = self._hook_unpack_bkg_weight(bkg_weight, mp_arr)
+                # TODO! not have the Literal[1]
+                bkg_weight: Array = (
+                    1 - weight
+                    if not isinstance(weight, int)
+                    else self.xp.ones((len(mp_arr), 1), dtype=mp_arr.dtype)
+                )
+                # It is the index-0 column of the array
+                mp_arr = self.xp.hstack((bkg_weight, mp_arr))
 
             # Skip empty (and incrementing the index)
             if mp_arr.shape[1] == 0:
@@ -142,3 +134,39 @@ class MixtureModel(ModelsBase[Array]):
             pars[name] = tie(pars)
 
         return Params[Array](pars)
+
+    # ===============================================================
+
+    def ln_likelihood_arr(
+        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
+    ) -> Array:
+        """Log likelihood.
+
+        Just the log-sum-exp of the individual log-likelihoods.
+
+        Parameters
+        ----------
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
+        data : Data[Array]
+            Data.
+        **kwargs : Array
+            Additional arguments.
+
+        Returns
+        -------
+        Array
+        """
+        # Get the parameters for each model, stripping the model name,
+        # and use that to evaluate the log likelihood for the model.
+        lnliks = tuple(
+            model.ln_likelihood_arr(
+                mpars.get_prefixed(name),
+                data,
+                **self._get_prefixed_kwargs(name, kwargs),
+            )
+            for name, model in self.components.items()
+        )
+        # Sum over the models, keeping the data dimension
+        return self.xp.logsumexp(self.xp.hstack(lnliks), 1)[:, None]

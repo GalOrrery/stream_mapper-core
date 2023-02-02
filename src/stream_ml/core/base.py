@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import textwrap
 from abc import ABCMeta, abstractmethod
-from dataclasses import KW_ONLY, InitVar, dataclass, fields, replace
+from dataclasses import KW_ONLY, InitVar, dataclass, fields
 from math import inf
 from typing import TYPE_CHECKING, ClassVar
 
@@ -14,13 +14,12 @@ from stream_ml.core.params import ParamBounds, Params, freeze_params, set_param
 from stream_ml.core.params.bounds import ParamBoundsField
 from stream_ml.core.params.names import ParamNamesField
 from stream_ml.core.prior.base import PriorBase
-from stream_ml.core.prior.bounds import NoBounds, PriorBounds
 from stream_ml.core.setup_package import CompiledShim
 from stream_ml.core.typing import Array, ArrayNamespace, BoundsT
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
-    from stream_ml.core.params.names import FlatParamName
+    pass
 
 __all__: list[str] = []
 
@@ -56,7 +55,7 @@ class ModelBase(Model[Array], CompiledShim, metaclass=ABCMeta):
     indep_coord_name: str = "phi1"  # TODO: move up class hierarchy?
 
     _: KW_ONLY
-    array_namespace: InitVar[ArrayNamespace]
+    array_namespace: InitVar[ArrayNamespace[Array]]
     name: str | None = None  # the name of the model
 
     coord_names: tuple[str, ...]
@@ -70,12 +69,12 @@ class ModelBase(Model[Array], CompiledShim, metaclass=ABCMeta):
 
     DEFAULT_BOUNDS: ClassVar  # TODO: [PriorBounds[Any]]
 
-    def __post_init__(self, array_namespace: ArrayNamespace) -> None:
+    def __post_init__(self, array_namespace: ArrayNamespace[Array]) -> None:
         """Post-init validation."""
         super().__post_init__(array_namespace=array_namespace)
         self._init_descriptor()  # TODO: Remove this when mypyc is fixed.
 
-        self._array_namespace_: ArrayNamespace = array_namespace
+        self._array_namespace_ = array_namespace
 
         # Validate the param_names
         if not self.param_names:
@@ -103,7 +102,7 @@ class ModelBase(Model[Array], CompiledShim, metaclass=ABCMeta):
         self.param_bounds.validate(self.param_names)
 
     @property
-    def xp(self) -> ArrayNamespace:
+    def xp(self) -> ArrayNamespace[Array]:
         """Array namespace."""
         return self._array_namespace_
 
@@ -152,23 +151,6 @@ class ModelBase(Model[Array], CompiledShim, metaclass=ABCMeta):
 
     # ========================================================================
     # Misc
-
-    @classmethod
-    def _make_bounds(
-        cls, bounds: PriorBounds[Array] | BoundsT | None, param_name: FlatParamName
-    ) -> PriorBounds[Array]:
-        """Make bounds."""
-        if isinstance(bounds, PriorBounds):
-            return bounds
-        elif bounds is None:
-            return NoBounds()
-
-        return replace(
-            cls.DEFAULT_BOUNDS,
-            lower=bounds[0],
-            upper=bounds[1],
-            param_name=param_name,
-        )
 
     def __str__(self) -> str:
         """String representation."""

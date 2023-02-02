@@ -26,7 +26,7 @@ class Model(Protocol[Array]):
     """Model base class."""
 
     name: str | None
-    _array_namespace_: ArrayNamespace
+    _array_namespace_: ArrayNamespace[Array]
 
     # Name of the coordinates and parameters.
     coord_names: tuple[str, ...]
@@ -45,7 +45,7 @@ class Model(Protocol[Array]):
         ...
 
     @property
-    def xp(self) -> ArrayNamespace:
+    def xp(self) -> ArrayNamespace[Array]:
         """Array namespace."""
         return self._array_namespace_
 

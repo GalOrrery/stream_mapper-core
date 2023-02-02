@@ -140,20 +140,12 @@ class IndependentModels(ModelsBase[Array]):
         -------
         Array
         """
-        # TODO: this is a bit of a hack to start with 0. We should use a
-        #       ``get_namespace`` method to get ``xp.zeros``.
-        lnlik: Array = 0  # type: ignore[assignment]
+        lnlik: Array = self.xp.zeros(())
         for name, m in self.components.items():
-            # Get the kwargs for this component
-            kwargs_ = self._get_prefixed_kwargs(name, kwargs)
-
-            # Get the relevant parameters
-            mpars_ = mpars.get_prefixed(name + ".")
-
-            # Compute the log-likelihood
-            mlnlik = m.ln_likelihood_arr(mpars_, data, **kwargs_)
-
-            # Add to the total
-            lnlik = lnlik + mlnlik
+            lnlik = lnlik + m.ln_likelihood_arr(
+                mpars.get_prefixed(name + "."),
+                data,
+                **self._get_prefixed_kwargs(name, kwargs),
+            )
 
         return lnlik
