@@ -7,7 +7,7 @@ from abc import ABCMeta
 from dataclasses import KW_ONLY, InitVar, dataclass, fields
 from functools import reduce
 from math import inf
-from typing import TYPE_CHECKING, ClassVar
+from typing import ClassVar
 
 from stream_ml.core.api import WEIGHT_NAME, Model
 from stream_ml.core.data import Data
@@ -20,9 +20,6 @@ from stream_ml.core.typing import Array, ArrayNamespace, BoundsT
 from stream_ml.core.utils.compat import array_at
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 from stream_ml.core.utils.funcs import within_bounds
-
-if TYPE_CHECKING:
-    pass
 
 __all__: list[str] = []
 
@@ -183,10 +180,10 @@ class ModelBase(Model[Array], CompiledShim, metaclass=ABCMeta):
         lnp = lnp + self._ln_prior_coord_bnds(mpars, data)
         # Parameter Bounds
         for bounds in self.param_bounds.flatvalues():
-            lnp = lnp + bounds.logpdf(mpars, data, self, lnp)
+            lnp = lnp + bounds.logpdf(mpars, data, self, lnp, xp=self.xp)
         # Priors
         for prior in self.priors:
-            lnp = lnp + prior.logpdf(mpars, data, self, lnp)
+            lnp = lnp + prior.logpdf(mpars, data, self, lnp, xp=self.xp)
 
         return lnp
 

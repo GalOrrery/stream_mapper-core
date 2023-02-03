@@ -11,16 +11,18 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar
 from stream_ml.core.data import Data
 from stream_ml.core.params.names import FlatParamName
 from stream_ml.core.prior.base import PriorBase
-from stream_ml.core.typing import Array, BoundsT
+from stream_ml.core.typing import Array, ArrayNamespace, BoundsT
+from stream_ml.core.utils.compat import array_at
+from stream_ml.core.utils.funcs import within_bounds
+
+__all__: list[str] = []
+
 
 if TYPE_CHECKING:
     from stream_ml.core.api import Model
     from stream_ml.core.params.core import Params
 
-__all__: list[str] = []
-
-
-Self = TypeVar("Self", bound="PriorBounds")  # type: ignore[type-arg]
+    Self = TypeVar("Self", bound="PriorBounds")  # type: ignore[type-arg]
 
 
 @dataclass(frozen=True)
@@ -32,7 +34,6 @@ class PriorBounds(PriorBase[Array]):
     _: KW_ONLY
     param_name: FlatParamName | None = None
 
-    @abstractmethod
     def logpdf(
         self,
         mpars: Params[Array],
@@ -40,9 +41,18 @@ class PriorBounds(PriorBase[Array]):
         model: Model[Array],
         current_lnpdf: Array | None = None,
         /,
-    ) -> Array | float:
+        *,
+        xp: ArrayNamespace[Array],
+    ) -> Array:
         """Evaluate the logpdf."""
-        ...
+        if self.param_name is None:
+            msg = "need to set param_name"
+            raise ValueError(msg)
+
+        bp = xp.zeros_like(mpars[self.param_name])
+        return array_at(
+            bp, ~within_bounds(mpars[self.param_name], self.lower, self.upper)
+        ).set(-xp.inf)
 
     @abstractmethod
     def __call__(self, pred: Array, data: Data[Array], model: Model[Array], /) -> Array:
@@ -87,7 +97,7 @@ class NoBounds(PriorBounds[Any]):
     lower: float = -inf
     upper: float = inf
 
-    def __post_init__(self, /) -> None:
+    def __post_init__(self) -> None:
         """Post-init."""
         if self.lower != -inf or self.upper != inf:
             msg = "lower and upper must be -inf and inf"
@@ -100,6 +110,8 @@ class NoBounds(PriorBounds[Any]):
         model: Model[Array],
         current_lnpdf: Array | None = None,
         /,
+        *,
+        xp: ArrayNamespace[Array],
     ) -> Array | Literal[0]:
         """Evaluate the logpdf."""
         if self.param_name is None:

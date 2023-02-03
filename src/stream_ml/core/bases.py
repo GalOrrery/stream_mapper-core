@@ -214,5 +214,5 @@ class ModelsBase(
         # included in the component priors.
         # Plugin for priors
         for prior in self.priors:
-            lnp = lnp + prior.logpdf(mpars, data, self, lnp)
+            lnp = lnp + prior.logpdf(mpars, data, self, lnp, xp=self.xp)
         return lnp

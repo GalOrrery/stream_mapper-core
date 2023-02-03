@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Generic
 
 # LOCAL
 from stream_ml.core.data import Data
-from stream_ml.core.typing import Array
+from stream_ml.core.typing import Array, ArrayNamespace
 
 if TYPE_CHECKING:
     # LOCAL
@@ -37,6 +37,8 @@ class PriorBase(Generic[Array], metaclass=ABCMeta):
         model: Model[Array],
         current_lnpdf: Array | None = None,
         /,
+        *,
+        xp: ArrayNamespace[Array],
     ) -> Array | float:
         """Evaluate the logpdf.
 
@@ -57,6 +59,9 @@ class PriorBase(Generic[Array], metaclass=ABCMeta):
             The current logpdf, by default `None`. This is useful for setting
             the additive log-pdf to a specific value.
 
+        xp : ArrayNamespace[Array], keyword-only
+            The array namespace.
+
         Returns
         -------
         Array
@@ -64,7 +69,6 @@ class PriorBase(Generic[Array], metaclass=ABCMeta):
         """
         ...
 
-    @abstractmethod
     def __call__(self, pred: Array, data: Data[Array], model: Model[Array], /) -> Array:
         """Evaluate the forward step in the prior.
 
@@ -81,4 +85,4 @@ class PriorBase(Generic[Array], metaclass=ABCMeta):
         -------
         Array
         """
-        ...
+        return pred

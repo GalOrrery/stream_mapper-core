@@ -39,7 +39,7 @@ class Model(Protocol[Array]):
     # Priors on the parameters.
     priors: tuple[PriorBase[Array], ...] = ()
 
-    DEFAULT_BOUNDS: ClassVar[Any]  # TODO: PriorBounds[Any]
+    DEFAULT_BOUNDS: ClassVar  # TODO: PriorBounds[Any]
 
     def __post_init__(self, *args: Any, **kwargs: Any) -> None:
         ...

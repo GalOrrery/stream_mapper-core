@@ -4,12 +4,12 @@ from __future__ import annotations
 
 # STDLIB
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, Protocol
 
 # LOCAL
 from stream_ml.core.data import Data
 from stream_ml.core.prior.base import PriorBase
-from stream_ml.core.typing import Array
+from stream_ml.core.typing import Array, ArrayNamespace
 
 if TYPE_CHECKING:
     # LOCAL
@@ -20,13 +20,28 @@ if TYPE_CHECKING:
 __all__: list[str] = []
 
 
+class LogPDFHook(Protocol):
+    """LogPDF hook."""
+
+    def __call__(
+        self,
+        mpars: Params[Array],
+        data: Data[Array],
+        model: Model[Array],
+        current_lnpdf: Array | None,
+        /,
+        *,
+        xp: ArrayNamespace[Array],
+    ) -> Array:
+        """Evaluate the logpdf."""
+        ...
+
+
 @dataclass(frozen=True)
 class Prior(PriorBase[Array]):
     """Prior."""
 
-    logpdf_hook: Callable[
-        [Params[Array], Data[Array], Model[Array], Array | None], Array
-    ]
+    logpdf_hook: LogPDFHook
     forward_hook: Callable[[Array, Model[Array]], Array]
 
     def logpdf(
@@ -36,6 +51,8 @@ class Prior(PriorBase[Array]):
         model: Model[Array],
         current_lnpdf: Array | None = None,
         /,
+        *,
+        xp: ArrayNamespace[Array],
     ) -> Array:
         """Evaluate the logpdf.
 
@@ -56,12 +73,15 @@ class Prior(PriorBase[Array]):
             The current logpdf, by default `None`. This is useful for setting
             the additive log-pdf to a specific value.
 
+        xp : ArrayNamespace[Array], keyword-only
+            The array namespace.
+
         Returns
         -------
         Array
             The logpdf.
         """
-        return self.logpdf_hook(mpars, data, model, current_lnpdf)
+        return self.logpdf_hook(mpars, data, model, current_lnpdf, xp=xp)
 
     def __call__(self, pred: Array, data: Data[Array], model: Model[Array], /) -> Array:
         """Evaluate the forward step in the prior.

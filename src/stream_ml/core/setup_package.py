@@ -4,9 +4,9 @@ from itertools import chain
 
 from mypy_extensions import trait
 
-import stream_ml.core
+from stream_ml.core.data import Data
 
-IS_COMPILED = hasattr(stream_ml.core.Data, "__mypyc_attrs__")
+IS_COMPILED = hasattr(Data, "__mypyc_attrs__")
 
 
 @trait
