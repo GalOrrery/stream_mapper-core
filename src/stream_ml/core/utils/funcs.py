@@ -1,41 +1,40 @@
-"""Stream Memberships Likelihood, with ML."""
+"""Core feature."""
 
 from __future__ import annotations
 
-from abc import abstractmethod
 from functools import singledispatch
-from typing import Any, Protocol
-
-from stream_ml.core.typing import Array
+from typing import TYPE_CHECKING
 
 __all__: list[str] = []
 
+if TYPE_CHECKING:
+    from stream_ml.core.typing import Array
+
 
 @singledispatch
-def array_at(array: Array, idx: Any) -> ArrayAt[Array]:
-    """Get the array at the index.
-
-    This is to emulate the `jax.numpy.ndarray.at` method.
+def within_bounds(
+    value: Array,
+    /,
+    lower_bound: Array | float | None,
+    upper_bound: Array | float | None,
+    *,
+    lower_inclusive: bool = True,
+    upper_inclusive: bool = True,
+) -> Array:
+    """Check if a value is within the given bounds.
 
     Parameters
     ----------
-    array : Array
-        Array to get the value at the index.
-    idx : Any
-        Index to get the value at.
+    value : ndarray
+        Value to check.
+    lower_bound, upper_bound : float | None
+        Bounds to check against.
+    lower_inclusive, upper_inclusive : bool, optional
+        Whether to include the bounds in the check, by default `True`.
 
     Returns
     -------
-    ArrayAt[Array]
-        Setter.
+    ndarray
+        Boolean array indicating whether the value is within the bounds.
     """
     raise NotImplementedError
-
-
-class ArrayAt(Protocol[Array]):
-    """Array at index."""
-
-    @abstractmethod
-    def set(self, value: Array) -> Array:  # noqa: A003
-        """Set the value at the index."""
-        ...

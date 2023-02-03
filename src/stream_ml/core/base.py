@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import textwrap
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 from dataclasses import KW_ONLY, InitVar, dataclass, fields
+from functools import reduce
 from math import inf
 from typing import TYPE_CHECKING, ClassVar
 
-from stream_ml.core.api import Model
+from stream_ml.core.api import WEIGHT_NAME, Model
 from stream_ml.core.data import Data
 from stream_ml.core.params import ParamBounds, Params, freeze_params, set_param
 from stream_ml.core.params.bounds import ParamBoundsField
@@ -16,7 +17,9 @@ from stream_ml.core.params.names import ParamNamesField
 from stream_ml.core.prior.base import PriorBase
 from stream_ml.core.setup_package import CompiledShim
 from stream_ml.core.typing import Array, ArrayNamespace, BoundsT
+from stream_ml.core.utils.compat import array_at
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
+from stream_ml.core.utils.funcs import within_bounds
 
 if TYPE_CHECKING:
     pass
@@ -131,7 +134,6 @@ class ModelBase(Model[Array], CompiledShim, metaclass=ABCMeta):
     # ========================================================================
     # Statistics
 
-    @abstractmethod
     def _ln_prior_coord_bnds(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Elementwise log prior for coordinate bounds.
 
@@ -146,8 +148,15 @@ class ModelBase(Model[Array], CompiledShim, metaclass=ABCMeta):
         Returns
         -------
         Array
+            Zero everywhere except where the data are outside the
+            coordinate bounds, where it is -inf.
         """
-        raise NotImplementedError
+        lnp = self.xp.zeros_like(mpars[(WEIGHT_NAME,)])
+        where = reduce(
+            self.xp.logical_or,
+            (~within_bounds(data[k], *v) for k, v in self.coord_bounds.items()),
+        )
+        return array_at(lnp, where).set(-self.xp.inf)
 
     def ln_prior_arr(
         self, mpars: Params[Array], data: Data[Array], current_lnp: Array | None = None
@@ -199,7 +208,7 @@ class ModelBase(Model[Array], CompiledShim, metaclass=ABCMeta):
         Array
             Same as input.
         """
-        # Parameter bounds
+        # Parameter bounds  # FIXME!
         for bnd in self.param_bounds.flatvalues():
             out = bnd(out, data, self)
 

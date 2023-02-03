@@ -5,7 +5,7 @@ from __future__ import annotations
 # STDLIB
 from collections.abc import Mapping
 from dataclasses import KW_ONLY, dataclass
-from typing import TYPE_CHECKING, Callable, cast
+from typing import TYPE_CHECKING, Callable, Final, cast
 
 # LOCAL
 from stream_ml.core.api import WEIGHT_NAME
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 __all__: list[str] = []
 
 
-BACKGROUND_KEY = "background"
+BACKGROUND_KEY: Final = "background"
 
 
 @dataclass
@@ -98,21 +98,26 @@ class MixtureModel(ModelsBase[Array]):
         for n, m in self.components.items():  # iter thru models
             # Get relevant parameters by index
             mp_arr = p_arr[:, slice(j, j + len(m.param_names.flat))]
-            if n == BACKGROUND_KEY:  # include the weight
-                weight = sum(
-                    cast("Array", pars[f"{k}.weight"])
-                    for k in tuple(self.components.keys())[:-1]
-                    # skipping the background, which is the last component
-                )
+
+            if n == BACKGROUND_KEY:
+                # The background is special, because it has a weight parameter
+                # that is defined as 1 - the sum of the other weights.
+                # So, we need to calculate the background weight from the
+                # other weights. Note that the background weight can be included
+                # in the parameter array, but it should not be determined by
+                # any network output, rather just a placeholder.
+
                 # The background weight is 1 - the other weights
-                # TODO! not have the Literal[1]
-                bkg_weight: Array = (
-                    1 - weight
-                    if not isinstance(weight, int)
-                    else self.xp.ones((len(mp_arr), 1), dtype=mp_arr.dtype)
+                bkg_weight: Array = 1 - sum(
+                    (
+                        cast("Array", pars[f"{k}.weight"])
+                        for k in tuple(self.components.keys())[:-1]
+                        # skipping the background, which is the last component
+                    ),
+                    start=self.xp.zeros((len(mp_arr), 1), dtype=mp_arr.dtype),
                 )
                 # It is the index-0 column of the array
-                mp_arr = self.xp.hstack((bkg_weight, mp_arr))
+                mp_arr = self.xp.hstack((bkg_weight, mp_arr[:, 1:]))
 
             # Skip empty (and incrementing the index)
             if mp_arr.shape[1] == 0:
@@ -126,7 +131,7 @@ class MixtureModel(ModelsBase[Array]):
 
         # Always add the combined weight
         pars[WEIGHT_NAME] = cast(
-            "Array", sum(pars[f"{k}.weight"] for k in self.components)
+            "Array", sum(cast("Array", pars[f"{k}.weight"]) for k in self.components)
         )
 
         # Add / update the dependent parameters

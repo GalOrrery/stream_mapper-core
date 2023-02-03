@@ -42,6 +42,10 @@ class ArrayLike(Protocol):
         """Indexing."""
         ...
 
+    def __invert__(self: Self) -> Self:
+        """Inversion."""
+        ...
+
     # ========================================================================
     # Math
 
@@ -143,4 +147,19 @@ class ArrayNamespace(Protocol[Array]):
     @staticmethod
     def hstack(arrays: tuple[Array, ...]) -> Array:
         """Horizontal stack."""
+        ...
+
+    @staticmethod
+    def zeros_like(array: Array) -> Array:
+        """Zeros like."""
+        ...
+
+    @staticmethod
+    def logical_or(array1: Array, array2: Array) -> Array:
+        """Logical or."""
+        ...
+
+    @property
+    def inf(self) -> Array:
+        """Infinity."""
         ...
