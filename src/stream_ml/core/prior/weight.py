@@ -2,55 +2,44 @@
 
 from __future__ import annotations
 
-# STDLIB
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Protocol
+from dataclasses import KW_ONLY, dataclass
+from math import inf
+from typing import TYPE_CHECKING
 
-# LOCAL
+from stream_ml.core.api import WEIGHT_NAME
 from stream_ml.core.data import Data
 from stream_ml.core.prior.base import PriorBase
-from stream_ml.core.typing import Array, ArrayNamespace
+from stream_ml.core.typing import ArrayNamespace
+from stream_ml.core.utils.compat import array_at
+from stream_ml.core.utils.funcs import within_bounds
+from stream_ml.pytorch.typing import Array
 
 if TYPE_CHECKING:
-    # LOCAL
     from stream_ml.core.api import Model
     from stream_ml.core.params.core import Params
-
 
 __all__: list[str] = []
 
 
-class LogPDFHook(Protocol):
-    """LogPDF hook."""
-
-    def __call__(
-        self,
-        mpars: Params[Array],
-        data: Data[Array],
-        model: Model[Array],
-        current_lnpdf: Array | None,
-        /,
-        *,
-        xp: ArrayNamespace[Array],
-    ) -> Array:
-        """Evaluate the logpdf."""
-        ...
-
-
-class ForwardHook(Protocol):
-    """Forward hook."""
-
-    def __call__(self, pred: Array, data: Data[Array], model: Model[Array], /) -> Array:
-        """Evaluate the forward step in the prior."""
-        ...
-
-
 @dataclass(frozen=True)
-class Prior(PriorBase[Array]):
-    """Prior."""
+class BoundedHardThreshold(PriorBase[Array]):
+    """Threshold prior.
 
-    logpdf_hook: LogPDFHook
-    forward_hook: ForwardHook
+    Parameters
+    ----------
+    threshold : float, optional
+        The threshold, by default 0.005
+    lower : float, optional
+        The lower bound in the domain of the prior, by default `-inf`.
+    upper : float, optional
+        The upper bound in the domain of the prior, by default `inf`.
+    """
+
+    threshold: float = 0.005
+    _: KW_ONLY
+    coord_name: str = "phi1"
+    lower: float = -inf
+    upper: float = inf
 
     def logpdf(
         self,
@@ -61,7 +50,7 @@ class Prior(PriorBase[Array]):
         /,
         *,
         xp: ArrayNamespace[Array],
-    ) -> Array:
+    ) -> Array | float:
         """Evaluate the logpdf.
 
         This log-pdf is added to the current logpdf. So if you want to set the
@@ -75,7 +64,7 @@ class Prior(PriorBase[Array]):
             parameters.
         data : Data[Array], position-only
             The data for which evaluate the prior.
-        model : Model[Array], position-only
+        model : Model, position-only
             The model for which evaluate the prior.
         current_lnpdf : Array | None, optional position-only
             The current logpdf, by default `None`. This is useful for setting
@@ -89,25 +78,30 @@ class Prior(PriorBase[Array]):
         Array
             The logpdf.
         """
-        return self.logpdf_hook(mpars, data, model, current_lnpdf, xp=xp)
+        lnp = xp.zeros_like(mpars[(WEIGHT_NAME,)])
+        where = within_bounds(data[self.coord_name], self.lower, self.upper) & (
+            mpars[(WEIGHT_NAME,)] < self.threshold
+        )
+        return array_at(lnp, where).set(-inf)
 
-    def __call__(self, pred: Array, data: Data[Array], model: Model[Array], /) -> Array:
+    def __call__(self, pred: Array, data: Data[Array], model: Model[Array]) -> Array:
         """Evaluate the forward step in the prior.
 
         Parameters
         ----------
-        pred : Array
+        pred : Array, position-only
             The input to evaluate the prior at.
-        data : Data[Array]
+        data : Data[Array], position-only
             The data to evaluate the prior at.
-        model : Model[Array]
+        model : `~stream_ml.core.Model`, position-only
             The model to evaluate the prior at.
-
-        xp : ArrayNamespace[Array], keyword-only
-            The array namespace.
 
         Returns
         -------
         Array
         """
-        return self.forward_hook(pred, data, model)
+        i = model.param_names.flat.index(WEIGHT_NAME)
+        where = within_bounds(data[self.coord_name][:, 0], self.lower, self.upper) & (
+            pred[:, i] <= self.threshold
+        )
+        return array_at(pred, (where, i), inplace=False).set(0.0)

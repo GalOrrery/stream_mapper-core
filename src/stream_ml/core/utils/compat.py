@@ -12,7 +12,7 @@ __all__: list[str] = []
 
 
 @singledispatch
-def array_at(array: Array, idx: Any) -> ArrayAt[Array]:
+def array_at(array: Array, idx: Any, /, *, inplace: bool = True) -> ArrayAt[Array]:
     """Get the array at the index.
 
     This is to emulate the `jax.numpy.ndarray.at` method.
@@ -23,6 +23,9 @@ def array_at(array: Array, idx: Any) -> ArrayAt[Array]:
         Array to get the value at the index.
     idx : Any
         Index to get the value at.
+
+    inplace : bool, optional
+        Whether to set the value in-place, by default `False`.
 
     Returns
     -------
