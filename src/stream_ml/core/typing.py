@@ -46,6 +46,26 @@ class ArrayLike(Protocol):
         """Inversion."""
         ...
 
+    def __and__(self: Self, other: ArrayLike) -> Self:
+        """Bitwise and."""
+        ...
+
+    def __gt__(self: Self, other: ArrayLike | float) -> Self:
+        """Greater than."""
+        ...
+
+    def __ge__(self: Self, other: ArrayLike | float) -> Self:
+        """Greater than or equal."""
+        ...
+
+    def __lt__(self: Self, other: ArrayLike | float) -> Self:
+        """Less than."""
+        ...
+
+    def __le__(self: Self, other: ArrayLike | float) -> Self:
+        """Less than or equal."""
+        ...
+
     # ========================================================================
     # Math
 

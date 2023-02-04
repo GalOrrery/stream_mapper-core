@@ -6,13 +6,12 @@ from dataclasses import KW_ONLY, dataclass
 from math import inf
 from typing import TYPE_CHECKING
 
-from stream_ml.core.api import WEIGHT_NAME
 from stream_ml.core.data import Data
 from stream_ml.core.prior.base import PriorBase
-from stream_ml.core.typing import ArrayNamespace
+from stream_ml.core.setup_package import WEIGHT_NAME
+from stream_ml.core.typing import Array, ArrayNamespace
 from stream_ml.core.utils.compat import array_at
 from stream_ml.core.utils.funcs import within_bounds
-from stream_ml.pytorch.typing import Array
 
 if TYPE_CHECKING:
     from stream_ml.core.api import Model
@@ -82,7 +81,7 @@ class BoundedHardThreshold(PriorBase[Array]):
         where = within_bounds(data[self.coord_name], self.lower, self.upper) & (
             mpars[(WEIGHT_NAME,)] < self.threshold
         )
-        return array_at(lnp, where).set(-inf)
+        return array_at(lnp, where).set(-xp.inf)
 
     def __call__(self, pred: Array, data: Data[Array], model: Model[Array]) -> Array:
         """Evaluate the forward step in the prior.
@@ -104,4 +103,4 @@ class BoundedHardThreshold(PriorBase[Array]):
         where = within_bounds(data[self.coord_name][:, 0], self.lower, self.upper) & (
             pred[:, i] <= self.threshold
         )
-        return array_at(pred, (where, i), inplace=False).set(0.0)
+        return array_at(pred, (where, i), inplace=False).set(0)

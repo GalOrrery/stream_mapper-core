@@ -2,17 +2,14 @@
 
 from __future__ import annotations
 
-# STDLIB
 from abc import ABCMeta, abstractmethod
 from dataclasses import KW_ONLY, dataclass
 from typing import TYPE_CHECKING, Generic
 
-# LOCAL
 from stream_ml.core.data import Data
 from stream_ml.core.typing import Array, ArrayNamespace
 
 if TYPE_CHECKING:
-    # LOCAL
     from stream_ml.core.api import Model
     from stream_ml.core.params.core import Params
 

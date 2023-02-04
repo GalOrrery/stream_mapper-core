@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, ClassVar, Final, Protocol
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol
 
 from stream_ml.core.data import Data
 from stream_ml.core.params.bounds import ParamBounds, ParamBoundsField
@@ -17,9 +17,6 @@ if TYPE_CHECKING:
     from stream_ml.core.typing import BoundsT, FlatParsT
 
 __all__: list[str] = []
-
-
-WEIGHT_NAME: Final = "weight"
 
 
 class Model(Protocol[Array]):

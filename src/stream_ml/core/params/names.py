@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-# STDLIB
 from collections.abc import Iterator, Sequence
 from types import EllipsisType
 from typing import (

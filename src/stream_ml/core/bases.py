@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-# STDLIB
 from abc import ABCMeta
 from collections.abc import Iterator, Mapping
 from dataclasses import KW_ONLY, dataclass
 from typing import TYPE_CHECKING, Any, ClassVar, TypeVar
 
-# LOCAL
 from stream_ml.core.api import Model
 from stream_ml.core.params import ParamBounds, ParamNames, Params
 from stream_ml.core.prior.base import PriorBase
@@ -17,7 +15,6 @@ from stream_ml.core.typing import Array, ArrayNamespace, BoundsT
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
-    # LOCAL
     from stream_ml.core.data import Data
     from stream_ml.core.typing import FlatParsT
 

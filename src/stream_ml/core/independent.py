@@ -2,19 +2,16 @@
 
 from __future__ import annotations
 
-# STDLIB
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-# LOCAL
-from stream_ml.core.api import WEIGHT_NAME
 from stream_ml.core.bases import ModelsBase
 from stream_ml.core.params import ParamNames, Params
+from stream_ml.core.setup_package import WEIGHT_NAME
 from stream_ml.core.typing import Array
 
 if TYPE_CHECKING:
-    # LOCAL
     from stream_ml.core.data import Data
 
 __all__: list[str] = []

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-# STDLIB
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -15,15 +14,12 @@ from typing import (
     overload,
 )
 
-# THIRD-PARTY
 import numpy as np
 from numpy.lib.recfunctions import structured_to_unstructured
 
-# LOCAL
 from stream_ml.core.typing import Array
 
 if TYPE_CHECKING:
-    # THIRD-PARTY
     from numpy.typing import NDArray
 
     from stream_ml.core.typing import ArrayLike

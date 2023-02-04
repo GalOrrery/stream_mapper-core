@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-# STDLIB
 from collections.abc import Iterable, Mapping
 from typing import TypeVar, cast, overload
 
-# LOCAL
 from stream_ml.core.params.names import LEN_NAME_TUPLE
 from stream_ml.core.utils.frozen_dict import FrozenDict
 

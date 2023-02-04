@@ -1,6 +1,5 @@
 """Stream Memberships Likelihood, with ML."""
 
-# STDLIB
 from enum import Enum, unique
 
 

@@ -1,6 +1,5 @@
 """Core library for stream membership likelihood, with ML."""
 
-# LOCAL
 from stream_ml.core.prior.base import PriorBase
 from stream_ml.core.prior.bounds import NoBounds, PriorBounds
 from stream_ml.core.prior.core import Prior

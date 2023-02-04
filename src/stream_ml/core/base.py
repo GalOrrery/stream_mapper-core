@@ -9,13 +9,13 @@ from functools import reduce
 from math import inf
 from typing import ClassVar
 
-from stream_ml.core.api import WEIGHT_NAME, Model
+from stream_ml.core.api import Model
 from stream_ml.core.data import Data
 from stream_ml.core.params import ParamBounds, Params, freeze_params, set_param
 from stream_ml.core.params.bounds import ParamBoundsField
 from stream_ml.core.params.names import ParamNamesField
 from stream_ml.core.prior.base import PriorBase
-from stream_ml.core.setup_package import CompiledShim
+from stream_ml.core.setup_package import WEIGHT_NAME, CompiledShim
 from stream_ml.core.typing import Array, ArrayNamespace, BoundsT
 from stream_ml.core.utils.compat import array_at
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField

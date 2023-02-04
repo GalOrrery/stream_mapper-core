@@ -2,27 +2,18 @@
 
 from __future__ import annotations
 
-# STDLIB
 from collections.abc import Mapping
 from dataclasses import KW_ONLY, dataclass
-from typing import TYPE_CHECKING, Callable, Final, cast
+from typing import Callable, cast
 
-# LOCAL
-from stream_ml.core.api import WEIGHT_NAME
 from stream_ml.core.bases import ModelsBase
 from stream_ml.core.data import Data
 from stream_ml.core.params import ParamNames, Params
+from stream_ml.core.setup_package import BACKGROUND_KEY, WEIGHT_NAME
 from stream_ml.core.typing import Array
 from stream_ml.core.utils.frozen_dict import FrozenDictField
 
-if TYPE_CHECKING:
-    # LOCAL
-    pass
-
 __all__: list[str] = []
-
-
-BACKGROUND_KEY: Final = "background"
 
 
 @dataclass
