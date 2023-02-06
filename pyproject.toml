@@ -1,8 +1,83 @@
+[project]
+  name = "stream_ml.core"
+  version = "0.1.0"
+  description = "Stream ML."
+  readme = "README.rst"
+  requires-python = ">=3.8"
+  license = {file = "LICENSE"}
+  keywords = ["numpy", "interoperability"]
+  authors = [
+    {name = "Nathaniel Starkman", email = "n.starkman@mail.utoronto.ca"},
+    {name = "Jacob Nibauer", email = "jnibauer@princetoon.edu"}
+  ]
+  maintainers = [
+    {name = "Nathaniel Starkman", email = "n.starkman@mail.utoronto.ca"},
+    {name = "Jacob Nibauer", email = "jnibauer@princetoon.edu"}
+  ]
+  classifiers = [
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+  ]
+  dependencies = [
+    "numpy>=1.21",
+  ]
+
+[project.optional-dependencies]
+  all = [
+    "tqdm",
+  ]
+  test = [
+    "coverage[toml]",
+    "pytest",
+    "pytest-astropy",
+  ]
+  docs = [
+    "graphviz",
+    "IPython",
+    "jupyter_client",
+    "nbsphinx",
+    "pydata-sphinx-theme",
+    "sphinx",
+    "sphinx-astropy",
+    "sphinxcontrib.bibtex < 2.0.0",
+    "tomlkit",
+  ]
+
+[project.urls]
+  homepage = "https://github.com/nstarman/stream_ml-core"
+  repository = "https://github.com/nstarman/stream_ml-core"
+  documentation = "https://github.com/nstarman/stream_ml-core"
+
+
+[build-system]
+  requires = [
+    "mypy>=0.991",
+    "mypy_extensions>=0.4.3",
+    "numpy>=1.21",
+    "setuptools>=45.0",
+    "setuptools_scm[toml]>=6.3.1",
+    "wheel",
+  ]
+
+  build-backend = 'setuptools.build_meta'
+
+
+[tool.setuptools]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"*" = ["py.typed"]
+
+
 [tool.coverage.run]
   omit = [
-    "*/stream_ml/conftest.py",
+    "tests/*",
     "*setup_package*",
-    "*/stream_ml/tests/*",
   ]
 
 [tool.coverage.report]
@@ -27,21 +102,21 @@
 
 
 [tool.mypy]
+  python_version = "3.10"
+
   namespace_packages = true
   explicit_package_bases = true
-  mypy_path = "$MYPY_CONFIG_FILE_DIR/libs/core/src:$MYPY_CONFIG_FILE_DIR/libs/pytorch/src:$MYPY_CONFIG_FILE_DIR/libs/jax/src"
+  mypy_path = "$MYPY_CONFIG_FILE_DIR/src"
 
   strict = true
   disallow_subclassing_any = false
   disallow_untyped_defs = true
-  ignore_missing_imports = true
   no_implicit_optional = true
   warn_return_any = true
   warn_redundant_casts = true
   warn_unused_configs = true
   warn_unreachable = true
   exclude = '''(^|/)tests/'''
-  python_version = "3.10"
   plugins = ["numpy.typing.mypy_plugin",]
 
   [[tool.mypy.overrides]]
@@ -61,6 +136,7 @@ ignore = [
   "ANN101", "ANN102", "ANN401",
   "ARG001", "ARG002",
   "D105", "D107", "D203", "D213",
+  "ERA001",
   "FBT003",
   "PD",
   "RET505", "RET506", "RET507",
