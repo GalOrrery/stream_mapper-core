@@ -117,8 +117,11 @@ class Data(Generic[Array]):
     def __str__(self) -> str:
         """Get the string representation."""
         array = indent(repr(self.array), prefix="\t")[1:]
-        return "\t".join(
-            (f"{type(self).__name__}(", f"names: {self.names!r}", f"array: {array}")
+        return (
+            "\t".join(
+                (f"{type(self).__name__}(", f"names: {self.names!r}", f"array: {array}")
+            )
+            + ")"
         )
 
     # -----------------------------------------------------------------------
