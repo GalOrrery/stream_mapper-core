@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     # TypeVar
     T = TypeVar("T")
 
-FlatParamName: TypeAlias = tuple[str] | tuple[str, str]  # type: ignore[misc]
+FlatParamName: TypeAlias = tuple[str] | tuple[str, str]  # type: ignore[misc]  # noqa: E501
 
 
 LEN_NAME_TUPLE = 2
