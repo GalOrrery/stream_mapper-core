@@ -205,7 +205,7 @@ class ModelBase(Model[Array], CompiledShim, metaclass=ABCMeta):
         Array
             Same as input.
         """
-        # Parameter bounds  # FIXME!
+        # Parameter bounds
         for bnd in self.param_bounds.flatvalues():
             out = bnd(out, data, self)
 

@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+from textwrap import indent
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Final,
     Generic,
     TypeGuard,
@@ -108,6 +109,20 @@ class Data(Generic[Array]):
 
     def __len__(self) -> int:
         return len(self.array)
+
+    def __repr__(self) -> str:
+        """Get the representation."""
+        return f"{type(self).__name__}({self.array!r}, names={self.names!r})"
+
+    def __str__(self) -> str:
+        """Get the string representation."""
+        array = indent(repr(self.array), prefix="\t")[1:]
+        return (
+            "\t".join(
+                (f"{type(self).__name__}(", f"names: {self.names!r}", f"array: {array}")
+            )
+            + ")"
+        )
 
     # -----------------------------------------------------------------------
 
