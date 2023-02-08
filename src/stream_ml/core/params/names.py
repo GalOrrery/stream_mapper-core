@@ -30,13 +30,13 @@ if TYPE_CHECKING:
 
     IncompleteCoordParamNameGroupT: TypeAlias = tuple[EllipsisType, CoordParamNamesT]
     IncompleteParamNameGroupT: TypeAlias = (
-        str | tuple[str, tuple[str, ...]] | tuple[EllipsisType, tuple[str, ...]]  # type: ignore[misc]  # noqa: E501
+        str | tuple[str, tuple[str, ...]] | tuple[EllipsisType, tuple[str, ...]]
     )
 
     # TypeVar
     T = TypeVar("T")
 
-FlatParamName: TypeAlias = tuple[str] | tuple[str, str]  # type: ignore[misc]  # noqa: E501
+FlatParamName: TypeAlias = tuple[str] | tuple[str, str]
 
 
 LEN_NAME_TUPLE = 2
@@ -92,9 +92,11 @@ class ParamNamesBase(
 
     def __getitem__(
         self, index: int | slice
-    ) -> str | tuple[str, CoordParamNamesT] | tuple[
-        str | tuple[str, CoordParamNamesT], ...
-    ]:
+    ) -> (
+        str
+        | tuple[str, CoordParamNamesT]
+        | tuple[str | tuple[str, CoordParamNamesT], ...]
+    ):
         return self._data[index]
 
     # ========================================================================

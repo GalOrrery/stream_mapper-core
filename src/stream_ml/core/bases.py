@@ -9,14 +9,13 @@ from typing import TYPE_CHECKING, Any, ClassVar, TypeVar
 
 from stream_ml.core.api import Model
 from stream_ml.core.params import ParamBounds, ParamNames, Params
-from stream_ml.core.prior.base import PriorBase
 from stream_ml.core.setup_package import CompiledShim
 from stream_ml.core.typing import Array, ArrayNamespace, BoundsT
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
     from stream_ml.core.data import Data
-    from stream_ml.core.typing import FlatParsT
+    from stream_ml.core.prior.base import PriorBase
 
     V = TypeVar("V")
 
@@ -142,7 +141,7 @@ class ModelsBase(
 
     # ===============================================================
 
-    def unpack_params(self, packed_pars: FlatParsT[Array], /) -> Params[Array]:
+    def unpack_params(self, packed_pars: Mapping[str, Array], /) -> Params[Array]:
         """Unpack parameters into a dictionary.
 
         Unpack a flat dictionary of parameters -- where keys have coordinate name,

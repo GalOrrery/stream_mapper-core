@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from textwrap import indent
 from typing import (
     TYPE_CHECKING,
@@ -18,9 +17,11 @@ from typing import (
 import numpy as np
 from numpy.lib.recfunctions import structured_to_unstructured
 
-from stream_ml.core.typing import Array
+from stream_ml.core.typing import Array  # noqa: TCH001
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from numpy.typing import NDArray
 
     from stream_ml.core.typing import ArrayLike

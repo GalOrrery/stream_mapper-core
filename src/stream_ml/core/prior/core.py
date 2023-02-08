@@ -5,12 +5,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Protocol
 
-from stream_ml.core.data import Data
 from stream_ml.core.prior.base import PriorBase
 from stream_ml.core.typing import Array, ArrayNamespace
 
 if TYPE_CHECKING:
     from stream_ml.core.api import Model
+    from stream_ml.core.data import Data
     from stream_ml.core.params.core import Params
 
 

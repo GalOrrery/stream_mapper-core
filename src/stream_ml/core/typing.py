@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-# STDLIB
-from collections.abc import Mapping
 from typing import Any, Protocol, TypeAlias, TypeVar
 
-__all__ = ["Array", "FlatParsT", "ArrayNamespace", "BoundsT"]
+__all__ = ["Array", "ArrayNamespace", "BoundsT"]
+
+
+BoundsT: TypeAlias = tuple[float, float]
 
 
 #####################################################################
@@ -114,14 +115,6 @@ class ArrayLike(Protocol):
 
 
 Array = TypeVar("Array", bound="ArrayLike")
-
-
-#####################################################################
-
-FlatParsT: TypeAlias = Mapping[str, Array]
-
-
-BoundsT: TypeAlias = tuple[float, float]
 
 
 #####################################################################

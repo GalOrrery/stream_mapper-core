@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -12,6 +11,8 @@ from stream_ml.core.setup_package import WEIGHT_NAME
 from stream_ml.core.typing import Array
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from stream_ml.core.data import Data
 
 __all__: list[str] = []
@@ -52,12 +53,14 @@ class IndependentModels(ModelsBase[Array]):
         # Add the param_names  # TODO: make sure no duplicates
         # The first is the weight and it is shared across all components.
         self._param_names: ParamNames = ParamNames(
-            (WEIGHT_NAME,)
-            + tuple(
-                (f"{c}.{p[0]}", p[1]) if isinstance(p, tuple) else f"{c}.{p}"
-                for c, m in self.components.items()
-                for p in m.param_names
-                if p != WEIGHT_NAME
+            (
+                WEIGHT_NAME,
+                *tuple(
+                    (f"{c}.{p[0]}", p[1]) if isinstance(p, tuple) else f"{c}.{p}"
+                    for c, m in self.components.items()
+                    for p in m.param_names
+                    if p != WEIGHT_NAME
+                ),
             ),
         )
 
@@ -94,7 +97,7 @@ class IndependentModels(ModelsBase[Array]):
                 continue
 
             # Get weight and relevant parameters by index
-            mp_arr = p_arr[:, [0] + list(range(j, j + len(m.param_names.flat) - 1))]
+            mp_arr = p_arr[:, [0, *list(range(j, j + len(m.param_names.flat) - 1))]]
 
             # Skip empty (and incrementing the index)
             if mp_arr.shape[1] == 0:
