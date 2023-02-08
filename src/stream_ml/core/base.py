@@ -7,14 +7,12 @@ from abc import ABCMeta
 from dataclasses import KW_ONLY, InitVar, dataclass, fields
 from functools import reduce
 from math import inf
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from stream_ml.core.api import Model
-from stream_ml.core.data import Data
 from stream_ml.core.params import ParamBounds, Params, freeze_params, set_param
 from stream_ml.core.params.bounds import ParamBoundsField
 from stream_ml.core.params.names import ParamNamesField
-from stream_ml.core.prior.base import PriorBase
 from stream_ml.core.setup_package import WEIGHT_NAME, CompiledShim
 from stream_ml.core.typing import Array, ArrayNamespace, BoundsT
 from stream_ml.core.utils.compat import array_at
@@ -22,6 +20,11 @@ from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 from stream_ml.core.utils.funcs import within_bounds
 
 __all__: list[str] = []
+
+
+if TYPE_CHECKING:
+    from stream_ml.core.data import Data
+    from stream_ml.core.prior.base import PriorBase
 
 
 @dataclass(unsafe_hash=True)
@@ -219,7 +222,7 @@ class ModelBase(Model[Array], CompiledShim, metaclass=ABCMeta):
     # Misc
 
     def __str__(self) -> str:
-        """String representation."""
+        """Return string representation."""
         s = f"{self.__class__.__name__}(\n"
         s += "\n".join(
             textwrap.indent(f"{f.name}: {getattr(self, f.name)!s}", prefix="\t")

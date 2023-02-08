@@ -54,7 +54,7 @@
 
 [build-system]
   requires = [
-    "mypy>=0.991",
+    "mypy>=1.0",
     "mypy_extensions>=0.4.3",
     "numpy>=1.21",
     "setuptools>=45.0",
@@ -133,13 +133,36 @@ target-version = "py310"
 line-length = 88
 select = ["ALL"]
 ignore = [
-  "ANN101", "ANN102", "ANN401",
-  "ARG001", "ARG002",
-  "D105", "D107", "D203", "D213",
-  "ERA001",
+  # flake8-annotations (ANN)
+  "ANN101",  # missing-type-self
+  "ANN102",  # missing-type-cls
+  "ANN401",  # dynamically-typed-expression
+
+  # flake8-unused-arguments (ARG)
+  "ARG001",  # unused-function-argument
+  "ARG002",  # unused-method-argument
+
+  # pydocstyle (D)
+  "D105",  # magic-method  # don't need docstrings for magic methods
+  "D107",  # public-init   # docstring is on the class
+  "D203",  # one-blank-line-before-class  # contra numpydoc
+  "D213",  # multi-line-summary-second-line  # TODO: fix
+  "D401",  # non-imperative-mood
+
+  # eradicate (ERA)
+  "ERA001",  # commented-out-code
+
+  # flake8-boolean-trap (FBT)
   "FBT003",
+
+  # pandas-vet (PD)
   "PD",
+
+  # flake8-return (RET)
   "RET505", "RET506", "RET507",
+
+  # flake8-self (SLF)
+  "SLF001",
 
   # flake8-commas (COM)
   "COM812",  # TrailingCommaMissing

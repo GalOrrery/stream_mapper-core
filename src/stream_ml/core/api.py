@@ -5,16 +5,18 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol
 
-from stream_ml.core.data import Data
 from stream_ml.core.params.bounds import ParamBounds, ParamBoundsField
 from stream_ml.core.params.core import Params, freeze_params, set_param
 from stream_ml.core.params.names import ParamNamesField
-from stream_ml.core.prior.base import PriorBase
 from stream_ml.core.typing import Array, ArrayNamespace
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
-    from stream_ml.core.typing import BoundsT, FlatParsT
+    from collections.abc import Mapping
+
+    from stream_ml.core.data import Data
+    from stream_ml.core.prior.base import PriorBase
+    from stream_ml.core.typing import BoundsT
 
 __all__: list[str] = []
 
@@ -53,7 +55,7 @@ class Model(Protocol[Array]):
         """Number of dimensions."""
         return len(self.coord_names)
 
-    def unpack_params(self, packed_pars: FlatParsT[Array], /) -> Params[Array]:
+    def unpack_params(self, packed_pars: Mapping[str, Array], /) -> Params[Array]:
         """Unpack parameters into a dictionary.
 
         This function takes a parameter array and unpacks it into a dictionary

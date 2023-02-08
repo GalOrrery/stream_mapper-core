@@ -2,18 +2,28 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping  # noqa: TCH003
 from dataclasses import KW_ONLY, dataclass
-from typing import Callable, cast
+from typing import TYPE_CHECKING, Protocol, cast
 
 from stream_ml.core.bases import ModelsBase
-from stream_ml.core.data import Data
 from stream_ml.core.params import ParamNames, Params
 from stream_ml.core.setup_package import BACKGROUND_KEY, WEIGHT_NAME
 from stream_ml.core.typing import Array
 from stream_ml.core.utils.frozen_dict import FrozenDictField
 
 __all__: list[str] = []
+
+if TYPE_CHECKING:
+    from stream_ml.core.data import Data
+
+
+class TieParamsCallable(Protocol):
+    """Callable for tying parameters."""
+
+    def __call__(self, params: Mapping[str, Array | Mapping[str, Array]], /) -> Array:
+        """Tie parameters."""
+        ...
 
 
 @dataclass
@@ -44,9 +54,7 @@ class MixtureModel(ModelsBase[Array]):
     """
 
     _: KW_ONLY
-    tied_params: FrozenDictField[
-        str, Callable[[Mapping[str, Array | Mapping[str, Array]]], Array]
-    ] = FrozenDictField({})
+    tied_params: FrozenDictField[str, TieParamsCallable] = FrozenDictField({})
 
     def __post_init__(self) -> None:
         # Add the param_names  # TODO: make sure no duplicates

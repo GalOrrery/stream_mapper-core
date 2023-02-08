@@ -3,13 +3,11 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from collections.abc import Iterator
 from dataclasses import KW_ONLY, dataclass
 from math import inf
 from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
-from stream_ml.core.data import Data
-from stream_ml.core.params.names import FlatParamName
+from stream_ml.core.params.names import FlatParamName  # noqa: TCH001
 from stream_ml.core.prior.base import PriorBase
 from stream_ml.core.typing import Array, ArrayNamespace, BoundsT
 from stream_ml.core.utils.compat import array_at
@@ -19,7 +17,10 @@ __all__: list[str] = []
 
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from stream_ml.core.api import Model
+    from stream_ml.core.data import Data
     from stream_ml.core.params.core import Params
 
     Self = TypeVar("Self", bound="PriorBounds")  # type: ignore[type-arg]

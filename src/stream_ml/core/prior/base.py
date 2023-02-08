@@ -6,12 +6,13 @@ from abc import ABCMeta, abstractmethod
 from dataclasses import KW_ONLY, dataclass
 from typing import TYPE_CHECKING, Generic
 
-from stream_ml.core.data import Data
-from stream_ml.core.typing import Array, ArrayNamespace
+from stream_ml.core.typing import Array  # noqa: TCH001
 
 if TYPE_CHECKING:
     from stream_ml.core.api import Model
+    from stream_ml.core.data import Data
     from stream_ml.core.params.core import Params
+    from stream_ml.core.typing import ArrayNamespace
 
 __all__: list[str] = []
 

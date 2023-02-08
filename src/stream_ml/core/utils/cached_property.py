@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, Generic, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast, overload
 
 __all__: list[str] = []
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 R = TypeVar("R")
@@ -49,7 +52,7 @@ class cached_property(Generic[R]):  # noqa: N801
             return self
         if self.fget is None:
             f"property '{self._name}' has no getter"
-            raise AttributeError()
+            raise AttributeError
         elif not hasattr(self, self._name_private):
             object.__setattr__(obj, self._name_private, self.fget(obj))
         return cast("R", getattr(obj, self._name_private))
@@ -57,7 +60,7 @@ class cached_property(Generic[R]):  # noqa: N801
     def __set__(self, obj: object, value: Any) -> None:
         if self.fset is None:
             f"property '{self._name}' has no setter"
-            raise AttributeError()
+            raise AttributeError
         self.fset(obj, value)
 
     def __delete__(self, obj: object) -> None:
