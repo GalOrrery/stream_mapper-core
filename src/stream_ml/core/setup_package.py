@@ -7,6 +7,8 @@ from mypy_extensions import trait
 
 from stream_ml.core.data import Data
 
+__all__: list[str] = []
+
 WEIGHT_NAME: Final = "weight"
 BACKGROUND_KEY: Final = "background"
 IS_COMPILED = hasattr(Data, "__mypyc_attrs__")
