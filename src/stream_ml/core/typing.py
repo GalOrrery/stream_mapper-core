@@ -120,12 +120,18 @@ Array = TypeVar("Array", bound="ArrayLike")
 #####################################################################
 
 
+class FInfo(Protocol):
+    """Protocol for floating point info."""
+
+    eps: float
+
+
 class ArrayNamespace(Protocol[Array]):
     """Protocol for array API namespace."""
 
     @staticmethod
-    def concatenate(arrays: tuple[Array, ...], axis: int = 0, **kwargs: Any) -> Array:
-        """Concatenate."""
+    def asarray(array: Array, dtype: Any = ...) -> Array:
+        """As array."""
         ...
 
     @staticmethod
@@ -134,18 +140,45 @@ class ArrayNamespace(Protocol[Array]):
         ...
 
     @staticmethod
+    def clip(array: Array, *args: Any) -> Array:
+        """Clip."""
+        ...
+
+    @staticmethod
+    def concatenate(arrays: tuple[Array, ...], axis: int = 0, **kwargs: Any) -> Array:
+        """Concatenate."""
+        ...
+
+    @staticmethod
+    def finfo(dtype: Any) -> FInfo:
+        """Floating point info."""
+        ...
+
+    @staticmethod
+    def hstack(arrays: tuple[Array, ...]) -> Array:
+        """Horizontal stack."""
+        ...
+
+    @property
+    def inf(self) -> Array:
+        """Infinity."""
+        ...
+
+    @staticmethod
+    def log(array: Array) -> Array:
+        """Logarithm."""
+        ...
+
+    @staticmethod
+    def logical_or(array1: Array, array2: Array) -> Array:
+        """Logical or."""
+        ...
+
+    @staticmethod
     def logsumexp(array: Array, *args: Any, **kwargs: Any) -> Array:
         """Log-sum-exp.
 
         First argument must be the axis ("dim" in pytorch, "axis" in jax).
-        """
-        ...
-
-    @staticmethod
-    def zeros(*args: Any, dtype: Any = ..., **kwargs: Any) -> Array:
-        """Zeros.
-
-        First argument must be the shape.
         """
         ...
 
@@ -158,21 +191,19 @@ class ArrayNamespace(Protocol[Array]):
         ...
 
     @staticmethod
-    def hstack(arrays: tuple[Array, ...]) -> Array:
-        """Horizontal stack."""
+    def ones_like(array: Array, dtype: Any) -> Array:
+        """Ones like."""
+        ...
+
+    @staticmethod
+    def zeros(*args: Any, dtype: Any = ..., **kwargs: Any) -> Array:
+        """Zeros.
+
+        First argument must be the shape.
+        """
         ...
 
     @staticmethod
     def zeros_like(array: Array) -> Array:
         """Zeros like."""
-        ...
-
-    @staticmethod
-    def logical_or(array1: Array, array2: Array) -> Array:
-        """Logical or."""
-        ...
-
-    @property
-    def inf(self) -> Array:
-        """Infinity."""
         ...
