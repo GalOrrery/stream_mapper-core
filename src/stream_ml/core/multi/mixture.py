@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping  # noqa: TCH003
 from dataclasses import KW_ONLY, dataclass
 from typing import TYPE_CHECKING, Protocol, cast
 
@@ -15,6 +14,8 @@ from stream_ml.core.utils.frozen_dict import FrozenDictField
 __all__: list[str] = []
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from stream_ml.core.data import Data
 
 
@@ -92,7 +93,7 @@ class MixtureModel(ModelsBase[Array]):
         Params[Array]
         """
         # Unpack the parameters
-        pars = dict[str, Array | Mapping[str, Array]]()
+        pars: dict[str, Array | Mapping[str, Array]] = {}
         j = 0
         for n, m in self.components.items():  # iter thru models
             # Get relevant parameters by index
