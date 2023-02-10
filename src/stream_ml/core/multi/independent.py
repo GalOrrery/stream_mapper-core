@@ -143,4 +143,4 @@ class IndependentModels(ModelsBase[Array]):
                 **self._get_prefixed_kwargs(name, kwargs),
             )
 
-        return lnlik
+        return lnlik / len(self.components)

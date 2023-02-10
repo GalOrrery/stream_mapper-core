@@ -94,7 +94,7 @@ class ArrayLike(Protocol):
         """Right subtraction."""
         ...
 
-    def __truediv__(self: Self, other: ArrayLike) -> Self:
+    def __truediv__(self: Self, other: ArrayLike | int) -> Self:
         """True division."""
         ...
 
