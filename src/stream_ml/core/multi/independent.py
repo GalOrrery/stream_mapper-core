@@ -84,7 +84,7 @@ class IndependentModels(ModelsBase[Array]):
         Params[Array]
         """
         # Unpack the parameters
-        pars = dict[str, Array | Mapping[str, Array]]()
+        pars: dict[str, Array | Mapping[str, Array]] = {}
 
         # Do the weight first. This is shared across all components.
         pars[WEIGHT_NAME] = p_arr[:, :1]
