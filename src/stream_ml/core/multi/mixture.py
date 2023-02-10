@@ -6,7 +6,7 @@ from collections.abc import Mapping  # noqa: TCH003
 from dataclasses import KW_ONLY, dataclass
 from typing import TYPE_CHECKING, Protocol, cast
 
-from stream_ml.core.bases import ModelsBase
+from stream_ml.core.multi.bases import ModelsBase
 from stream_ml.core.params import ParamNames, Params
 from stream_ml.core.setup_package import BACKGROUND_KEY, WEIGHT_NAME
 from stream_ml.core.typing import Array

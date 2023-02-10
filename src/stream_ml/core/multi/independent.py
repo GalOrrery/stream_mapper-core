@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from stream_ml.core.bases import ModelsBase
+from stream_ml.core.multi.bases import ModelsBase
 from stream_ml.core.params import ParamNames, Params
 from stream_ml.core.setup_package import WEIGHT_NAME
 from stream_ml.core.typing import Array
@@ -110,11 +110,6 @@ class IndependentModels(ModelsBase[Array]):
             j += len(m.param_names.flat) - 1
 
         return Params[Array](pars)
-
-    # TODO or make abstract and remove here, becuase it's abstract in the base
-    # class
-    def pack_params_to_arr(self, mpars: Params[Array], /) -> Array:  # noqa: D102
-        raise NotImplementedError
 
     # ===============================================================
     # Statistics
