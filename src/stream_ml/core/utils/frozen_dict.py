@@ -43,7 +43,7 @@ from typing import Any, Generic, Literal, Protocol, TypeVar
 
 from stream_ml.core.utils.sentinel import MISSING, Sentinel
 
-__all__: list[str] = ["FrozenDict", "freeze", "unfreeze"]
+__all__ = ["FrozenDict", "freeze", "unfreeze"]
 
 
 ###############################################################################

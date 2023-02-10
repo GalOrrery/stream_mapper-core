@@ -1,4 +1,4 @@
-"""Stream Memberships Likelihood, with ML."""
+"""Parameters."""
 
 from stream_ml.core.params.bounds import ParamBounds
 from stream_ml.core.params.core import Params, freeze_params, set_param, unfreeze_params
