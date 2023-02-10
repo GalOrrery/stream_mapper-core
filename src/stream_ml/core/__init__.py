@@ -3,8 +3,8 @@
 
 from stream_ml.core import params, prior, utils
 from stream_ml.core.data import Data
-from stream_ml.core.independent import IndependentModels
-from stream_ml.core.mixture import MixtureModel
+from stream_ml.core.multi.independent import IndependentModels
+from stream_ml.core.multi.mixture import MixtureModel
 
 __all__: list[str] = [
     # classes
