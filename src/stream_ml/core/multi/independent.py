@@ -86,11 +86,11 @@ class IndependentModels(ModelsBase[Array]):
         # Unpack the parameters
         pars: dict[str, Array | Mapping[str, Array]] = {}
 
-        # Do the weight first. This is shared across all components.
-        pars[WEIGHT_NAME] = p_arr[:, :1]
+        # FIXME! what should we do with the weights? the weight should be shared
+        # across all components. pars[WEIGHT_NAME] = p_arr[:, 0:1]
 
         # Iterate through the components
-        j = 1
+        j = 0
         for n, m in self.components.items():  # iter thru models
             # Determine whether the model has parameters beyond the weight
             if len(m.param_names.flat) == 1:
@@ -109,7 +109,7 @@ class IndependentModels(ModelsBase[Array]):
             # Increment the index
             j += len(m.param_names.flat) - 1
 
-        return Params[Array](pars)
+        return Params(pars)
 
     # ===============================================================
     # Statistics

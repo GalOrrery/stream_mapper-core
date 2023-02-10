@@ -126,39 +126,54 @@ def unfreeze_params(
 def set_param(
     m: dict[str, V | dict[str, V]],
     /,
-    key: str,
+    key: str | tuple[str] | tuple[str, str],
     value: V | dict[str, V],
-) -> None:
+) -> dict[str, V | dict[str, V]]:
     ...
 
 
 @overload
 def set_param(
-    m: dict[str, V | dict[str, V]],
+    m: Params[V],
     /,
-    key: tuple[str],
+    key: str | tuple[str] | tuple[str, str],
     value: V | dict[str, V],
-) -> None:
+) -> Params[V]:
     ...
 
 
-@overload
 def set_param(
-    m: dict[str, V | dict[str, V]],
+    m: dict[str, V | dict[str, V]] | Params[V],
     /,
-    key: tuple[str, str],
-    value: V,
-) -> None:
-    ...
+    key: str | tuple[str] | tuple[str, str],
+    value: V | dict[str, V],
+) -> dict[str, V | dict[str, V]] | Params[V]:
+    """Set a parameter on a Params or Params-like dictionary.
+
+    Parameters
+    ----------
+    m : Mapping[str, V | Mapping[str, V]], positional-only
+        The dictionary to set the parameter on.
+    key : str | tuple[str] | tuple[str, str]
+        The key to set.
+    value : V | dict[str, V]
+        The value to set.
+
+    Returns
+    -------
+    Mapping[str, V | Mapping[str, V]]
+    """
+    if isinstance(m, Params):
+        return _set_param_params(m, key, value)
+    return _set_param_dict(m, key, value)
 
 
-def set_param(
+def _set_param_dict(
     m: dict[str, V | dict[str, V]],
     /,
     key: str | tuple[str] | tuple[str, str],
     value: V | dict[str, V],
-) -> None:
-    """Set a parameter in-place."""
+) -> dict[str, V | dict[str, V]]:
     if isinstance(key, str):
         m[key] = value
     elif len(key) == 1:
@@ -171,4 +186,25 @@ def set_param(
             raise KeyError(str(key))
         cm[key[1]] = value  # type: ignore[assignment]
 
-    return
+    return m
+
+
+def _set_param_params(
+    m: Params[V],
+    /,
+    key: str | tuple[str] | tuple[str, str],
+    value: V | dict[str, V],
+) -> Params[V]:
+    if isinstance(key, str) or len(key) == 1:
+        # We can shortcut copying sub-dicts
+        pum = {k: v for k, v in m._dict.items()}
+        k = key if isinstance(key, str) else key[0]
+        if isinstance(value, dict):
+            pum[k] = FrozenDict(value)
+        else:
+            pum[k] = value
+        # Note this copies the dict one more time. It would be nice to avoid this.
+        return type(m)(pum)
+    else:
+        # Note this copies the dict one more time. It would be nice to avoid this.
+        return type(m)(set_param(m.unfreeze(), key, value))
