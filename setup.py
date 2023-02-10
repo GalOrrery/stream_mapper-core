@@ -68,14 +68,12 @@ else:
     print("BUILDING `stream_ml.core` with MYPYC")  # noqa: T201
 
     blocklist: list[Path] = [  # TODO: not block
-        CORE / "utils" / "compat.py",
-        CORE / "utils" / "funcs.py",
-        *find_python_files(CORE / "prior"),
         CORE / "api.py",
         CORE / "base.py",
-        CORE / "bases.py",
-        CORE / "independent.py",
-        CORE / "mixture.py",
+        *find_python_files(CORE / "multi"),
+        *find_python_files(CORE / "prior"),
+        CORE / "utils" / "compat.py",
+        CORE / "utils" / "funcs.py",
     ]
     discovered: list[Path] = [*find_python_files(CORE)]
     mypyc_targets = [str(p) for p in discovered if p not in blocklist]
