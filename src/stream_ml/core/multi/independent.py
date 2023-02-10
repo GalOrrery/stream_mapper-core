@@ -109,7 +109,7 @@ class IndependentModels(ModelsBase[Array]):
             # Increment the index
             j += len(m.param_names.flat) - 1
 
-        return Params[Array](pars)
+        return Params(pars)
 
     # ===============================================================
     # Statistics

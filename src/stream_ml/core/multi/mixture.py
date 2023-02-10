@@ -138,7 +138,7 @@ class MixtureModel(ModelsBase[Array]):
         for name, tie in self.tied_params.items():
             pars[name] = tie(pars)
 
-        return Params[Array](pars)
+        return Params(pars)
 
     # ===============================================================
 
