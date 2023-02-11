@@ -17,14 +17,12 @@ from typing import (
 import numpy as np
 from numpy.lib.recfunctions import structured_to_unstructured
 
-from stream_ml.core.typing import Array  # noqa: TCH001
+from stream_ml.core.typing import Array, ArrayLike
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from numpy.typing import NDArray
-
-    from stream_ml.core.typing import ArrayLike
 
     Self = TypeVar("Self", bound="Data[Array]")  # type: ignore[valid-type]
 
@@ -145,7 +143,7 @@ class Data(Generic[Array]):
 
     @overload
     def __getitem__(
-        self: Self, key: list[int] | NDArray[np.integer[Any]], /
+        self: Self, key: list[int] | NDArray[np.integer[Any]] | Array, /
     ) -> Self:  # get rows
         ...
 
@@ -174,6 +172,7 @@ class Data(Generic[Array]):
         | slice
         | list[int]
         | NDArray[np.integer[Any]]
+        | ArrayLike
         | tuple[int, ...]
         | tuple[str, ...]
         | tuple[slice, ...]
@@ -187,7 +186,7 @@ class Data(Generic[Array]):
         elif isinstance(key, int):
             out = type(self)(self.array[None, key], names=self.names)  # type: ignore[index] # noqa: E501
 
-        elif isinstance(key, (slice, list, np.ndarray)):
+        elif isinstance(key, (slice, list, np.ndarray, ArrayLike)):
             out = type(self)(self.array[key], names=self.names)  # type: ignore[index]
 
         elif isinstance(key, tuple) and len(key) >= LEN_INDEXING_TUPLE:
