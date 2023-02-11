@@ -93,7 +93,7 @@ class IndependentModels(ModelsBase[Array]):
         j = 0
         for n, m in self.components.items():  # iter thru models
             # Determine whether the model has parameters beyond the weight
-            if len(m.param_names.flat) == 1:
+            if len(m.param_names.flat) == 0:
                 continue
 
             # Get weight and relevant parameters by index
