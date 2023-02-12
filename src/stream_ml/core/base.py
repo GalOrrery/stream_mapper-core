@@ -55,12 +55,11 @@ class ModelBase(Model[Array], CompiledShim, metaclass=ABCMeta):
         The bounds on the parameters.
     """
 
-    indep_coord_name: str = "phi1"  # TODO: move up class hierarchy?
-
     _: KW_ONLY
     array_namespace: InitVar[ArrayNamespace[Array]]
     name: str | None = None  # the name of the model
 
+    indep_coord_name: str = "phi1"  # TODO? allow this to be a tuple
     coord_names: tuple[str, ...]
     param_names: ParamNamesField = ParamNamesField()
 
