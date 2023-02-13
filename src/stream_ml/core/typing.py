@@ -131,7 +131,7 @@ class ArrayNamespace(Protocol[Array]):
     """Protocol for array API namespace."""
 
     @staticmethod
-    def asarray(array: Array, dtype: Any = ...) -> Array:
+    def asarray(array: Any, dtype: Any = ...) -> Array:
         """As array."""
         ...
 
