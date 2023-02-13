@@ -59,7 +59,7 @@ class ModelBase(Model[Array], CompiledShim, metaclass=ABCMeta):
     array_namespace: InitVar[ArrayNamespace[Array]]
     name: str | None = None  # the name of the model
 
-    indep_coord_name: str = "phi1"  # TODO? allow this to be a tuple
+    indep_coord_names: tuple[str, ...] = ("phi1",)
     coord_names: tuple[str, ...]
     param_names: ParamNamesField = ParamNamesField()
 
