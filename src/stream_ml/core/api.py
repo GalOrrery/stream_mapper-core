@@ -258,6 +258,134 @@ class Model(Protocol[Array]):
         """
         return self.ln_likelihood(mpars, data, **kw) + self.ln_prior(mpars, data)
 
+    # ------------------------------------------------------------------------
+    # Non-logarithmic elementwise versions
+
+    def likelihood_arr(
+        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
+    ) -> Array:
+        """Elementwise likelihood of the model.
+
+        Parameters
+        ----------
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
+        data : Data[Array]
+            Data.
+        **kwargs : Array
+            Additional arguments.
+
+        Returns
+        -------
+        Array
+        """
+        return self.xp.exp(self.ln_likelihood_arr(mpars, data, **kwargs))
+
+    def prior_arr(
+        self, mpars: Params[Array], data: Data[Array], current_lnp: Array | None = None
+    ) -> Array:
+        """Elementwise prior.
+
+        Parameters
+        ----------
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
+        data : Data[Array]
+            Data.
+        current_lnp : Array | None, optional
+            Current value of the log prior, by default `None`.
+
+        Returns
+        -------
+        Array
+        """
+        return self.xp.exp(self.ln_prior_arr(mpars, data, current_lnp))
+
+    def posterior_arr(
+        self, mpars: Params[Array], data: Data[Array], **kw: Array
+    ) -> Array:
+        """Elementwise posterior.
+
+        Parameters
+        ----------
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
+        data : Data[Array]
+            Data.
+        **kw : Array
+            Arguments.
+
+        Returns
+        -------
+        Array
+        """
+        return self.xp.exp(self.ln_posterior_arr(mpars, data, **kw))
+
+    # ------------------------------------------------------------------------
+    # Non-logarithmic scalar versions
+
+    def likelihood(
+        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
+    ) -> Array:
+        """Likelihood of the model.
+
+        This is evaluated over the entire data set.
+
+        Parameters
+        ----------
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
+        data : Data
+            Data.
+        **kwargs : Array
+            Additional arguments.
+
+        Returns
+        -------
+        Array
+        """
+        return self.xp.exp(self.ln_likelihood(mpars, data, **kwargs))
+
+    def prior(self, mpars: Params[Array], data: Data[Array]) -> Array:
+        """Prior.
+
+        Parameters
+        ----------
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
+        data : Data
+            Data.
+
+        Returns
+        -------
+        Array
+        """
+        return self.xp.exp(self.ln_prior(mpars, data))
+
+    def posterior(self, mpars: Params[Array], data: Data[Array], **kw: Array) -> Array:
+        """Posterior.
+
+        Parameters
+        ----------
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
+        data : Data[Array]
+            Data.
+        **kw : Array
+            Keyword arguments. These are passed to the likelihood function.
+
+        Returns
+        -------
+        Array
+        """
+        return self.xp.exp(self.ln_posterior(mpars, data, **kw))
+
     # ========================================================================
     # ML
 
