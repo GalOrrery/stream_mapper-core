@@ -259,7 +259,7 @@ class Model(Protocol[Array]):
         return self.ln_likelihood(mpars, data, **kw) + self.ln_prior(mpars, data)
 
     # ------------------------------------------------------------------------
-    # Non-logarithm elementwise versions
+    # Non-logarithmic elementwise versions
 
     def likelihood_arr(
         self, mpars: Params[Array], data: Data[Array], **kwargs: Array
@@ -325,7 +325,7 @@ class Model(Protocol[Array]):
         return self.xp.exp(self.ln_posterior_arr(mpars, data, **kw))
 
     # ------------------------------------------------------------------------
-    # Non-logarithm scalar versions
+    # Non-logarithmic scalar versions
 
     def likelihood(
         self, mpars: Params[Array], data: Data[Array], **kwargs: Array
