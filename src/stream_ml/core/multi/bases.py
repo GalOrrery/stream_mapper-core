@@ -8,6 +8,7 @@ from dataclasses import KW_ONLY, dataclass
 from typing import TYPE_CHECKING, Any, ClassVar, TypeVar
 
 from stream_ml.core.api import Model
+from stream_ml.core.base import NN_NAMESPACE
 from stream_ml.core.params import ParamBounds, ParamNames, Params
 from stream_ml.core.setup_package import CompiledShim
 from stream_ml.core.typing import Array, ArrayNamespace, BoundsT
@@ -50,6 +51,7 @@ class ModelsBase(
         self._init_descriptor()  # TODO: Remove this when mypyc is fixed.
 
         self._array_namespace_ = _get_namespace(self.components)
+        self._nn_namespace_ = NN_NAMESPACE[self._array_namespace_]
 
         # Check that there is at least one component
         if not self.components:

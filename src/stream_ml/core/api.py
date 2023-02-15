@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
     from stream_ml.core.data import Data
     from stream_ml.core.prior.base import PriorBase
-    from stream_ml.core.typing import BoundsT
+    from stream_ml.core.typing import BoundsT, NNNamespace
 
 __all__: list[str] = []
 
@@ -26,6 +26,7 @@ class Model(Protocol[Array]):
 
     name: str | None
     _array_namespace_: ArrayNamespace[Array]
+    _nn_namespace_: NNNamespace[Array]
 
     # Name of the coordinates and parameters.
     coord_names: tuple[str, ...]
@@ -47,6 +48,11 @@ class Model(Protocol[Array]):
     def xp(self) -> ArrayNamespace[Array]:
         """Array namespace."""
         return self._array_namespace_
+
+    @property
+    def xpnn(self) -> NNNamespace[Array]:
+        """NN namespace."""
+        return self._nn_namespace_
 
     # ========================================================================
 

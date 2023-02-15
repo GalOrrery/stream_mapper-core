@@ -220,3 +220,24 @@ class ArrayNamespace(Protocol[Array]):
     def zeros_like(array: Array) -> Array:
         """Zeros like."""
         ...
+
+
+#####################################################################
+
+
+class NNIdentity(Protocol[Array]):
+    """Protocol for identity."""
+
+    @staticmethod
+    def __call__(x: Array) -> Array:
+        """Call."""
+        ...
+
+
+class NNNamespace(Protocol[Array]):
+    """Protocol for neural network API namespace."""
+
+    @staticmethod
+    def Identity(*args: Any, **kwargs: Any) -> NNIdentity[Array]:  # noqa: N802
+        """Identity."""
+        ...

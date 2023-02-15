@@ -7,14 +7,14 @@ from abc import ABCMeta
 from dataclasses import KW_ONLY, InitVar, dataclass, fields
 from functools import reduce
 from math import inf
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Protocol, cast
 
 from stream_ml.core.api import Model
 from stream_ml.core.params import ParamBounds, Params, freeze_params, set_param
 from stream_ml.core.params.bounds import ParamBoundsField
 from stream_ml.core.params.names import ParamNamesField
 from stream_ml.core.setup_package import WEIGHT_NAME, CompiledShim
-from stream_ml.core.typing import Array, ArrayNamespace, BoundsT
+from stream_ml.core.typing import Array, ArrayNamespace, BoundsT, NNNamespace
 from stream_ml.core.utils.compat import array_at
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 from stream_ml.core.utils.funcs import within_bounds
@@ -25,6 +25,30 @@ __all__: list[str] = []
 if TYPE_CHECKING:
     from stream_ml.core.data import Data
     from stream_ml.core.prior.base import PriorBase
+
+
+#####################################################################
+# PARAMETERS
+
+
+class NNNamespaceMap(Protocol):
+    """Protocol for mapping array namespaces to NN namespaces."""
+
+    def __getitem__(self, key: ArrayNamespace[Array]) -> NNNamespace[Array]:
+        """Get item."""
+        ...
+
+    def __setitem__(
+        self, key: ArrayNamespace[Array], value: NNNamespace[Array]
+    ) -> None:
+        """Set item."""
+        ...
+
+
+NN_NAMESPACE = cast(NNNamespaceMap, {})
+
+
+#####################################################################
 
 
 @dataclass(unsafe_hash=True)
@@ -77,6 +101,7 @@ class ModelBase(Model[Array], CompiledShim, metaclass=ABCMeta):
         self._init_descriptor()  # TODO: Remove this when mypyc is fixed.
 
         self._array_namespace_ = array_namespace
+        self._nn_namespace_ = NN_NAMESPACE[array_namespace]
 
         # Validate the param_names
         if not self.param_names:
