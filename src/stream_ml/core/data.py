@@ -8,14 +8,12 @@ from typing import (
     Any,
     Final,
     Generic,
+    Protocol,
     TypeGuard,
     TypeVar,
     cast,
     overload,
 )
-
-import numpy as np
-from numpy.lib.recfunctions import structured_to_unstructured
 
 from stream_ml.core.typing import Array, ArrayLike
 
@@ -35,10 +33,6 @@ if TYPE_CHECKING:
 
 
 LEN_INDEXING_TUPLE: Final = 1
-
-DATA_HOOK: dict[type, Callable[[Data[Array]], Data[Array]]] = {}
-ARRAY_HOOK: dict[type, Callable[[Array], Array]] = {}
-TO_FORMAT_REGISTRY: dict[tuple[type, type], Callable[[Data[Any]], Data[ArrayLike]]] = {}
 
 
 #####################################################################
@@ -143,7 +137,7 @@ class Data(Generic[Array]):
 
     @overload
     def __getitem__(
-        self: Self, key: list[int] | NDArray[np.integer[Any]] | Array, /
+        self: Self, key: list[int] | Array, /  # Array[np.integer[Any]]
     ) -> Self:  # get rows
         ...
 
@@ -171,8 +165,7 @@ class Data(Generic[Array]):
         | int
         | slice
         | list[int]
-        | NDArray[np.integer[Any]]
-        | ArrayLike
+        | ArrayLike  # [np.integer[Any]]
         | tuple[int, ...]
         | tuple[str, ...]
         | tuple[slice, ...]
@@ -180,13 +173,13 @@ class Data(Generic[Array]):
         /,
     ) -> Array | Self:
         out: Array | Self
-        if isinstance(key, str):
+        if isinstance(key, str):  # get a column
             out = cast("Array", self.array[:, self._n2k[key]])  # type: ignore[index] # noqa: E501
 
-        elif isinstance(key, int):
+        elif isinstance(key, int):  # get a row
             out = type(self)(self.array[None, key], names=self.names)  # type: ignore[index] # noqa: E501
 
-        elif isinstance(key, (slice, list, np.ndarray, ArrayLike)):
+        elif isinstance(key, (slice, list, ArrayLike)):  # get rows
             out = type(self)(self.array[key], names=self.names)  # type: ignore[index]
 
         elif isinstance(key, tuple) and len(key) >= LEN_INDEXING_TUPLE:
@@ -213,7 +206,7 @@ class Data(Generic[Array]):
         if isinstance(out, Data) and type(out.array) in DATA_HOOK:
             return cast("Self", DATA_HOOK[type(out.array)](out))
         elif type(out) in ARRAY_HOOK:
-            return ARRAY_HOOK[type(out)](out)
+            return ARRAY_HOOK[type(out)](out, key=key)
 
         return out
 
@@ -231,25 +224,6 @@ class Data(Generic[Array]):
     def items(self) -> tuple[tuple[str, Array], ...]:
         """Get the items as an iterator over the names and columns."""
         return tuple((k, self[k]) for k in self.names)
-
-    # =========================================================================
-    # Alternate constructors
-
-    @classmethod
-    def from_structured_array(cls: type[Self], array: Array, /) -> Self:
-        """Create a `Data` instance from a structured array.
-
-        Parameters
-        ----------
-        array : Array
-            The structured array.
-
-        Returns
-        -------
-        Data
-            The data instance.
-        """
-        return cls(structured_to_unstructured(array), names=array.dtype.names)
 
     # =========================================================================
     # I/O
@@ -272,3 +246,48 @@ class Data(Generic[Array]):
             The converted data.
         """
         return cast("Data[ArrayT]", TO_FORMAT_REGISTRY[(type(self.array), fmt)](self))
+
+    # TODO: a from_format method with registry.
+
+
+###############################################################################
+# HOOKS
+
+
+class _ArrayHookCallable(Protocol):
+    def __call__(self, array: Array, /, key: Any) -> Array:  # noqa: ANN001, N805
+        ...
+
+
+DATA_HOOK: dict[type, Callable[[Data[Array]], Data[Array]]] = {}
+ARRAY_HOOK: dict[type, _ArrayHookCallable] = {}
+TO_FORMAT_REGISTRY: dict[tuple[type, type], Callable[[Data[Any]], Data[ArrayLike]]] = {}
+
+
+###############################################################################
+# Alternate constructors
+
+
+# TODO: this should be moved to a separate module, interfacing via ``from_format``.
+def from_structured_array(array: NDArray[Any], /) -> Data[NDArray[Any]]:
+    """Create a `Data` instance from a structured numpy array.
+
+    Requires :mod:`numpy` to be installed.
+
+    Parameters
+    ----------
+    array : ndarray
+        The structured array.
+
+    Returns
+    -------
+    Data
+        The data instance.
+    """
+    from numpy.lib.recfunctions import structured_to_unstructured
+
+    if not isinstance(array.dtype.names, tuple):
+        msg = "The array must be structured."
+        raise TypeError(msg)
+
+    return Data(structured_to_unstructured(array), names=array.dtype.names)

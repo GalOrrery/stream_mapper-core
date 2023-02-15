@@ -20,16 +20,12 @@ Self = TypeVar("Self", bound="ArrayLike")
 class ArrayLike(Protocol):
     """Protocol for array addition."""
 
-    @property
-    def dtype(self) -> Any:
-        """Data type."""
-        ...
-
     # ========================================================================
     # Properties
 
-    def __len__(self) -> int:
-        """Length."""
+    @property
+    def dtype(self) -> Any:
+        """Data type."""
         ...
 
     @property
@@ -38,7 +34,18 @@ class ArrayLike(Protocol):
         ...
 
     # ========================================================================
+    # Methods
+
+    def flatten(self: Self) -> Self:
+        """Flatten."""
+        ...
+
+    # ========================================================================
     # Dunder methods
+
+    def __len__(self) -> int:
+        """Length."""
+        ...
 
     def __getitem__(self: Self, key: Any, /) -> Self:
         """Indexing."""
