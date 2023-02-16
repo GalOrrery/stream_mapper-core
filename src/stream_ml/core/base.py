@@ -116,18 +116,6 @@ class ModelBase(Model[Array], CompiledShim, metaclass=ABCMeta):
             raise ValueError(msg)
         self.coord_bounds = FrozenDict(cbs)
 
-        # Make parameter bounds
-        # 1) Make the default bounds for all parameters.
-        # 2) Update from the user-specified bounds.
-        # 3) Fix up the names so each bound references its parameter.
-        self.param_bounds: ParamBounds[Array] = (
-            ParamBounds.from_names(self.param_names, default=self.DEFAULT_BOUNDS)
-            | self.param_bounds
-        )
-        self.param_bounds._fixup_param_names()
-        # Validate param bounds.
-        self.param_bounds.validate(self.param_names)
-
     @property
     def xp(self) -> ArrayNamespace[Array]:
         """Array namespace."""

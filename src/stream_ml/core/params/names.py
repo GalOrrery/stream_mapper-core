@@ -56,7 +56,7 @@ class ParamNamesBase(
 
         self._data = tuple(iterable)
 
-        # hint property types
+        # hint cached values
         self._top_level: tuple[str | T, ...]
         self._flat: tuple[str | T, ...]
         self._flats: tuple[tuple[str] | tuple[str | T, str], ...]
