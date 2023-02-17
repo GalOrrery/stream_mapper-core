@@ -11,6 +11,15 @@ from stream_ml.core.typing import Array
 __all__: list[str] = []
 
 
+class ArrayAt(Protocol[Array]):
+    """Array at index."""
+
+    @abstractmethod
+    def set(self, value: Array | Literal[0]) -> Array:  # noqa: A003
+        """Set the value at the index."""
+        ...
+
+
 @singledispatch
 def array_at(array: Array, idx: Any, /, *, inplace: bool = True) -> ArrayAt[Array]:
     """Get the array at the index.
@@ -33,12 +42,3 @@ def array_at(array: Array, idx: Any, /, *, inplace: bool = True) -> ArrayAt[Arra
         Setter.
     """
     raise NotImplementedError
-
-
-class ArrayAt(Protocol[Array]):
-    """Array at index."""
-
-    @abstractmethod
-    def set(self, value: Array | Literal[0]) -> Array:  # noqa: A003
-        """Set the value at the index."""
-        ...

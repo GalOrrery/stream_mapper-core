@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Protocol, TypeAlias, TypeVar, runtime_checkable
+from typing import Any, Protocol, TypeAlias, TypeVar
 
 __all__ = ["Array", "ArrayNamespace", "BoundsT"]
 
@@ -16,7 +16,7 @@ BoundsT: TypeAlias = tuple[float, float]
 Self = TypeVar("Self", bound="ArrayLike")
 
 
-@runtime_checkable
+# @runtime_checkable  # TODO: when mypyc supports runtime_checkable protocols
 class ArrayLike(Protocol):
     """Protocol for array addition."""
 
