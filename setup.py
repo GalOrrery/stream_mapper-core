@@ -72,8 +72,6 @@ else:
         CORE / "base.py",
         *find_python_files(CORE / "multi"),
         *find_python_files(CORE / "prior"),
-        CORE / "utils" / "compat.py",
-        CORE / "utils" / "funcs.py",
     ]
     discovered: list[Path] = [*find_python_files(CORE)]
     mypyc_targets = [str(p) for p in discovered if p not in blocklist]

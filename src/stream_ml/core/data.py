@@ -15,12 +15,14 @@ from typing import (
     overload,
 )
 
-from stream_ml.core.typing import Array, ArrayLike
+from stream_ml.core.typing import Array  # noqa: TCH001
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from numpy.typing import NDArray
+
+    from stream_ml.core.typing import ArrayLike
 
     Self = TypeVar("Self", bound="Data[Array]")  # type: ignore[valid-type]
 
@@ -43,7 +45,16 @@ def _all_strs(seq: tuple[Any, ...]) -> TypeGuard[tuple[str, ...]]:
     return all(isinstance(x, str) for x in seq)
 
 
-# @dataclass(frozen=True)
+def _is_arraylike(obj: Any) -> TypeGuard[ArrayLike]:
+    """Check if an object is array-like.
+
+    This only exists b/c mypyc does not yet support runtime_checkable protocols,
+    so `isinstance(obj, ArrayLike)` does not work.
+    """
+    return hasattr(obj, "dtype") and hasattr(obj, "shape")
+
+
+# @dataclass(frozen=True)  # TODO: when mypyc supports generic dataclasses
 class Data(Generic[Array]):
     """Labelled data.
 
@@ -179,7 +190,7 @@ class Data(Generic[Array]):
         elif isinstance(key, int):  # get a row
             out = type(self)(self.array[None, key], names=self.names)  # type: ignore[index] # noqa: E501
 
-        elif isinstance(key, (slice, list, ArrayLike)):  # get rows
+        elif isinstance(key, (slice, list)) or _is_arraylike(key):  # get rows
             out = type(self)(self.array[key], names=self.names)  # type: ignore[index]
 
         elif isinstance(key, tuple) and len(key) >= LEN_INDEXING_TUPLE:
