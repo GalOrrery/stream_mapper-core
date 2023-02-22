@@ -11,7 +11,7 @@ from stream_ml.core.api import Model
 from stream_ml.core.base import NN_NAMESPACE
 from stream_ml.core.params import ParamBounds, ParamNames, Params
 from stream_ml.core.setup_package import CompiledShim
-from stream_ml.core.typing import Array, ArrayNamespace, BoundsT
+from stream_ml.core.typing import Array, ArrayNamespace, BoundsT, NNModel
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
@@ -23,7 +23,9 @@ if TYPE_CHECKING:
 __all__: list[str] = []
 
 
-def _get_namespace(components: FrozenDict[str, Model[Array]]) -> ArrayNamespace[Array]:
+def _get_namespace(
+    components: FrozenDict[str, Model[Array, NNModel]]
+) -> ArrayNamespace[Array]:
     """Get the array namespace."""
     ns = {v._array_namespace_ for v in components.values()}
     if len(ns) != 1:
@@ -34,11 +36,14 @@ def _get_namespace(components: FrozenDict[str, Model[Array]]) -> ArrayNamespace[
 
 @dataclass
 class ModelsBase(
-    Model[Array], Mapping[str, Model[Array]], CompiledShim, metaclass=ABCMeta
+    Model[Array, NNModel],
+    Mapping[str, Model[Array, NNModel]],
+    CompiledShim,
+    metaclass=ABCMeta,
 ):
     """Multi-model base class."""
 
-    components: FrozenDictField[str, Model[Array]] = FrozenDictField()
+    components: FrozenDictField[str, Model[Array, NNModel]] = FrozenDictField()
 
     _: KW_ONLY
     name: str | None = None  # the name of the model
@@ -129,7 +134,7 @@ class ModelsBase(
     # ===============================================================
     # Mapping
 
-    def __getitem__(self, key: str) -> Model[Array]:
+    def __getitem__(self, key: str) -> Model[Array, NNModel]:
         return self.components[key]
 
     def __iter__(self) -> Iterator[str]:

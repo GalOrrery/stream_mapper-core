@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from stream_ml.core.api import Model
     from stream_ml.core.data import Data
     from stream_ml.core.params.core import Params
+    from stream_ml.core.typing.nn import NNModel
 
 
 __all__: list[str] = []
@@ -24,7 +25,7 @@ class LogPDFHook(Protocol):
         self,
         mpars: Params[Array],
         data: Data[Array],
-        model: Model[Array],
+        model: Model[Array, NNModel],
         current_lnpdf: Array | None,
         /,
         *,
@@ -37,7 +38,9 @@ class LogPDFHook(Protocol):
 class ForwardHook(Protocol):
     """Forward hook."""
 
-    def __call__(self, pred: Array, data: Data[Array], model: Model[Array], /) -> Array:
+    def __call__(
+        self, pred: Array, data: Data[Array], model: Model[Array, NNModel], /
+    ) -> Array:
         """Evaluate the forward step in the prior."""
         ...
 
@@ -53,7 +56,7 @@ class Prior(PriorBase[Array]):
         self,
         mpars: Params[Array],
         data: Data[Array],
-        model: Model[Array],
+        model: Model[Array, NNModel],
         current_lnpdf: Array | None = None,
         /,
         *,
@@ -72,7 +75,7 @@ class Prior(PriorBase[Array]):
             parameters.
         data : Data[Array], position-only
             The data for which evaluate the prior.
-        model : Model[Array], position-only
+        model : Model[Array, NNModel], position-only
             The model for which evaluate the prior.
         current_lnpdf : Array | None, optional position-only
             The current logpdf, by default `None`. This is useful for setting
@@ -88,7 +91,9 @@ class Prior(PriorBase[Array]):
         """
         return self.logpdf_hook(mpars, data, model, current_lnpdf, xp=xp)
 
-    def __call__(self, pred: Array, data: Data[Array], model: Model[Array], /) -> Array:
+    def __call__(
+        self, pred: Array, data: Data[Array], model: Model[Array, NNModel], /
+    ) -> Array:
         """Evaluate the forward step in the prior.
 
         Parameters
@@ -97,7 +102,7 @@ class Prior(PriorBase[Array]):
             The input to evaluate the prior at.
         data : Data[Array]
             The data to evaluate the prior at.
-        model : Model[Array]
+        model : Model[Array, NNModel]
             The model to evaluate the prior at.
 
         xp : ArrayNamespace[Array], keyword-only

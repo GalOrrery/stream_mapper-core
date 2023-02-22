@@ -7,14 +7,15 @@ from abc import ABCMeta
 from dataclasses import KW_ONLY, InitVar, dataclass, fields
 from functools import reduce
 from math import inf
-from typing import TYPE_CHECKING, ClassVar, Protocol, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol, cast
 
 from stream_ml.core.api import Model
 from stream_ml.core.params import ParamBounds, Params, freeze_params, set_param
 from stream_ml.core.params.bounds import ParamBoundsField
 from stream_ml.core.params.names import ParamNamesField
+from stream_ml.core.prior.bounds import NoBounds
 from stream_ml.core.setup_package import WEIGHT_NAME, CompiledShim
-from stream_ml.core.typing import Array, ArrayNamespace, BoundsT, NNNamespace
+from stream_ml.core.typing import Array, ArrayNamespace, BoundsT, NNModel, NNNamespace
 from stream_ml.core.utils.compat import array_at
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 from stream_ml.core.utils.funcs import within_bounds
@@ -34,12 +35,12 @@ if TYPE_CHECKING:
 class NNNamespaceMap(Protocol):
     """Protocol for mapping array namespaces to NN namespaces."""
 
-    def __getitem__(self, key: ArrayNamespace[Array]) -> NNNamespace[Array]:
+    def __getitem__(self, key: ArrayNamespace[Array]) -> NNNamespace[NNModel, Array]:
         """Get item."""
         ...
 
     def __setitem__(
-        self, key: ArrayNamespace[Array], value: NNNamespace[Array]
+        self, key: ArrayNamespace[Array], value: NNNamespace[NNModel, Array]
     ) -> None:
         """Set item."""
         ...
@@ -52,7 +53,7 @@ NN_NAMESPACE = cast(NNNamespaceMap, {})
 
 
 @dataclass(unsafe_hash=True)
-class ModelBase(Model[Array], CompiledShim, metaclass=ABCMeta):
+class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
     """Single-model base class.
 
     Parameters
@@ -79,6 +80,8 @@ class ModelBase(Model[Array], CompiledShim, metaclass=ABCMeta):
         The bounds on the parameters.
     """
 
+    net: InitVar[Any | None] = None
+
     _: KW_ONLY
     array_namespace: InitVar[ArrayNamespace[Array]]
     name: str | None = None  # the name of the model
@@ -93,11 +96,13 @@ class ModelBase(Model[Array], CompiledShim, metaclass=ABCMeta):
 
     priors: tuple[PriorBase[Array], ...] = ()
 
-    DEFAULT_BOUNDS: ClassVar  # TODO: [PriorBounds[Any]]
+    DEFAULT_BOUNDS: ClassVar = NoBounds()  # TODO: [PriorBounds[Any]]
 
-    def __post_init__(self, array_namespace: ArrayNamespace[Array]) -> None:
+    def __post_init__(
+        self, net: Any | None, array_namespace: ArrayNamespace[Array]
+    ) -> None:
         """Post-init validation."""
-        super().__post_init__(array_namespace=array_namespace)
+        super().__post_init__(net=net, array_namespace=array_namespace)
         self._init_descriptor()  # TODO: Remove this when mypyc is fixed.
 
         self._array_namespace_ = array_namespace
@@ -116,10 +121,17 @@ class ModelBase(Model[Array], CompiledShim, metaclass=ABCMeta):
             raise ValueError(msg)
         self.coord_bounds = FrozenDict(cbs)
 
-    @property
-    def xp(self) -> ArrayNamespace[Array]:
-        """Array namespace."""
-        return self._array_namespace_
+        # Need to type hint the nn.Module
+        self.nn: Any
+        nnet = self._net_init_default() if net is None else net
+        if nnet is not None:
+            self.nn = nnet
+        else:
+            msg = "must provide a wrapped neural network."
+            raise ValueError(msg)
+
+    def _net_init_default(self) -> Any | None:
+        return None
 
     # ========================================================================
 

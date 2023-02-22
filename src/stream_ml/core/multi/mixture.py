@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Protocol, cast
 from stream_ml.core.multi.bases import ModelsBase
 from stream_ml.core.params import ParamNames, Params
 from stream_ml.core.setup_package import BACKGROUND_KEY, WEIGHT_NAME
-from stream_ml.core.typing import Array
+from stream_ml.core.typing import Array, NNModel
 from stream_ml.core.utils.frozen_dict import FrozenDictField
 
 __all__: list[str] = []
@@ -28,7 +28,7 @@ class TieParamsCallable(Protocol):
 
 
 @dataclass
-class MixtureModel(ModelsBase[Array]):
+class MixtureModel(ModelsBase[Array, NNModel]):
     """Full Model.
 
     Parameters

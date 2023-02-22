@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 from stream_ml.core.params.names import FlatParamName  # noqa: TCH001
 from stream_ml.core.prior.base import PriorBase
-from stream_ml.core.typing import Array, ArrayNamespace, BoundsT
+from stream_ml.core.typing import Array, ArrayNamespace
 from stream_ml.core.utils.compat import array_at
 from stream_ml.core.utils.funcs import within_bounds
 
@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     from stream_ml.core.api import Model
     from stream_ml.core.data import Data
     from stream_ml.core.params.core import Params
+    from stream_ml.core.typing import BoundsT, NNModel
 
     Self = TypeVar("Self", bound="PriorBounds")  # type: ignore[type-arg]
 
@@ -39,7 +40,7 @@ class PriorBounds(PriorBase[Array]):
         self,
         mpars: Params[Array],
         data: Data[Array],
-        model: Model[Array],
+        model: Model[Array, NNModel],
         current_lnpdf: Array | None = None,
         /,
         *,
@@ -56,7 +57,9 @@ class PriorBounds(PriorBase[Array]):
         ).set(-xp.inf)
 
     @abstractmethod
-    def __call__(self, pred: Array, data: Data[Array], model: Model[Array], /) -> Array:
+    def __call__(
+        self, pred: Array, data: Data[Array], model: Model[Array, NNModel], /
+    ) -> Array:
         """Evaluate the forward step in the prior."""
         ...
 
@@ -108,7 +111,7 @@ class NoBounds(PriorBounds[Any]):
         self,
         mpars: Params[Array],
         data: Data[Array],
-        model: Model[Array],
+        model: Model[Array, NNModel],
         current_lnpdf: Array | None = None,
         /,
         *,
@@ -120,6 +123,8 @@ class NoBounds(PriorBounds[Any]):
             raise ValueError(msg)
         return 0
 
-    def __call__(self, pred: Array, data: Data[Array], model: Model[Array], /) -> Array:
+    def __call__(
+        self, pred: Array, data: Data[Array], model: Model[Array, NNModel], /
+    ) -> Array:
         """Evaluate the forward step in the prior."""
         return pred

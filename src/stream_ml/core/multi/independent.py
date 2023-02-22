@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from stream_ml.core.multi.bases import ModelsBase
 from stream_ml.core.params import ParamNames, Params
 from stream_ml.core.setup_package import WEIGHT_NAME
-from stream_ml.core.typing import Array
+from stream_ml.core.typing import Array, NNModel
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -19,7 +19,7 @@ __all__: list[str] = []
 
 
 @dataclass(unsafe_hash=True)
-class IndependentModels(ModelsBase[Array]):
+class IndependentModels(ModelsBase[Array, NNModel]):
     """Composite of a few models that acts like one model.
 
     This is different from a mixture model in that the components are not
