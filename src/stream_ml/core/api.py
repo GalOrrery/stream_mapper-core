@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Protocol
 from stream_ml.core.params.bounds import ParamBounds, ParamBoundsField
 from stream_ml.core.params.core import Params, freeze_params, set_param
 from stream_ml.core.params.names import ParamNamesField
-from stream_ml.core.typing import Array, ArrayNamespace
+from stream_ml.core.typing import Array, ArrayNamespace, NNModel
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
@@ -21,12 +21,22 @@ if TYPE_CHECKING:
 __all__: list[str] = []
 
 
-class Model(Protocol[Array]):
+class SupportsXP(Protocol[Array]):
+    """Protocol for objects that support array namespaces."""
+
+    _array_namespace_: ArrayNamespace[Array]
+
+    @property
+    def xp(self) -> ArrayNamespace[Array]:
+        """Array namespace."""
+        return self._array_namespace_
+
+
+class Model(SupportsXP[Array], Protocol[Array, NNModel]):
     """Model base class."""
 
     name: str | None
-    _array_namespace_: ArrayNamespace[Array]
-    _nn_namespace_: NNNamespace[Array]
+    _nn_namespace_: NNNamespace[NNModel, Array]
 
     # Name of the coordinates and parameters.
     coord_names: tuple[str, ...]
@@ -45,12 +55,7 @@ class Model(Protocol[Array]):
         ...
 
     @property
-    def xp(self) -> ArrayNamespace[Array]:
-        """Array namespace."""
-        return self._array_namespace_
-
-    @property
-    def xpnn(self) -> NNNamespace[Array]:
+    def xpnn(self) -> NNNamespace[NNModel, Array]:
         """NN namespace."""
         return self._nn_namespace_
 

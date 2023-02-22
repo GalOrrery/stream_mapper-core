@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from stream_ml.core.api import Model
     from stream_ml.core.data import Data
     from stream_ml.core.params.core import Params
+    from stream_ml.core.typing import NNModel
 
 __all__: list[str] = []
 
@@ -44,7 +45,7 @@ class BoundedHardThreshold(PriorBase[Array]):
         self,
         mpars: Params[Array],
         data: Data[Array],
-        model: Model[Array],
+        model: Model[Array, NNModel],
         current_lnpdf: Array | None = None,
         /,
         *,
@@ -83,7 +84,9 @@ class BoundedHardThreshold(PriorBase[Array]):
         )
         return array_at(lnp, where).set(-xp.inf)
 
-    def __call__(self, pred: Array, data: Data[Array], model: Model[Array]) -> Array:
+    def __call__(
+        self, pred: Array, data: Data[Array], model: Model[Array, NNModel]
+    ) -> Array:
         """Evaluate the forward step in the prior.
 
         Parameters

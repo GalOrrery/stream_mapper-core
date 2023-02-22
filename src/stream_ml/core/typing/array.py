@@ -2,12 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any, Protocol, TypeAlias, TypeVar
+from typing import Any, Protocol, TypeVar
 
-__all__ = ["Array", "ArrayNamespace", "BoundsT"]
-
-
-BoundsT: TypeAlias = tuple[float, float]
+__all__: list[str] = []
 
 
 #####################################################################
@@ -123,6 +120,7 @@ class ArrayLike(Protocol):
 
 
 Array = TypeVar("Array", bound="ArrayLike")
+Array_co = TypeVar("Array_co", bound="ArrayLike", covariant=True)
 
 
 #####################################################################
@@ -221,23 +219,22 @@ class ArrayNamespace(Protocol[Array]):
         """Zeros like."""
         ...
 
-
-#####################################################################
-
-
-class NNIdentity(Protocol[Array]):
-    """Protocol for identity."""
-
     @staticmethod
-    def __call__(x: Array) -> Array:
-        """Call."""
+    def isneginf(array: Array) -> Array:
+        """Is negative infinity."""
         ...
 
-
-class NNNamespace(Protocol[Array]):
-    """Protocol for neural network API namespace."""
+    @staticmethod
+    def isposinf(array: Array) -> Array:
+        """Is positive infinity."""
+        ...
 
     @staticmethod
-    def Identity(*args: Any, **kwargs: Any) -> NNIdentity[Array]:  # noqa: N802
-        """Identity."""
+    def isinf(array: Array) -> Array:
+        """Is infinity."""
+        ...
+
+    @staticmethod
+    def sigmoid(array: Array) -> Array:
+        """Sigmoid."""
         ...
