@@ -32,11 +32,21 @@ class SupportsXP(Protocol[Array]):
         return self._array_namespace_
 
 
-class Model(SupportsXP[Array], Protocol[Array, NNModel]):
+class SupportsXPNN(SupportsXP[Array], Protocol[Array, NNModel]):
+    """Protocol for objects that support array and NN namespaces."""
+
+    _nn_namespace_: NNNamespace[NNModel, Array]
+
+    @property
+    def xpnn(self) -> NNNamespace[NNModel, Array]:
+        """NN namespace."""
+        return self._nn_namespace_
+
+
+class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
     """Model base class."""
 
     name: str | None
-    _nn_namespace_: NNNamespace[NNModel, Array]
 
     # Name of the coordinates and parameters.
     coord_names: tuple[str, ...]
@@ -53,11 +63,6 @@ class Model(SupportsXP[Array], Protocol[Array, NNModel]):
 
     def __post_init__(self, *args: Any, **kwargs: Any) -> None:
         ...
-
-    @property
-    def xpnn(self) -> NNNamespace[NNModel, Array]:
-        """NN namespace."""
-        return self._nn_namespace_
 
     # ========================================================================
 
@@ -141,7 +146,7 @@ class Model(SupportsXP[Array], Protocol[Array, NNModel]):
 
     @abstractmethod
     def ln_likelihood_arr(
-        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
+        self, mpars: Params[Array], data: Data[Array], **kwargs: Any
     ) -> Array:
         """Elementwise log-likelihood of the model.
 
@@ -152,7 +157,7 @@ class Model(SupportsXP[Array], Protocol[Array, NNModel]):
             parameters.
         data : Data[Array]
             Data.
-        **kwargs : Array
+        **kwargs : Any
             Additional arguments.
 
         Returns
