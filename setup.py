@@ -70,6 +70,7 @@ else:
     blocklist: list[Path] = [  # TODO: not block
         CORE / "api.py",
         CORE / "base.py",
+        *find_python_files(CORE / "background"),
         *find_python_files(CORE / "multi"),
         *find_python_files(CORE / "prior"),
     ]
