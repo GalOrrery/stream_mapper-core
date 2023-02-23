@@ -93,21 +93,3 @@ class Uniform(ModelBase[Array, NNModel]):
             self.xp.log(self.xp.clip(f, eps))
             - (indicator * self._ln_diffs).sum(1)[:, None]
         )
-
-    # ========================================================================
-    # ML
-
-    def forward(self, data: Data[Array]) -> Array:
-        """Forward pass.
-
-        Parameters
-        ----------
-        data : Data[Array]
-            Input.
-
-        Returns
-        -------
-        Array
-            fraction, mean, sigma
-        """
-        return self.xp.asarray([])  # there are no priors
