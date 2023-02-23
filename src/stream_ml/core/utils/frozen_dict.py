@@ -29,7 +29,6 @@ Main changes:
 
 from __future__ import annotations
 
-import textwrap
 from collections.abc import (
     ItemsView,
     Iterable,
@@ -39,6 +38,7 @@ from collections.abc import (
     Sequence,
     ValuesView,
 )
+import textwrap
 from typing import Any, Generic, Literal, Protocol, TypeVar
 
 from stream_ml.core.utils.sentinel import MISSING, Sentinel

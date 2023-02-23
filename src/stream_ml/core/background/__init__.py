@@ -1,6 +1,6 @@
 """Background models."""
 
 
-from .uniform import Uniform
+from stream_ml.core.background.uniform import Uniform
 
 __all__ = ["Uniform"]

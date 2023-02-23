@@ -20,4 +20,4 @@ __all__ = [
 
 
 # isort: split
-from . import _connect  # noqa: F401
+from stream_ml.core import _connect  # noqa: F401
