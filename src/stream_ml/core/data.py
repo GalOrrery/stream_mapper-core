@@ -8,7 +8,6 @@ from typing import (
     Any,
     Final,
     Generic,
-    Protocol,
     TypeGuard,
     TypeVar,
     cast,
@@ -19,8 +18,6 @@ from stream_ml.core.typing import Array  # noqa: TCH001
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-
-    from numpy.typing import NDArray
 
     from stream_ml.core.typing import ArrayLike
 
@@ -194,7 +191,7 @@ class Data(Generic[Array]):
             out = type(self)(self.array[key], names=self.names)  # type: ignore[index]
 
         elif isinstance(key, tuple) and len(key) >= LEN_INDEXING_TUPLE:
-            if _all_strs(key):
+            if _all_strs(key):  # multiple columns
                 names = key
                 key = (slice(None), tuple(self._n2k[k] for k in key))
                 out = type(self)(self.array[key], names=names)  # type: ignore[index]
@@ -214,12 +211,7 @@ class Data(Generic[Array]):
         else:
             out = cast("Array", self.array[key])  # type: ignore[index]
 
-        if isinstance(out, Data) and type(out.array) in DATA_HOOK:
-            return cast("Self", DATA_HOOK[type(out.array)](out))
-        elif type(out) in ARRAY_HOOK:
-            return ARRAY_HOOK[type(out)](out, key=key)
-
-        return out
+        return out  # noqa: RET504
 
     # =========================================================================
     # Mapping methods
@@ -239,6 +231,7 @@ class Data(Generic[Array]):
     # =========================================================================
     # I/O
 
+    # TODO: instead interact with jax as a dictionary
     def __jax_array__(self) -> Array:
         """Convert to a JAX array."""
         return self.array
@@ -258,47 +251,27 @@ class Data(Generic[Array]):
         """
         return cast("Data[ArrayT]", TO_FORMAT_REGISTRY[(type(self.array), fmt)](self))
 
-    # TODO: a from_format method with registry.
+    @classmethod
+    def from_format(cls, data: Any, /, fmt: str) -> Data[Any]:  # noqa: ANN001, D417
+        """Convert the data from a different format.
+
+        Parameters
+        ----------
+        data : Any, positional-only
+            The data to convert.
+        fmt : str
+            The format to convert from.
+
+        Returns
+        -------
+        Data
+            The converted data.
+        """
+        return FROM_FORMAT_REGISTRY[fmt](data)
 
 
 ###############################################################################
 # HOOKS
 
-
-class _ArrayHookCallable(Protocol):
-    def __call__(self, array: Array, /, key: Any) -> Array:  # noqa: ANN001, N805
-        ...
-
-
-DATA_HOOK: dict[type, Callable[[Data[Array]], Data[Array]]] = {}
-ARRAY_HOOK: dict[type, _ArrayHookCallable] = {}
 TO_FORMAT_REGISTRY: dict[tuple[type, type], Callable[[Data[Any]], Data[ArrayLike]]] = {}
-
-
-###############################################################################
-# Alternate constructors
-
-
-# TODO: this should be moved to a separate module, interfacing via ``from_format``.
-def from_structured_array(array: NDArray[Any], /) -> Data[NDArray[Any]]:
-    """Create a `Data` instance from a structured numpy array.
-
-    Requires :mod:`numpy` to be installed.
-
-    Parameters
-    ----------
-    array : ndarray
-        The structured array.
-
-    Returns
-    -------
-    Data
-        The data instance.
-    """
-    from numpy.lib.recfunctions import structured_to_unstructured
-
-    if not isinstance(array.dtype.names, tuple):
-        msg = "The array must be structured."
-        raise TypeError(msg)
-
-    return Data(structured_to_unstructured(array), names=array.dtype.names)
+FROM_FORMAT_REGISTRY: dict[str, Callable[[Any], Data[Any]]] = {}

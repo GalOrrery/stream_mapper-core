@@ -17,3 +17,7 @@ __all__ = [
     "MixtureModel",
     "IndependentModels",
 ]
+
+
+# isort: split
+from . import _connect  # noqa: F401
