@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Protocol, TypeVar
 
-from .array import Array, Array_co
+from stream_ml.core.typing.array import Array, Array_co
 
 __all__: list[str] = []
 

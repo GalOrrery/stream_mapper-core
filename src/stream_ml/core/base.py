@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import textwrap
 from abc import ABCMeta
 from dataclasses import KW_ONLY, InitVar, dataclass, fields
 from functools import reduce
 from math import inf
+import textwrap
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol, cast
 
 from stream_ml.core.api import Model
