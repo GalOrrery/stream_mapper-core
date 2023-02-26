@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 # PARAMETERS
 
 
-LEN_INDEXING_TUPLE: Final = 1
+_LEN_INDEXING_TUPLE: Final = 1
 
 
 #####################################################################
@@ -190,7 +190,7 @@ class Data(Generic[Array]):
         elif isinstance(key, (slice, list)) or _is_arraylike(key):  # get rows
             out = type(self)(self.array[key], names=self.names)  # type: ignore[index]
 
-        elif isinstance(key, tuple) and len(key) >= LEN_INDEXING_TUPLE:
+        elif isinstance(key, tuple) and len(key) >= _LEN_INDEXING_TUPLE:
             if _all_strs(key):  # multiple columns
                 names = key
                 key = (slice(None), tuple(self._n2k[k] for k in key))

@@ -12,6 +12,10 @@ if TYPE_CHECKING:
     from numpy.typing import NDArray
 
 
+#####################################################################
+# FROM_FORMAT
+
+
 def _from_structured_array(array: NDArray[Any], /) -> Data[NDArray[Any]]:
     """Create a `Data` instance from a structured numpy array.
 
@@ -36,4 +40,7 @@ def _from_structured_array(array: NDArray[Any], /) -> Data[NDArray[Any]]:
     return Data(structured_to_unstructured(array), names=array.dtype.names)
 
 
-FROM_FORMAT_REGISTRY["numpy.structured"] = _from_structured_array
+try:
+    import numpy as np  # noqa: F401
+except ImportError:
+    FROM_FORMAT_REGISTRY["numpy.structured"] = _from_structured_array
