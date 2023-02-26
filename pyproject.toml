@@ -121,12 +121,16 @@ where = ["src"]
   plugins = ["numpy.typing.mypy_plugin",]
 
   [[tool.mypy.overrides]]
-    module = "*/tests/*"
+    module = [
+      "*/tests/*",
+      "tests/*"
+    ]
     ignore_errors = true
 
   [[tool.mypy.overrides]]
-    module = "tests/*"
+    module = "astropy.*"
     ignore_errors = true
+    ignore_missing_imports = true
 
 
 [tool.ruff]

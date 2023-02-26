@@ -89,7 +89,7 @@ class Data(Generic[Array]):
         """The names of the features."""
         return self._names
 
-    # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    # =========================================================================
 
     def __post_init__(self) -> None:
         # Check that the number of names matches the number of columns.
@@ -230,6 +230,23 @@ class Data(Generic[Array]):
         return tuple((k, self[k]) for k in self.names)
 
     # =========================================================================
+
+    def apply(self: Self, func: Callable[[Array], Array], /) -> Self:
+        """Apply a function to the data.
+
+        Parameters
+        ----------
+        func : Callable
+            The function to apply. Must not change the names.
+
+        Returns
+        -------
+        Data
+            The transformed data.
+        """
+        return type(self)(func(self.array), names=self.names)
+
+    # =========================================================================
     # I/O
 
     # TODO: instead interact with jax as a dictionary
@@ -237,7 +254,7 @@ class Data(Generic[Array]):
         """Convert to a JAX array."""
         return self.array
 
-    def to_format(self, fmt: type[ArrayT], /) -> Data[ArrayT]:
+    def astype(self, fmt: type[ArrayT], /) -> Data[ArrayT]:
         """Convert the data to a different format.
 
         Parameters
@@ -250,7 +267,22 @@ class Data(Generic[Array]):
         Data
             The converted data.
         """
-        return cast("Data[ArrayT]", TO_FORMAT_REGISTRY[(type(self.array), fmt)](self))
+        return cast("Data[ArrayT]", ASTYPE_REGISTRY[(type(self.array), fmt)](self))
+
+    def to_format(self, fmt: type[ArrayT], /) -> ArrayT:
+        """Convert the data to a different format.
+
+        Parameters
+        ----------
+        fmt : type
+            The format to convert to.
+
+        Returns
+        -------
+        Data
+            The converted data.
+        """
+        return cast("ArrayT", TO_FORMAT_REGISTRY[(type(self.array), fmt)](self))
 
     @classmethod
     def from_format(  # noqa: D417
@@ -278,7 +310,8 @@ class Data(Generic[Array]):
 ###############################################################################
 # HOOKS
 
-TO_FORMAT_REGISTRY: dict[tuple[type, type], Callable[[Data[Any]], Data[ArrayLike]]] = {}
+ASTYPE_REGISTRY: dict[tuple[type, type], Callable[[Data[Any]], Data[ArrayLike]]] = {}
+TO_FORMAT_REGISTRY: dict[tuple[type, type], Callable[[Data[Any]], ArrayLike]] = {}
 
 
 class FromFormatCallable(Protocol):
