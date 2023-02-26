@@ -4,6 +4,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
+from numpy.lib.recfunctions import (
+    structured_to_unstructured,
+    unstructured_to_structured,
+)
+
 from stream_ml.core.data import FROM_FORMAT_REGISTRY, TO_FORMAT_REGISTRY, Data
 
 __all__: list[str] = []
@@ -41,8 +46,6 @@ def _from_structured_array(array: NDArray[Any], /, **kwargs: Any) -> Data[NDArra
     Data
         The data instance.
     """
-    from numpy.lib.recfunctions import structured_to_unstructured
-
     if not isinstance(array.dtype.names, tuple):
         msg = "The array must be structured."
         raise TypeError(msg)
@@ -71,8 +74,6 @@ def _to_format_structured_array(data: Data[NDArray[Any]], /) -> NDArray[Any]:
     ndarray
         The structured array.
     """
-    from numpy.lib.recfunctions import unstructured_to_structured
-
     return cast(
         "NDArray[Any]", unstructured_to_structured(data.array, names=data.names)
     )
