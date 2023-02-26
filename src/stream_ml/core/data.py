@@ -8,6 +8,7 @@ from typing import (
     Any,
     Final,
     Generic,
+    Protocol,
     TypeGuard,
     TypeVar,
     cast,
@@ -252,7 +253,9 @@ class Data(Generic[Array]):
         return cast("Data[ArrayT]", TO_FORMAT_REGISTRY[(type(self.array), fmt)](self))
 
     @classmethod
-    def from_format(cls, data: Any, /, fmt: str) -> Data[Any]:  # noqa: ANN001, D417
+    def from_format(  # noqa: D417
+        cls, data: Any, /, fmt: str, **kwargs: Any  # noqa: ANN001
+    ) -> Data[Any]:
         """Convert the data from a different format.
 
         Parameters
@@ -261,17 +264,28 @@ class Data(Generic[Array]):
             The data to convert.
         fmt : str
             The format to convert from.
+        **kwargs : Any
+            Additional keyword arguments to pass to the converter.
 
         Returns
         -------
         Data
             The converted data.
         """
-        return FROM_FORMAT_REGISTRY[fmt](data)
+        return FROM_FORMAT_REGISTRY[fmt](data, **kwargs)
 
 
 ###############################################################################
 # HOOKS
 
 TO_FORMAT_REGISTRY: dict[tuple[type, type], Callable[[Data[Any]], Data[ArrayLike]]] = {}
-FROM_FORMAT_REGISTRY: dict[str, Callable[[Any], Data[Any]]] = {}
+
+
+class FromFormatCallable(Protocol):
+    """Callable to convert data from a different format."""
+
+    def __call__(self, obj: Any, /, **kwargs: Any) -> Data[Any]:  # noqa: D102
+        ...
+
+
+FROM_FORMAT_REGISTRY: dict[str, FromFormatCallable] = {}
