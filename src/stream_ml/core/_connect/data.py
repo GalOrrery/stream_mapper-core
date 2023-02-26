@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
-from stream_ml.core.data import FROM_FORMAT_REGISTRY, Data
+from stream_ml.core.data import FROM_FORMAT_REGISTRY, TO_FORMAT_REGISTRY, Data
 
 __all__: list[str] = []
 
@@ -56,12 +56,35 @@ def _from_structured_array(array: NDArray[Any], /, **kwargs: Any) -> Data[NDArra
     )
 
 
+def _to_format_structured_array(data: Data[NDArray[Any]], /) -> NDArray[Any]:
+    """Convert the data to a structured numpy array.
+
+    Requires :mod:`numpy` to be installed.
+
+    Parameters
+    ----------
+    data : Data
+        The data.
+
+    Returns
+    -------
+    ndarray
+        The structured array.
+    """
+    from numpy.lib.recfunctions import unstructured_to_structured
+
+    return cast(
+        "NDArray[Any]", unstructured_to_structured(data.array, names=data.names)
+    )
+
+
 try:
-    import numpy as np  # noqa: F401
+    import numpy as np
 except ImportError:
     pass
 else:
     FROM_FORMAT_REGISTRY["numpy.structured"] = _from_structured_array
+    TO_FORMAT_REGISTRY[(np.ndarray, np.ndarray)] = _to_format_structured_array
 
 
 #####################################################################
