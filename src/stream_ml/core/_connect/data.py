@@ -118,11 +118,9 @@ def _from_astropy_table(table: Table, /, **kwargs: Any) -> Data[NDArray[Any]]:
     Data
         The data instance.
     """
+    names = kwargs.pop("names", Ellipsis)
     return Data.from_format(
-        table.as_array(
-            keep_byteorder=kwargs.pop("keep_byteorder", False),
-            names=kwargs.pop("names", None),
-        ),
+        table[names].as_array(keep_byteorder=kwargs.pop("keep_byteorder", False)),
         fmt="numpy.structured",
         **kwargs,
     )
