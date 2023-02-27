@@ -16,27 +16,37 @@ if TYPE_CHECKING:
     from stream_ml.core.api import Model
     from stream_ml.core.data import Data
     from stream_ml.core.params.core import Params
+    from stream_ml.core.params.names import FlatParamName
     from stream_ml.core.typing import NNModel
 
 __all__: list[str] = []
 
 
 @dataclass(frozen=True)
-class BoundedHardThreshold(PriorBase[Array]):
+class HardThreshold(PriorBase[Array]):
     """Threshold prior.
 
     Parameters
     ----------
     threshold : float, optional
         The threshold, by default 0.005
-    lower : float, optional
+
+    lower : float, optional keyword-only
         The lower bound in the domain of the prior, by default `-inf`.
-    upper : float, optional
+    upper : float, optional keyword-only
         The upper bound in the domain of the prior, by default `inf`.
+
+    param_name : FlatParamName, optional keyword-only
+        The name of the parameter to apply the prior to, by default
+        `(WEIGHT_NAME,)`.
+    coord_name : str, optional keyword-only
+        The name of the coordinate over which the parameter varies, by default
+        `"phi1"`.
     """
 
-    threshold: float = 0.005
+    threshold: float = 5e-3
     _: KW_ONLY
+    param_name: FlatParamName = (WEIGHT_NAME,)
     coord_name: str = "phi1"
     lower: float = -inf
     upper: float = inf
@@ -78,9 +88,9 @@ class BoundedHardThreshold(PriorBase[Array]):
         Array
             The logpdf.
         """
-        lnp = xp.zeros_like(mpars[(WEIGHT_NAME,)])
+        lnp = xp.zeros_like(mpars[self.param_name])
         where = within_bounds(data[self.coord_name], self.lower, self.upper) & (
-            mpars[(WEIGHT_NAME,)] < self.threshold
+            mpars[self.param_name] < self.threshold
         )
         return array_at(lnp, where).set(-xp.inf)
 
@@ -102,8 +112,8 @@ class BoundedHardThreshold(PriorBase[Array]):
         -------
         Array
         """
-        i = model.param_names.flat.index(WEIGHT_NAME)
-        where = within_bounds(data[self.coord_name][:, 0], self.lower, self.upper) & (
-            pred[:, i] <= self.threshold
-        )
+        i = model.param_names.flats.index(self.param_name)
+        where = within_bounds(
+            data[self.coord_name].flatten(), self.lower, self.upper
+        ) & (pred[:, i] <= self.threshold)
         return array_at(pred, (where, i), inplace=False).set(0)
