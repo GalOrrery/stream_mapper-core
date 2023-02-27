@@ -38,7 +38,7 @@ class HardThreshold(PriorBase[Array]):
 
     param_name : FlatParamName, optional keyword-only
         The name of the parameter to apply the prior to, by default
-        `WEIGHT_NAME`.
+        `(WEIGHT_NAME,)`.
     coord_name : str, optional keyword-only
         The name of the coordinate over which the parameter varies, by default
         `"phi1"`.
