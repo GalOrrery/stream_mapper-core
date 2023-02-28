@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 from abc import ABCMeta
-from dataclasses import KW_ONLY, InitVar, dataclass, fields
+from dataclasses import KW_ONLY, InitVar, dataclass, field, fields
 from functools import reduce
 from math import inf
 import textwrap
-from typing import TYPE_CHECKING, Any, ClassVar, Protocol, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, Protocol, cast
 
 from stream_ml.core.api import Model
 from stream_ml.core.params import ParamBounds, Params, freeze_params, set_param
@@ -52,6 +52,47 @@ NN_NAMESPACE = cast(NNNamespaceMap, {})
 #####################################################################
 
 
+@dataclass(frozen=True, slots=True)
+class NNField(Generic[NNModel]):
+    """Dataclass descriptor for attached nn.
+
+    Parameters
+    ----------
+    default : NNModel | None, optional
+        Default value, by default `None`.
+
+        - `NNModel` : a value.
+        - `None` : defer setting a value until model init.
+    """
+
+    default: NNModel | None = None
+    _name: str = field(default="")
+
+    def __set_name__(self, owner: type, name: str) -> None:
+        object.__setattr__(self, "_name", "_" + name)
+
+    def __get__(
+        self, model: ModelBase[Array, NNModel] | None, model_cls: Any
+    ) -> NNModel | None:
+        if model is not None:
+            return cast("NNModel", getattr(model, self._name))
+        return self.default
+
+    def __set__(
+        self,
+        model: ModelBase[Array, NNModel],
+        value: NNModel | None,
+    ) -> None:
+        # Call the _net_init_default hook. This can be Any | None
+        net = model._net_init_default() if value is None else value
+
+        if net is None:
+            msg = "must provide a wrapped neural network."
+            raise ValueError(msg)
+
+        object.__setattr__(model, self._name, net)
+
+
 @dataclass(unsafe_hash=True)
 class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
     """Single-model base class.
@@ -80,7 +121,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         The bounds on the parameters.
     """
 
-    net: InitVar[Any | None] = None
+    net: NNField[NNModel] = NNField(default=None)
 
     _: KW_ONLY
     array_namespace: InitVar[ArrayNamespace[Array]]
@@ -98,12 +139,10 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
 
     DEFAULT_BOUNDS: ClassVar = NoBounds()  # TODO: [PriorBounds[Any]]
 
-    def __post_init__(
-        self, net: Any | None, array_namespace: ArrayNamespace[Array]
-    ) -> None:
+    def __post_init__(self, array_namespace: ArrayNamespace[Array]) -> None:
         """Post-init validation."""
-        super().__post_init__(net=net, array_namespace=array_namespace)
-        self._init_descriptor()  # TODO: Remove this when mypyc is fixed.
+        super().__post_init__(array_namespace=array_namespace)
+        self._mypyc_init_descriptor()  # TODO: Remove this when mypyc is fixed.
 
         self._array_namespace_ = array_namespace
         self._nn_namespace_ = NN_NAMESPACE[array_namespace]
@@ -120,15 +159,6 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
             msg = f"coord_bounds contains invalid keys {crnt_cbs.keys()}."
             raise ValueError(msg)
         self.coord_bounds = FrozenDict(cbs)
-
-        # Need to type hint the nn.Module
-        self.nn: Any
-        nnet = self._net_init_default() if net is None else net
-        if nnet is not None:
-            self.nn = nnet
-        else:
-            msg = "must provide a wrapped neural network."
-            raise ValueError(msg)
 
     def _net_init_default(self) -> Any | None:
         return None
