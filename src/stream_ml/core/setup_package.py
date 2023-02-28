@@ -18,7 +18,7 @@ IS_COMPILED = hasattr(Data, "__mypyc_attrs__")
 class CompiledShim:
     """Shim to make the compiled code work with the uncompiled version."""
 
-    def _init_descriptor(self) -> None:
+    def _mypyc_init_descriptor(self) -> None:
         """Initialize the descriptor."""
         if not IS_COMPILED:
             return

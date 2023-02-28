@@ -53,7 +53,7 @@ class ModelsBase(
 
     def __post_init__(self) -> None:
         """Post-init validation."""
-        self._init_descriptor()  # TODO: Remove this when mypyc is fixed.
+        self._mypyc_init_descriptor()  # TODO: Remove this when mypyc is fixed.
 
         self._array_namespace_ = _get_namespace(self.components)
         self._nn_namespace_ = NN_NAMESPACE[self._array_namespace_]

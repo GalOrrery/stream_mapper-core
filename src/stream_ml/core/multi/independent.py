@@ -48,7 +48,7 @@ class IndependentModels(ModelsBase[Array, NNModel]):
     """
 
     def __post_init__(self) -> None:
-        self._init_descriptor()  # TODO: Remove this when mypyc is fixed.
+        self._mypyc_init_descriptor()  # TODO: Remove this when mypyc is fixed.
 
         # Add the param_names  # TODO: make sure no duplicates
         # The first is the weight and it is shared across all components.

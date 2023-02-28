@@ -33,17 +33,15 @@ class Uniform(ModelBase[Array, NNModel]):
     )
     require_mask: bool = False
 
-    def __post_init__(
-        self, net: Any | None, array_namespace: ArrayNamespace[Array]
-    ) -> None:
-        super().__post_init__(net=net, array_namespace=array_namespace)
+    def __post_init__(self, array_namespace: ArrayNamespace[Array]) -> None:
+        super().__post_init__(array_namespace=array_namespace)
 
         # Pre-compute the log-difference, shape (1, F)
         self._ln_diffs = self.xp.log(
             self.xp.asarray([b - a for a, b in self.coord_bounds.values()])[None, :]
         )
 
-    def _net_init_default(self) -> Any | None:
+    def _net_init_default(self) -> NNModel:
         return self.xpnn.Identity()
 
     # ========================================================================
