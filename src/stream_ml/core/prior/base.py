@@ -37,7 +37,7 @@ class PriorBase(Generic[Array], metaclass=ABCMeta):
         /,
         *,
         xp: ArrayNamespace[Array],
-    ) -> Array | float:
+    ) -> Array:
         """Evaluate the logpdf.
 
         This log-pdf is added to the current logpdf. So if you want to set the
