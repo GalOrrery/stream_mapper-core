@@ -114,7 +114,7 @@ class IndependentModels(ModelsBase[Array, NNModel]):
     # ===============================================================
     # Statistics
 
-    def ln_likelihood_arr(
+    def ln_likelihood(
         self, mpars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log likelihood.
@@ -137,7 +137,7 @@ class IndependentModels(ModelsBase[Array, NNModel]):
         """
         lnlik: Array = self.xp.zeros(())
         for name, m in self.components.items():
-            lnlik = lnlik + m.ln_likelihood_arr(
+            lnlik = lnlik + m.ln_likelihood(
                 mpars.get_prefixed(name + "."),
                 data,
                 **self._get_prefixed_kwargs(name, kwargs),

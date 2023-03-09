@@ -212,7 +212,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         )
         return array_at(lnp, where).set(-self.xp.inf)
 
-    def ln_prior_arr(
+    def ln_prior(
         self, mpars: Params[Array], data: Data[Array], current_lnp: Array | None = None
     ) -> Array:
         """Log prior.

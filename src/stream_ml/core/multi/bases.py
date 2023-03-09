@@ -190,7 +190,7 @@ class ModelsBase(
     # ===============================================================
     # Statistics
 
-    def ln_prior_arr(
+    def ln_prior(
         self, mpars: Params[Array], data: Data[Array], current_lnp: Array | None = None
     ) -> Array:
         """Log prior.
@@ -212,7 +212,7 @@ class ModelsBase(
         # Loop over the components
         lnp: Array = self.xp.zeros(()) if current_lnp is None else current_lnp
         for name, m in self.components.items():
-            lnp = lnp + m.ln_prior_arr(mpars.get_prefixed(name + "."), data)
+            lnp = lnp + m.ln_prior(mpars.get_prefixed(name + "."), data)
         # No need to do the parameter boundss here, since they are already
         # included in the component priors.
         # Plugin for priors
