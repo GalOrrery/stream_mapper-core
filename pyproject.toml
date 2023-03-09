@@ -151,7 +151,7 @@ ignore = [
   "D105",  # magic-method  # don't need docstrings for magic methods
   "D107",  # public-init   # docstring is on the class
   "D203",  # one-blank-line-before-class  # contra numpydoc
-  "D213",  # multi-line-summary-second-line  # TODO: fix
+  "D213",  # multi-line-summary-second-line
   "D401",  # non-imperative-mood
 
   # eradicate (ERA)
