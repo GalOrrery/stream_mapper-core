@@ -142,7 +142,7 @@ class MixtureModel(ModelsBase[Array, NNModel]):
 
     # ===============================================================
 
-    def ln_likelihood_arr(
+    def ln_likelihood(
         self, mpars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log likelihood.
@@ -166,7 +166,7 @@ class MixtureModel(ModelsBase[Array, NNModel]):
         # Get the parameters for each model, stripping the model name,
         # and use that to evaluate the log likelihood for the model.
         lnliks = tuple(
-            model.ln_likelihood_arr(
+            model.ln_likelihood(
                 mpars.get_prefixed(name),
                 data,
                 **self._get_prefixed_kwargs(name, kwargs),

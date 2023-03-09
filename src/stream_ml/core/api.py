@@ -145,7 +145,7 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
     # Elementwise versions
 
     @abstractmethod
-    def ln_likelihood_arr(
+    def ln_likelihood(
         self, mpars: Params[Array], data: Data[Array], **kwargs: Any
     ) -> Array:
         """Elementwise log-likelihood of the model.
@@ -166,7 +166,7 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
         """
         raise NotImplementedError
 
-    def ln_prior_arr(
+    def ln_prior(
         self, mpars: Params[Array], data: Data[Array], current_lnp: Array | None = None
     ) -> Array:
         """Elementwise log prior.
@@ -187,7 +187,7 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
         """
         ...
 
-    def ln_posterior_arr(
+    def ln_posterior(
         self, mpars: Params[Array], data: Data[Array], **kw: Array
     ) -> Array:
         """Elementwise log posterior.
@@ -206,17 +206,15 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
         -------
         Array
         """
-        return self.ln_likelihood_arr(mpars, data, **kw) + self.ln_prior_arr(
-            mpars, data
-        )
+        return self.ln_likelihood(mpars, data, **kw) + self.ln_prior(mpars, data)
 
     # ------------------------------------------------------------------------
     # Scalar versions
 
-    def ln_likelihood(
+    def ln_likelihood_tot(
         self, mpars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
-        """Log-likelihood of the model.
+        """Total log-likelihood of the model.
 
         This is evaluated over the entire data set.
 
@@ -234,9 +232,9 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
         -------
         Array
         """
-        return self.ln_likelihood_arr(mpars, data, **kwargs).sum()
+        return self.ln_likelihood(mpars, data, **kwargs).sum()
 
-    def ln_prior(self, mpars: Params[Array], data: Data[Array]) -> Array:
+    def ln_prior_tot(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
@@ -251,9 +249,9 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
         -------
         Array
         """
-        return self.ln_prior_arr(mpars, data).sum()
+        return self.ln_prior(mpars, data).sum()
 
-    def ln_posterior(
+    def ln_posterior_tot(
         self, mpars: Params[Array], data: Data[Array], **kw: Array
     ) -> Array:
         """Log posterior.
@@ -272,12 +270,14 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
         -------
         Array
         """
-        return self.ln_likelihood(mpars, data, **kw) + self.ln_prior(mpars, data)
+        return self.ln_likelihood_tot(mpars, data, **kw) + self.ln_prior_tot(
+            mpars, data
+        )
 
     # ------------------------------------------------------------------------
     # Non-logarithmic elementwise versions
 
-    def likelihood_arr(
+    def likelihood(
         self, mpars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Elementwise likelihood of the model.
@@ -296,9 +296,9 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
         -------
         Array
         """
-        return self.xp.exp(self.ln_likelihood_arr(mpars, data, **kwargs))
+        return self.xp.exp(self.ln_likelihood(mpars, data, **kwargs))
 
-    def prior_arr(
+    def prior(
         self, mpars: Params[Array], data: Data[Array], current_lnp: Array | None = None
     ) -> Array:
         """Elementwise prior.
@@ -317,11 +317,9 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
         -------
         Array
         """
-        return self.xp.exp(self.ln_prior_arr(mpars, data, current_lnp))
+        return self.xp.exp(self.ln_prior(mpars, data, current_lnp))
 
-    def posterior_arr(
-        self, mpars: Params[Array], data: Data[Array], **kw: Array
-    ) -> Array:
+    def posterior(self, mpars: Params[Array], data: Data[Array], **kw: Array) -> Array:
         """Elementwise posterior.
 
         Parameters
@@ -338,15 +336,15 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
         -------
         Array
         """
-        return self.xp.exp(self.ln_posterior_arr(mpars, data, **kw))
+        return self.xp.exp(self.ln_posterior(mpars, data, **kw))
 
     # ------------------------------------------------------------------------
     # Non-logarithmic scalar versions
 
-    def likelihood(
+    def likelihood_tot(
         self, mpars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
-        """Likelihood of the model.
+        """Total likelihood of the model.
 
         This is evaluated over the entire data set.
 
@@ -364,10 +362,10 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
         -------
         Array
         """
-        return self.xp.exp(self.ln_likelihood(mpars, data, **kwargs))
+        return self.xp.exp(self.ln_likelihood_tot(mpars, data, **kwargs))
 
-    def prior(self, mpars: Params[Array], data: Data[Array]) -> Array:
-        """Prior.
+    def prior_tot(self, mpars: Params[Array], data: Data[Array]) -> Array:
+        """Total prior.
 
         Parameters
         ----------
@@ -381,10 +379,12 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
         -------
         Array
         """
-        return self.xp.exp(self.ln_prior(mpars, data))
+        return self.xp.exp(self.ln_prior_tot(mpars, data))
 
-    def posterior(self, mpars: Params[Array], data: Data[Array], **kw: Array) -> Array:
-        """Posterior.
+    def posterior_tot(
+        self, mpars: Params[Array], data: Data[Array], **kw: Array
+    ) -> Array:
+        """Total posterior.
 
         Parameters
         ----------
@@ -400,7 +400,7 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
         -------
         Array
         """
-        return self.xp.exp(self.ln_posterior(mpars, data, **kw))
+        return self.xp.exp(self.ln_posterior_tot(mpars, data, **kw))
 
     # ========================================================================
     # ML
