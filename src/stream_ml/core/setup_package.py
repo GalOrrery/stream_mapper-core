@@ -28,6 +28,8 @@ class CompiledShim:
         # call the __set__ method of the descriptor and instead
         # just set the attribute directly.
         for k, v in chain(*(c.__dict__.items() for c in self.__class__.mro())):
+            # Check if the attribute is a descriptor and if it's
+            # not already set.
             if (
                 k not in getattr(self, "__dataclass_fields__", ())
                 or not hasattr(v, "__set__")

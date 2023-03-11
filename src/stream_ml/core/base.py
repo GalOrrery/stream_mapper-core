@@ -149,23 +149,25 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
 
     def __new__(  # noqa: D102
         cls: type[Self],
-        *args: Any,
+        *args: Any,  # noqa: ARG003
         array_namespace: ArrayNamespace[Array],
-        **kwargs: Any,
+        **kwargs: Any,  # noqa: ARG003
     ) -> Self:
+        # Create the model instance.
+        # TODO: Model.__new__ over objects.__new__ is a mypyc hack.
+        self = Model.__new__(cls)
+
         # Ensure that the array and nn namespaces are available to the dataclass
-        # descriptor fields.s
-        kwargs["array_namespace"] = array_namespace
-        self = super().__new__(cls, *args, **kwargs)
+        # descriptor fields.
         self._array_namespace_ = array_namespace
         self._nn_namespace_ = NN_NAMESPACE[array_namespace]
 
-        self._mypyc_init_descriptor()  # TODO: Remove this when mypyc is fixed.
         return self
 
     def __post_init__(self, array_namespace: ArrayNamespace[Array]) -> None:
         """Post-init validation."""
         super().__post_init__(array_namespace=array_namespace)
+        self._mypyc_init_descriptor()  # TODO: Remove this when mypyc is fixed.
 
         # Validate the param_names
         if not self.param_names:

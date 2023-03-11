@@ -150,7 +150,7 @@ class IncompleteParamNames(ParamNamesBase[EllipsisType]):
     """Incomplete parameter names."""
 
     @property
-    def is_complete(self) -> TypeGuard[tuple[ParamNameGroupT, ...]]:
+    def is_complete(self) -> bool:
         """Check if parameter names are complete."""
         return is_complete(self)
 
