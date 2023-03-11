@@ -231,6 +231,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         where = reduce(
             self.xp.logical_or,
             (~within_bounds(data[k], *v) for k, v in self.coord_bounds.items()),
+            self.xp.zeros(data.array[:, 0].shape, dtype=bool),
         )
         return array_at(lnp, where).set(-self.xp.inf)
 
