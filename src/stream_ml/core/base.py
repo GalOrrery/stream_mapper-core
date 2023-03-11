@@ -7,7 +7,7 @@ from dataclasses import KW_ONLY, InitVar, dataclass, field, fields
 from functools import reduce
 from math import inf
 import textwrap
-from typing import TYPE_CHECKING, Any, ClassVar, Generic, Protocol, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, Protocol, TypeVar, cast
 
 from stream_ml.core.api import Model
 from stream_ml.core.params import ParamBounds, Params, freeze_params, set_param
@@ -26,6 +26,8 @@ __all__: list[str] = []
 if TYPE_CHECKING:
     from stream_ml.core.data import Data
     from stream_ml.core.prior.base import PriorBase
+
+    Self = TypeVar("Self", bound="ModelBase[Array, NNModel]")  # type: ignore[valid-type]  # noqa: E501
 
 
 #####################################################################
@@ -84,6 +86,7 @@ class NNField(Generic[NNModel]):
         value: NNModel | None,
     ) -> None:
         # Call the _net_init_default hook. This can be Any | None
+        # First need to ensure that the array and nn namespaces are set.
         net = model._net_init_default() if value is None else value
 
         if net is None:
@@ -99,26 +102,31 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
 
     Parameters
     ----------
-    name : str or None, optional keyword-only
-        The (internal) name of the model, e.g. 'stream' or 'background'. Note
-        that this can be different from the name of the model when it is used in
-        a mixture model (see :class:`~stream_ml.core.core.MixtureModel`).
+    net : NNField[NNModel], keyword-only
+        The neural network.
+
+    array_namespace : ArrayNamespace[Array], keyword-only
+        The array namespace.
 
     coord_names : tuple[str, ...], keyword-only
         The names of the coordinates, not including the 'independent' variable.
         E.g. for independent variable 'phi1' this might be ('phi2', 'prlx',
         ...).
-    param_names : `~stream_ml.core.params.ParamNames`, keyword-only
-        The names of the parameters. Parameters dependent on the coordinates are
-        grouped by the coordinate name.
-        E.g. ('weight', ('phi1', ('mu', 'sigma'))).
-
     coord_bounds : Mapping[str, tuple[float, float]], keyword-only
         The bounds on the coordinates. If not provided, the bounds are
         (-inf, inf) for all coordinates.
 
+    param_names : `~stream_ml.core.params.ParamNames`, keyword-only
+        The names of the parameters. Parameters dependent on the coordinates are
+        grouped by the coordinate name.
+        E.g. ('weight', ('phi1', ('mu', 'sigma'))).
     param_bounds : `~stream_ml.core.params.ParamBounds`, keyword-only
         The bounds on the parameters.
+
+    name : str or None, optional keyword-only
+        The (internal) name of the model, e.g. 'stream' or 'background'. Note
+        that this can be different from the name of the model when it is used in
+        a mixture model (see :class:`~stream_ml.core.core.MixtureModel`).
     """
 
     net: NNField[NNModel] = NNField(default=None)
@@ -139,13 +147,27 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
 
     DEFAULT_BOUNDS: ClassVar = NoBounds()  # TODO: [PriorBounds[Any]]
 
+    def __new__(  # noqa: D102
+        cls: type[Self],
+        *args: Any,  # noqa: ARG003
+        array_namespace: ArrayNamespace[Array],
+        **kwargs: Any,  # noqa: ARG003
+    ) -> Self:
+        # Create the model instance.
+        # TODO: Model.__new__ over objects.__new__ is a mypyc hack.
+        self = Model.__new__(cls)
+
+        # Ensure that the array and nn namespaces are available to the dataclass
+        # descriptor fields.
+        self._array_namespace_ = array_namespace
+        self._nn_namespace_ = NN_NAMESPACE[array_namespace]
+
+        return self
+
     def __post_init__(self, array_namespace: ArrayNamespace[Array]) -> None:
         """Post-init validation."""
         super().__post_init__(array_namespace=array_namespace)
         self._mypyc_init_descriptor()  # TODO: Remove this when mypyc is fixed.
-
-        self._array_namespace_ = array_namespace
-        self._nn_namespace_ = NN_NAMESPACE[array_namespace]
 
         # Validate the param_names
         if not self.param_names:
