@@ -37,6 +37,15 @@ class Uniform(ModelBase[Array, NNModel]):
         super().__post_init__(array_namespace=array_namespace)
 
         # Pre-compute the log-difference, shape (1, F)
+        # First need to check that the bound are finite.
+        if not all(
+            self.xp.isfinite(bound)
+            for bounds in self.coord_bounds.values()
+            for bound in self.xp.asarray(bounds)
+        ):
+            msg = "coordinate bounds must be finite"
+            raise ValueError(msg)
+
         self._ln_diffs = self.xp.log(
             self.xp.asarray([b - a for a, b in self.coord_bounds.values()])[None, :]
         )

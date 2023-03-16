@@ -10,13 +10,13 @@ from typing import (
     Any,
     ClassVar,
     Generic,
+    Literal,
     Protocol,
     TypeGuard,
     TypeVar,
     cast,
     overload,
 )
-from typing import Literal as L  # noqa: N817
 
 from stream_ml.core.prior.bounds import NoBounds, PriorBounds
 from stream_ml.core.typing import Array
@@ -90,11 +90,9 @@ class ParamBoundsBase(
         ...
 
     @overload
-    def __getitem__(self, key: tuple[str]) -> PriorBounds[Array]:  # Flat key
-        ...
-
-    @overload
-    def __getitem__(self, key: tuple[str, str]) -> PriorBounds[Array]:  # Flat key
+    def __getitem__(
+        self, key: tuple[str] | tuple[str, str]  # Flat keys
+    ) -> PriorBounds[Array]:
         ...
 
     def __getitem__(
@@ -273,7 +271,7 @@ def is_completable(
     return all(not isinstance(k, EllipsisType) for k in pbs)
 
 
-#####################################################################
+##############################################################################
 
 
 class SupportsCoordandParamNames(Protocol):
@@ -308,9 +306,11 @@ class ParamBoundsField(Generic[Array]):
             str | EllipsisType,
             PriorBounds[Array] | None | Mapping[str, PriorBounds[Array] | None],
         ]
-        | L[Sentinel.MISSING] = MISSING,
+        | Literal[Sentinel.MISSING] = MISSING,
     ) -> None:
-        dft: ParamBounds[Array] | IncompleteParamBounds[Array] | L[Sentinel.MISSING]
+        dft: ParamBounds[Array] | IncompleteParamBounds[Array] | Literal[
+            Sentinel.MISSING
+        ]
         if default is MISSING:
             dft = MISSING
         elif isinstance(default, (ParamBounds, IncompleteParamBounds)):
@@ -320,7 +320,7 @@ class ParamBoundsField(Generic[Array]):
         else:
             dft = IncompleteParamBounds(default)
 
-        self._default: ParamBounds[Array] | IncompleteParamBounds[Array] | L[
+        self._default: ParamBounds[Array] | IncompleteParamBounds[Array] | Literal[
             Sentinel.MISSING
         ]
         self._default = dft

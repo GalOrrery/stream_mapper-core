@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any, Protocol, TypeVar
+from typing import TYPE_CHECKING, Any, Protocol, TypeVar
 
 __all__: list[str] = []
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 
 #####################################################################
@@ -50,6 +53,10 @@ class ArrayLike(Protocol):
 
     def __invert__(self: Self) -> Self:
         """Inversion."""
+        ...
+
+    def __iter__(self: Self) -> Iterator[Self]:
+        """Iteration."""
         ...
 
     def __and__(self: Self, other: ArrayLike) -> Self:
@@ -173,6 +180,11 @@ class ArrayNamespace(Protocol[Array]):
     @property
     def inf(self) -> Array:
         """Infinity."""
+        ...
+
+    @property
+    def isfinite(self) -> Any:
+        """Is finite."""
         ...
 
     @staticmethod

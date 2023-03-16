@@ -50,10 +50,10 @@ class cached_property(Generic[R]):  # noqa: N801
     ) -> Self | R:
         if obj is None:
             return self
-        if self.fget is None:
-            f"property '{self._name}' has no getter"
-            raise AttributeError
-        elif not hasattr(self, self._name_private):
+        if not hasattr(self, self._name_private):
+            if self.fget is None:
+                f"property '{self._name}' has no getter"
+                raise AttributeError
             object.__setattr__(obj, self._name_private, self.fget(obj))
         return cast("R", getattr(obj, self._name_private))
 
