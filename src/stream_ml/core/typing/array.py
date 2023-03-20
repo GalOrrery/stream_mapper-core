@@ -33,6 +33,11 @@ class ArrayLike(Protocol):
         """Shape."""
         ...
 
+    @property
+    def ndim(self) -> int:
+        """Number of dimensions."""
+        ...
+
     # ========================================================================
     # Methods
 
@@ -121,7 +126,7 @@ class ArrayLike(Protocol):
         """Minimum."""
         ...
 
-    def sum(self: Self, axis: int | None = None) -> Self:  # noqa: A003
+    def sum(self: Self, axis: int | None | tuple[int, ...] = ...) -> Self:  # noqa: A003
         """Sum."""
         ...
 
@@ -249,4 +254,14 @@ class ArrayNamespace(Protocol[Array]):
     @staticmethod
     def sigmoid(array: Array) -> Array:
         """Sigmoid."""
+        ...
+
+    @staticmethod
+    def square(array: Array) -> Array:
+        """Square."""
+        ...
+
+    @staticmethod
+    def sqrt(array: Array) -> Array:
+        """Square root."""
         ...
