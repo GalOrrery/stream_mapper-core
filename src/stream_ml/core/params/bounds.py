@@ -70,7 +70,7 @@ class ParamBoundsBase(
         self, m: Any = (), /, *, __unsafe_skip_copy__: bool = False, **kwargs: Any
     ) -> None:
         if __unsafe_skip_copy__ and not kwargs:
-            return super().__init__(m, __unsafe_skip_copy__=True)
+            super().__init__(m, __unsafe_skip_copy__=True)
 
         # Initialize, with validation.
         # TODO: not cast to dict if already a ParamBounds
@@ -78,7 +78,6 @@ class ParamBoundsBase(
         pb = _prepare_freeze(dict(m, **kwargs))
 
         super().__init__(pb, __unsafe_skip_copy__=True)
-        return None
 
     # =========================================================================
     # Mapping
@@ -111,7 +110,7 @@ class ParamBoundsBase(
                 value = v[key[1]]
         else:  # e.g. "weight"
             value = super().__getitem__(key)
-        return value  # noqa: RET504
+        return value
 
     @overload
     def __contains__(self, o: str | T, /) -> bool:
@@ -313,7 +312,7 @@ class ParamBoundsField(Generic[Array]):
         ]
         if default is MISSING:
             dft = MISSING
-        elif isinstance(default, (ParamBounds, IncompleteParamBounds)):
+        elif isinstance(default, ParamBounds | IncompleteParamBounds):
             dft = default
         elif is_completable(default):
             dft = ParamBounds(default)  # e.g. fills in None -> NoBounds

@@ -15,7 +15,7 @@ from typing import (
     overload,
 )
 
-from stream_ml.core.typing import Array  # noqa: TCH001
+from stream_ml.core.typing import Array
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -188,7 +188,7 @@ class Data(Generic[Array]):
         elif isinstance(key, int):  # get a row
             out = type(self)(self.array[None, key], names=self.names)  # type: ignore[index] # noqa: E501
 
-        elif isinstance(key, (slice, list)) or _is_arraylike(key):  # get rows
+        elif isinstance(key, slice | list) or _is_arraylike(key):  # get rows
             out = type(self)(self.array[key], names=self.names)  # type: ignore[index]
 
         elif isinstance(key, tuple) and len(key) >= _LEN_INDEXING_TUPLE:
@@ -212,7 +212,7 @@ class Data(Generic[Array]):
         else:
             out = cast("Array", self.array[key])  # type: ignore[index]
 
-        return out  # noqa: RET504
+        return out
 
     # =========================================================================
     # Mapping methods
@@ -286,7 +286,7 @@ class Data(Generic[Array]):
 
     @classmethod
     def from_format(  # noqa: D417
-        cls, data: Any, /, fmt: str, **kwargs: Any  # noqa: ANN001
+        cls, data: Any, /, fmt: str, **kwargs: Any
     ) -> Data[Any]:
         """Convert the data from a different format.
 

@@ -6,7 +6,7 @@ from abc import ABCMeta, abstractmethod
 from dataclasses import KW_ONLY, dataclass
 from typing import TYPE_CHECKING, Generic
 
-from stream_ml.core.typing import Array  # noqa: TCH001
+from stream_ml.core.typing import Array
 
 if TYPE_CHECKING:
     from stream_ml.core.api import Model
