@@ -280,6 +280,7 @@ def freeze(m: dict[K, V], /) -> FrozenDict[K, V]:
     return FrozenDict(m)
 
 
+# TODO! actually do the recursive type
 def _recursive_unfreeze(x: Mapping[K, V], /, *, deep: bool) -> dict[K, V]:
     ys: dict[K, V] = {}
     for k, v in x.items():
