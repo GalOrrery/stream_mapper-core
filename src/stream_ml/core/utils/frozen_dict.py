@@ -281,11 +281,12 @@ def freeze(m: dict[K, V], /) -> FrozenDict[K, V]:
 
 
 def _recursive_unfreeze(x: Mapping[K, V], /, *, deep: bool) -> dict[K, V]:
-    ys = {}
+    ys: dict[K, V] = {}
     for k, v in x.items():
         if isinstance(v, dict) or (deep and isinstance(v, FrozenDict)):
-            v = _recursive_unfreeze(v, deep=deep)  # type: ignore[assignment]
-        ys[k] = v
+            ys[k] = _recursive_unfreeze(v, deep=deep)  # type: ignore[assignment]
+        else:
+            ys[k] = v
     return ys
 
 

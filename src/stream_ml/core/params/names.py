@@ -216,7 +216,7 @@ class ParamNamesField:
         dft: ParamNames | IncompleteParamNames | Literal[Sentinel.MISSING]
         if default is MISSING:
             dft = MISSING
-        elif isinstance(default, (ParamNames, IncompleteParamNames)):
+        elif isinstance(default, ParamNames | IncompleteParamNames):
             dft = default
         elif is_complete(default):
             dft = ParamNames(default)
