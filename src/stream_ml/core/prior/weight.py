@@ -7,7 +7,6 @@ from math import inf
 from typing import TYPE_CHECKING
 
 from stream_ml.core.prior.base import PriorBase
-from stream_ml.core.setup_package import WEIGHT_NAME
 from stream_ml.core.typing import Array, ArrayNamespace
 from stream_ml.core.utils.compat import array_at
 from stream_ml.core.utils.funcs import within_bounds
@@ -46,7 +45,7 @@ class HardThreshold(PriorBase[Array]):
 
     threshold: float = 5e-3
     _: KW_ONLY
-    param_name: FlatParamName = (WEIGHT_NAME,)
+    param_name: FlatParamName
     coord_name: str = "phi1"
     lower: float = -inf
     upper: float = inf
