@@ -263,6 +263,10 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         -------
         Array
         """
+        data = self.data_scaler.transform(
+            data[self.data_scaler.names], names=self.data_scaler.names
+        )
+
         lnp: Array = self.xp.zeros(()) if current_lnp is None else current_lnp
 
         # Coordinate Bounds
