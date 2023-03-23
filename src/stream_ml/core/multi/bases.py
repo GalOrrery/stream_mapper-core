@@ -71,10 +71,10 @@ class ModelsBase(
 
         # Add the coord_bounds
         # TODO: make sure duplicates have the same bounds
-        cbs: FrozenDict[str, BoundsT] = FrozenDict()
+        cbs: dict[str, BoundsT] = {}
         for m in self.components.values():
-            cbs._dict.update(m.coord_bounds)
-        self._coord_bounds = cbs
+            cbs.update(m.coord_bounds)
+        self._coord_bounds = FrozenDict(cbs)
 
         # Hint the param_names
         self._param_names: ParamNames

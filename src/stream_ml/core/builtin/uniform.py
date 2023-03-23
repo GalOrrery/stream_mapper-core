@@ -46,7 +46,7 @@ class Uniform(ModelBase[Array, NNModel]):
             msg = "coordinate bounds must be finite"
             raise ValueError(msg)
 
-        self._ln_diffs = self.xp.log(
+        self._ln_diffs = self.xp.log(  # unscaled
             self.xp.asarray([b - a for a, b in self.coord_bounds.values()])[None, :]
         )
 
@@ -84,11 +84,7 @@ class Uniform(ModelBase[Array, NNModel]):
         -------
         Array
         """
-        data = self.data_scaler.transform(
-            data[self.data_scaler.names], names=self.data_scaler.names
-        )
-
-        wgt = self.xp.clip(mpars[(WEIGHT_NAME,)], 1e-10)
+        ln_wgt = self.xp.log(self.xp.clip(mpars[(WEIGHT_NAME,)], 1e-10))
 
         if mask is not None:
             indicator = mask[tuple(self.coord_bounds.keys())].array
@@ -99,4 +95,4 @@ class Uniform(ModelBase[Array, NNModel]):
             indicator = self.xp.ones_like(self._ln_diffs, dtype=int)
             # shape (1, F) so that it can broadcast with (N, F)
 
-        return self.xp.log(wgt) - (indicator * self._ln_diffs).sum(1)[:, None]
+        return ln_wgt - (indicator * self._ln_diffs).sum(1)[:, None]
