@@ -230,23 +230,6 @@ class Data(Generic[Array]):
         return tuple((k, self[k]) for k in self.names)
 
     # =========================================================================
-
-    def apply(self: Self, func: Callable[[Array], Array], /) -> Self:
-        """Apply a function to the data.
-
-        Parameters
-        ----------
-        func : Callable
-            The function to apply. Must not change the names.
-
-        Returns
-        -------
-        Data
-            The transformed data.
-        """
-        return type(self)(func(self.array), names=self.names)
-
-    # =========================================================================
     # I/O
 
     # TODO: instead interact with jax as a dictionary

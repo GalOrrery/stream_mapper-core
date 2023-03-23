@@ -19,6 +19,7 @@ from stream_ml.core.typing import Array, ArrayNamespace, BoundsT, NNModel, NNNam
 from stream_ml.core.utils.compat import array_at
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 from stream_ml.core.utils.funcs import within_bounds
+from stream_ml.core.utils.scale.base import DataScaler  # noqa: TCH001
 
 __all__: list[str] = []
 
@@ -96,6 +97,9 @@ class NNField(Generic[NNModel]):
         object.__setattr__(model, self._name, net)
 
 
+#####################################################################
+
+
 @dataclass(unsafe_hash=True)
 class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
     """Single-model base class.
@@ -135,17 +139,22 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
     array_namespace: InitVar[ArrayNamespace[Array]]
     name: str | None = None  # the name of the model
 
+    # Standardizer
+    data_scaler: DataScaler
+
+    # Coordinates, indpendent and dependent.
     indep_coord_names: tuple[str, ...] = ("phi1",)
     coord_names: tuple[str, ...]
-    param_names: ParamNamesField = ParamNamesField()
-
-    # Bounds on the coordinates and parameters.
     coord_bounds: FrozenDictField[str, BoundsT] = FrozenDictField(FrozenDict())
+
+    # Model Parameters, generally produced by the neural network.
+    param_names: ParamNamesField = ParamNamesField()
     param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array](ParamBounds())
 
+    # Priors on the parameters.
     priors: tuple[PriorBase[Array], ...] = ()
 
-    DEFAULT_BOUNDS: ClassVar = NoBounds()  # TODO: [PriorBounds[Any]]
+    DEFAULT_BOUNDS: ClassVar = NoBounds()  # TODO: ClassVar[PriorBounds[Any]]
 
     def __new__(  # noqa: D102
         cls: type[Self],
@@ -254,6 +263,10 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         -------
         Array
         """
+        data = self.data_scaler.transform(
+            data[self.data_scaler.names], names=self.data_scaler.names
+        )
+
         lnp: Array = self.xp.zeros(()) if current_lnp is None else current_lnp
 
         # Coordinate Bounds
@@ -289,8 +302,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         for bnd in self.param_bounds.flatvalues():
             out = bnd(out, data, self)
 
-        # Other priors
-        # TODO: a better way to do the order of the priors.
+        # Other priors  # TODO: a better way to do the order of the priors.
         for prior in self.priors:
             out = prior(out, data, self)
         return out
