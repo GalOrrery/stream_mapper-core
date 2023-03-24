@@ -13,6 +13,7 @@ from stream_ml.core.api import Model
 from stream_ml.core.params import ParamBounds, Params, freeze_params, set_param
 from stream_ml.core.params.bounds import ParamBoundsField
 from stream_ml.core.params.names import ParamNamesField
+from stream_ml.core.params.scales import ParamScalerField
 from stream_ml.core.prior.bounds import NoBounds
 from stream_ml.core.setup_package import WEIGHT_NAME, CompiledShim
 from stream_ml.core.typing import Array, ArrayNamespace, BoundsT, NNModel, NNNamespace
@@ -93,7 +94,7 @@ class NNField(Generic[NNModel]):
         object.__setattr__(model, self._name, net)
 
 
-#####################################################################
+##############################################################################
 
 
 @dataclass(unsafe_hash=True)
@@ -146,6 +147,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
     # Model Parameters, generally produced by the neural network.
     param_names: ParamNamesField = ParamNamesField()
     param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array](ParamBounds())
+    param_scaler: ParamScalerField[Array] = ParamScalerField()
 
     # Priors on the parameters.
     priors: tuple[PriorBase[Array], ...] = ()
@@ -209,7 +211,8 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         """
         pars: dict[str, Array | dict[str, Array]] = {}
         for i, k in enumerate(self.param_names.flats):
-            set_param(pars, k, p_arr[:, i : i + 1])
+            v = self.param_scaler[k].inverse_transform(p_arr[:, i : i + 1])
+            set_param(pars, k, v)
         return freeze_params(pars)
 
     # ========================================================================
