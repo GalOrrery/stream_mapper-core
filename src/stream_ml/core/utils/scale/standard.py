@@ -113,8 +113,9 @@ def _transform_inv_data(
     /,
     names: tuple[str, ...],
 ) -> Data[Array]:
-    mean_ = np.array([mean[data.names.index(name)] for name in names])
-    scale_ = np.array([scale[data.names.index(name)] for name in names])
+    shape = (-1,) + (1,) * (len(data.array.shape) - 2)
+    mean_ = np.array([mean[data.names.index(name)] for name in names]).reshape(shape)
+    scale_ = np.array([scale[data.names.index(name)] for name in names]).reshape(shape)
     return Data(
         _transform_inv(data[names].array, mean_, scale_, names=names),
         names=names,
