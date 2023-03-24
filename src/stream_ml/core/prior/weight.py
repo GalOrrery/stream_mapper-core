@@ -89,7 +89,7 @@ class HardThreshold(PriorBase[Array]):
         """
         lnp = xp.zeros_like(mpars[self.param_name])
         where = within_bounds(data[self.coord_name], self.lower, self.upper) & (
-            mpars[self.param_name] < self.threshold
+            mpars[self.param_name] > self.threshold
         )
         return array_at(lnp, where).set(-xp.inf)
 
