@@ -81,11 +81,7 @@ class NNField(Generic[NNModel]):
             return cast("NNModel", getattr(model, self._name))
         return self.default
 
-    def __set__(
-        self,
-        model: ModelBase[Array, NNModel],
-        value: NNModel | None,
-    ) -> None:
+    def __set__(self, model: ModelBase[Array, NNModel], value: NNModel | None) -> None:
         # Call the _net_init_default hook. This can be Any | None
         # First need to ensure that the array and nn namespaces are set.
         net = model._net_init_default() if value is None else value
@@ -196,7 +192,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
 
     # ========================================================================
 
-    def unpack_params_from_arr(self, p_arr: Array) -> Params[Array]:
+    def unpack_params_from_arr(self, p_arr: Array, /) -> Params[Array]:
         """Unpack parameters into a dictionary.
 
         This function takes a parameter array and unpacks it into a dictionary
@@ -204,7 +200,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
 
         Parameters
         ----------
-        p_arr : Array
+        p_arr : Array, positional-only
             Parameter array.
 
         Returns
@@ -283,15 +279,15 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
     # ========================================================================
     # ML
 
-    def _forward_priors(self, out: Array, data: Data[Array]) -> Array:
+    def _forward_priors(self, out: Array, scaled_data: Data[Array], /) -> Array:
         """Forward pass.
 
         Parameters
         ----------
-        out : Array
+        out : Array, positional-only
             Input.
-        data : Data[Array]
-            Data.
+        scaled_data : Data[Array], positional-only
+            Data, scaled by ``data_scaler``.
 
         Returns
         -------
@@ -300,11 +296,11 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         """
         # Parameter bounds
         for bnd in self.param_bounds.flatvalues():
-            out = bnd(out, data, self)
+            out = bnd(out, scaled_data, self)
 
         # Other priors  # TODO: a better way to do the order of the priors.
         for prior in self.priors:
-            out = prior(out, data, self)
+            out = prior(out, scaled_data, self)
         return out
 
     # ========================================================================

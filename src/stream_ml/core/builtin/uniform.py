@@ -84,8 +84,6 @@ class Uniform(ModelBase[Array, NNModel]):
         -------
         Array
         """
-        ln_wgt = self.xp.log(self.xp.clip(mpars[(WEIGHT_NAME,)], 1e-10))
-
         if mask is not None:
             indicator = mask[tuple(self.coord_bounds.keys())].array
         elif self.require_mask:
@@ -95,4 +93,5 @@ class Uniform(ModelBase[Array, NNModel]):
             indicator = self.xp.ones_like(self._ln_diffs, dtype=int)
             # shape (1, F) so that it can broadcast with (N, F)
 
+        ln_wgt = self.xp.log(self.xp.clip(mpars[(WEIGHT_NAME,)], 1e-10))
         return ln_wgt - (indicator * self._ln_diffs).sum(1)[:, None]
