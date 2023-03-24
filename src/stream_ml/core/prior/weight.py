@@ -27,8 +27,11 @@ class HardThreshold(PriorBase[Array]):
 
     Parameters
     ----------
-    threshold : float, optional
-        The threshold, by default 0.005
+    threshold : float
+        The threshold. Everything below this (not inclusive) is set to
+        ``set_to``.
+    set_to : float
+        What to set
 
     lower : float, optional keyword-only
         The lower bound in the domain of the prior, by default `-inf`.
@@ -44,6 +47,7 @@ class HardThreshold(PriorBase[Array]):
     """
 
     threshold: float = 5e-3
+    set_to: float = 1e-10
     _: KW_ONLY
     param_name: FlatParamName
     coord_name: str = "phi1"
@@ -114,5 +118,5 @@ class HardThreshold(PriorBase[Array]):
         i = model.param_names.flats.index(self.param_name)
         where = within_bounds(
             data[self.coord_name].flatten(), self.lower, self.upper
-        ) & (pred[:, i] <= self.threshold)
-        return array_at(pred, (where, i), inplace=False).set(0)
+        ) & (pred[:, i] < self.threshold)
+        return array_at(pred, (where, i), inplace=False).set(self.set_to)
