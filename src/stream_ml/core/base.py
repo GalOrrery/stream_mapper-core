@@ -13,6 +13,7 @@ from stream_ml.core.api import Model
 from stream_ml.core.params import ParamBounds, Params, freeze_params, set_param
 from stream_ml.core.params.bounds import ParamBoundsField
 from stream_ml.core.params.names import ParamNamesField
+from stream_ml.core.params.scales import ParamScalerField
 from stream_ml.core.prior.bounds import NoBounds
 from stream_ml.core.setup_package import WEIGHT_NAME, CompiledShim
 from stream_ml.core.typing import Array, ArrayNamespace, BoundsT, NNModel, NNNamespace
@@ -81,11 +82,7 @@ class NNField(Generic[NNModel]):
             return cast("NNModel", getattr(model, self._name))
         return self.default
 
-    def __set__(
-        self,
-        model: ModelBase[Array, NNModel],
-        value: NNModel | None,
-    ) -> None:
+    def __set__(self, model: ModelBase[Array, NNModel], value: NNModel | None) -> None:
         # Call the _net_init_default hook. This can be Any | None
         # First need to ensure that the array and nn namespaces are set.
         net = model._net_init_default() if value is None else value
@@ -97,7 +94,7 @@ class NNField(Generic[NNModel]):
         object.__setattr__(model, self._name, net)
 
 
-#####################################################################
+##############################################################################
 
 
 @dataclass(unsafe_hash=True)
@@ -150,6 +147,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
     # Model Parameters, generally produced by the neural network.
     param_names: ParamNamesField = ParamNamesField()
     param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array](ParamBounds())
+    param_scaler: ParamScalerField[Array] = ParamScalerField()
 
     # Priors on the parameters.
     priors: tuple[PriorBase[Array], ...] = ()
@@ -196,7 +194,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
 
     # ========================================================================
 
-    def unpack_params_from_arr(self, p_arr: Array) -> Params[Array]:
+    def unpack_params_from_arr(self, p_arr: Array, /) -> Params[Array]:
         """Unpack parameters into a dictionary.
 
         This function takes a parameter array and unpacks it into a dictionary
@@ -204,7 +202,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
 
         Parameters
         ----------
-        p_arr : Array
+        p_arr : Array, positional-only
             Parameter array.
 
         Returns
@@ -213,7 +211,8 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         """
         pars: dict[str, Array | dict[str, Array]] = {}
         for i, k in enumerate(self.param_names.flats):
-            set_param(pars, k, p_arr[:, i : i + 1])
+            v = self.param_scaler[k].inverse_transform(p_arr[:, i : i + 1])
+            set_param(pars, k, v)
         return freeze_params(pars)
 
     # ========================================================================
@@ -283,15 +282,15 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
     # ========================================================================
     # ML
 
-    def _forward_priors(self, out: Array, data: Data[Array]) -> Array:
+    def _forward_priors(self, out: Array, scaled_data: Data[Array], /) -> Array:
         """Forward pass.
 
         Parameters
         ----------
-        out : Array
+        out : Array, positional-only
             Input.
-        data : Data[Array]
-            Data.
+        scaled_data : Data[Array], positional-only
+            Data, scaled by ``data_scaler``.
 
         Returns
         -------
@@ -300,11 +299,11 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         """
         # Parameter bounds
         for bnd in self.param_bounds.flatvalues():
-            out = bnd(out, data, self)
+            out = bnd(out, scaled_data, self)
 
         # Other priors  # TODO: a better way to do the order of the priors.
         for prior in self.priors:
-            out = prior(out, data, self)
+            out = prior(out, scaled_data, self)
         return out
 
     # ========================================================================

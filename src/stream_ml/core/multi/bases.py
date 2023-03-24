@@ -79,7 +79,7 @@ class ModelsBase(
         # Hint the param_names
         self._param_names: ParamNames
 
-        # Add the param_bounds
+        # Add the param_bounds  # TODO! not update internal to ParamBounds.
         cps: ParamBounds[Array] = ParamBounds()
         for n, m in self.components.items():
             cps._dict.update({f"{n}_{k}": v for k, v in m.param_bounds.items()})
@@ -151,9 +151,9 @@ class ModelsBase(
     def unpack_params(self, packed_pars: Mapping[str, Array], /) -> Params[Array]:
         """Unpack parameters into a dictionary.
 
-        Unpack a flat dictionary of parameters -- where keys have coordinate name,
-        parameter name, and model component name -- into a nested dictionary with
-        parameters grouped by coordinate name.
+        Unpack a flat dictionary of parameters -- where keys have coordinate
+        name, parameter name, and model component name -- into a nested
+        dictionary with parameters grouped by coordinate name.
 
         Parameters
         ----------
