@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from functools import singledispatch
-from typing import Any, Literal, Protocol
+from typing import Any, Protocol
 
 from stream_ml.core.typing import Array
 
@@ -15,7 +15,7 @@ class ArrayAt(Protocol[Array]):
     """Array at index."""
 
     @abstractmethod
-    def set(self, value: Array | Literal[0]) -> Array:  # noqa: A003
+    def set(self, value: Array | float) -> Array:  # noqa: A003
         """Set the value at the index."""
         ...
 
