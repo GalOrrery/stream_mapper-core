@@ -235,6 +235,8 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
             Zero everywhere except where the data are outside the
             coordinate bounds, where it is -inf.
         """
+        data = self.data_scaler.inverse_transform(data, names=data.names)
+
         lnp = self.xp.zeros_like(mpars[(WEIGHT_NAME,)])
         where = reduce(
             self.xp.logical_or,
