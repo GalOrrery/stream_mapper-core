@@ -38,17 +38,18 @@ class Uniform(ModelBase[Array, NNModel]):
 
         # Pre-compute the log-difference, shape (1, F)
         # First need to check that the bound are finite.
-        if not all(
-            self.xp.isfinite(bound)
-            for bounds in self.coord_bounds.values()
-            for bound in self.xp.asarray(bounds)
-        ):
-            msg = "coordinate bounds must be finite"
-            raise ValueError(msg)
+        _bma = []
+        for k, (a, b) in self.coord_bounds.items():
+            if not self.xp.isfinite(a) or not self.xp.isfinite(b):
+                msg = f"a bound of coordinate {k} is not finite"
+                raise ValueError(msg)
 
-        self._ln_diffs = self.xp.log(  # unscaled
-            self.xp.asarray([b - a for a, b in self.coord_bounds.values()])[None, :]
-        )
+            a_ = self.data_scaler.transform(a, names=(k,))
+            b_ = self.data_scaler.transform(b, names=(k,))
+
+            _bma.append(b_ - a_)
+
+        self._ln_diffs = self.xp.log(self.xp.asarray(_bma)[None, :])
 
     def _net_init_default(self) -> NNModel:
         return self.xpnn.Identity()
