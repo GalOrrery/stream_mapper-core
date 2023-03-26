@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABCMeta
-from dataclasses import KW_ONLY, InitVar, dataclass, field, fields
+from dataclasses import KW_ONLY, InitVar, dataclass, field, fields, replace
 from functools import reduce
 from math import inf
 import textwrap
@@ -189,6 +189,20 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
             raise ValueError(msg)
         self.coord_bounds = FrozenDict(cbs)
 
+        # Add scaling to the param bounds.
+        # TODO! unfreeze then freeze
+        for k, v in self.param_bounds.items():
+            if not isinstance(k, str):
+                raise TypeError
+
+            if not isinstance(v, FrozenDict):
+                self.param_bounds._dict[k] = replace(
+                    v, param_scaler=self.param_scaler[k]
+                )
+                continue
+            for k2, v2 in v.items():
+                v._dict[k2] = replace(v2, param_scaler=self.param_scaler[k, k2])
+
     def _net_init_default(self) -> Any | None:
         return None
 
@@ -235,8 +249,6 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
             Zero everywhere except where the data are outside the
             coordinate bounds, where it is -inf.
         """
-        data = self.data_scaler.inverse_transform(data, names=data.names)
-
         lnp = self.xp.zeros_like(mpars[(WEIGHT_NAME,)])
         where = reduce(
             self.xp.logical_or,
@@ -264,9 +276,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         -------
         Array
         """
-        data = self.data_scaler.transform(
-            data[self.data_scaler.names], names=self.data_scaler.names
-        )
+        scaled_data = self.data_scaler.transform(data, names=self.data_scaler.names)
 
         lnp: Array = self.xp.zeros(()) if current_lnp is None else current_lnp
 
@@ -277,7 +287,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
             lnp = lnp + bounds.logpdf(mpars, data, self, lnp, xp=self.xp)
         # Priors
         for prior in self.priors:
-            lnp = lnp + prior.logpdf(mpars, data, self, lnp, xp=self.xp)
+            lnp = lnp + prior.logpdf(mpars, scaled_data, self, lnp, xp=self.xp)
 
         return lnp
 

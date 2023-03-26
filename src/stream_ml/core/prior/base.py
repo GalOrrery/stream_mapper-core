@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
 from dataclasses import KW_ONLY, dataclass
-from typing import TYPE_CHECKING, Generic
+from typing import TYPE_CHECKING, Any, Generic
 
 from stream_ml.core.typing import Array
 
@@ -24,7 +24,7 @@ class PriorBase(Generic[Array], metaclass=ABCMeta):
     _: KW_ONLY
     name: str | None = None  # the name of the prior
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, *args: Any, **kwargs: Any) -> None:
         """Post-init."""
 
     @abstractmethod

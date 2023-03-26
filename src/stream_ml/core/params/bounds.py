@@ -2,22 +2,20 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Iterator, Mapping
+from collections.abc import Iterator, Mapping
 from dataclasses import replace
 from types import EllipsisType
 from typing import (
     TYPE_CHECKING,
-    Any,
     ClassVar,
     Generic,
     Literal,
     Protocol,
     TypeGuard,
     TypeVar,
-    cast,
-    overload,
 )
 
+from stream_ml.core.params.base import ParamThingyBase
 from stream_ml.core.prior.bounds import NoBounds, PriorBounds
 from stream_ml.core.typing import Array
 from stream_ml.core.utils.frozen_dict import FrozenDict
@@ -27,6 +25,7 @@ if TYPE_CHECKING:
     from stream_ml.core.params.names import ParamNames, ParamNamesField
 
     Self = TypeVar("Self", bound="ParamBounds[Array]")  # type: ignore[valid-type]
+    Object = TypeVar("Object")
 
 T = TypeVar("T", bound=str | EllipsisType)
 
@@ -41,137 +40,31 @@ def _resolve_bound(b: PriorBounds[Array] | None) -> PriorBounds[Array]:
     return NoBounds() if b is None else b
 
 
-def _prepare_freeze(
-    xs: dict[
-        str | T, PriorBounds[Array] | None | Mapping[str, PriorBounds[Array] | None]
-    ],
-    /,
-) -> dict[str | T, PriorBounds[Array] | FrozenDict[str, PriorBounds[Array]]]:
-    """Deep copy unfrozen dicts to make the dictionary FrozenDict safe."""
-    return {
-        k: (
-            _resolve_bound(v)
-            if not isinstance(v, Mapping)
-            else FrozenDict({kk: _resolve_bound(vv) for kk, vv in v.items()})
-        )
-        for k, v in xs.items()
-    }
-
-
 # ===================================================================
 
 
-class ParamBoundsBase(
-    FrozenDict[str | T, PriorBounds[Array] | FrozenDict[str, PriorBounds[Array]]],
-):
+class ParamBoundsBase(ParamThingyBase[T, PriorBounds[Array]]):
     """Base class for parameter bounds."""
 
-    def __init__(
-        self, m: Any = (), /, *, __unsafe_skip_copy__: bool = False, **kwargs: Any
-    ) -> None:
-        if __unsafe_skip_copy__ and not kwargs:
-            super().__init__(m, __unsafe_skip_copy__=True)
+    _Object = PriorBounds
 
-        # Initialize, with validation.
-        # TODO: not cast to dict if already a ParamBounds
-        pb: dict[str | T, PriorBounds[Array] | FrozenDict[str, PriorBounds[Array]]]
-        pb = _prepare_freeze(dict(m, **kwargs))
-
-        super().__init__(pb, __unsafe_skip_copy__=True)
-
-    # =========================================================================
-    # Mapping
-
-    @overload
-    def __getitem__(
-        self, key: str | T
-    ) -> PriorBounds[Array] | FrozenDict[str, PriorBounds[Array]]:
-        ...
-
-    @overload
-    def __getitem__(
-        self, key: tuple[str] | tuple[str, str]  # Flat keys
-    ) -> PriorBounds[Array]:
-        ...
-
-    def __getitem__(
-        self, key: str | T | tuple[str] | tuple[str, str]
-    ) -> PriorBounds[Array] | FrozenDict[str, PriorBounds[Array]]:
-        if isinstance(key, tuple):
-            if len(key) == 1:  # e.g. ("weight",)
-                value = super().__getitem__(key[0])
-                if not isinstance(value, PriorBounds):
-                    raise KeyError(key)
-            else:  # e.g. ("phi2", "mu")
-                key = cast("tuple[str, str]", key)  # TODO: remove cast
-                v = super().__getitem__(key[0])
-                if not isinstance(v, FrozenDict):
-                    raise KeyError(key)
-                value = v[key[1]]
-        else:  # e.g. "weight"
-            value = super().__getitem__(key)
-        return value
-
-    @overload
-    def __contains__(self, o: str | T, /) -> bool:
-        ...
-
-    @overload
-    def __contains__(self, o: tuple[str] | tuple[str, str], /) -> bool:
-        ...
-
-    @overload
-    def __contains__(self, o: object, /) -> bool:
-        ...
-
-    def __contains__(self, o: Any, /) -> bool:
-        """Check if a key is in the ParamBounds instance."""
-        if isinstance(o, str):
-            return bool(super().__contains__(o))
-        else:
-            try:
-                self[o]
-            except KeyError:
-                return False
-            else:
-                return True
-
-    # =========================================================================
-    # Flat
-
-    def flatitems(
-        self,
-    ) -> Iterable[tuple[tuple[str | T] | tuple[str | T, str], PriorBounds[Array]]]:
-        """Flattened items."""
-        for name, bounds in self.items():
-            if isinstance(bounds, PriorBounds):
-                yield (name,), bounds
-            else:
-                for subname, subbounds in bounds.items():
-                    yield (name, subname), subbounds
-
-    def flatkeys(self) -> tuple[tuple[str | T] | tuple[str | T, str], ...]:
-        """Flattened keys."""
-        return tuple(k for k, _ in self.flatitems())
-
-    def flatvalues(self) -> tuple[PriorBounds[Array], ...]:
-        """Flattened values."""
-        return tuple(v for _, v in self.flatitems())
-
-    # =========================================================================
-    # Misc
-
-    def validate(self, names: ParamNames, *, error: bool = False) -> bool | None:
-        """Check that the parameter bounds are consistent with the model."""
-        if self.flatkeys() != names.flats:
-            if not error:
-                return False
-
-            # TODO: more informative error.
-            msg = "param_bounds keys do not match param_names"
-            raise ValueError(msg)
-
-        return True
+    @staticmethod
+    def _prepare_freeze(
+        xs: dict[
+            str | T,
+            PriorBounds[Array] | None | Mapping[str, PriorBounds[Array] | None],
+        ],
+        /,
+    ) -> dict[str | T, PriorBounds[Array] | FrozenDict[str, PriorBounds[Array]]]:
+        """Deep copy unfrozen dicts to make the dictionary FrozenDict safe."""
+        return {
+            k: (
+                _resolve_bound(v)
+                if not isinstance(v, Mapping)
+                else FrozenDict({kk: _resolve_bound(vv) for kk, vv in v.items()})
+            )
+            for k, v in xs.items()
+        }
 
 
 class ParamBounds(ParamBoundsBase[str, Array]):
