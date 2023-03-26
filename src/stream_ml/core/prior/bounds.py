@@ -22,7 +22,8 @@ if TYPE_CHECKING:
     from stream_ml.core.api import Model
     from stream_ml.core.data import Data
     from stream_ml.core.params.core import Params
-    from stream_ml.core.typing import BoundsT, NNModel
+    from stream_ml.core.params.scales import ParamScaler
+    from stream_ml.core.typing import NNModel
 
     Self = TypeVar("Self", bound="PriorBounds")  # type: ignore[type-arg]
 
@@ -31,10 +32,26 @@ if TYPE_CHECKING:
 class PriorBounds(PriorBase[Array]):
     """Base class for prior bounds."""
 
-    lower: float
-    upper: float
+    lower: Array | float
+    upper: Array | float
     _: KW_ONLY
     param_name: FlatParamName | None = None
+    param_scaler: ParamScaler[Array] | None = None
+
+    def __post_init__(self) -> None:
+        """Post-init."""
+        self._scaled_bounds: tuple[Array, Array]
+        if self.param_scaler is not None:
+            object.__setattr__(
+                self,
+                "_scaled_bounds",
+                (
+                    self.param_scaler.transform(self.lower),
+                    self.param_scaler.transform(self.upper),
+                ),
+            )
+
+    # =========================================================================
 
     def logpdf(
         self,
@@ -65,28 +82,22 @@ class PriorBounds(PriorBase[Array]):
 
     # =========================================================================
 
-    @classmethod
-    def from_tuple(
-        cls: type[Self],
-        t: BoundsT,
-        /,
-        param_name: FlatParamName | None = None,
-    ) -> Self:
-        """Create from tuple."""
-        return cls(*t, param_name=param_name)
-
-    def as_tuple(self) -> BoundsT:
-        """Get as tuple."""
-        return self.lower, self.upper
+    @property
+    def bounds(self) -> tuple[Array | float, Array | float]:
+        """Get the bounds."""
+        return (self.lower, self.upper)
 
     @property
-    def bounds(self) -> BoundsT:
-        """Get the bounds."""
-        return self.as_tuple()
+    def scaled_bounds(self) -> tuple[Array | float, Array | float]:
+        """Get the scaled bounds."""
+        if not hasattr(self, "_scaled_bounds"):
+            msg = "need to pass scaler to prior bounds"
+            raise ValueError(msg)
+        return self._scaled_bounds
 
     # =========================================================================
 
-    def __iter__(self) -> Iterator[float]:
+    def __iter__(self) -> Iterator[Array | float]:
         """Iterate over the bounds."""
         yield from self.bounds
 
@@ -106,6 +117,8 @@ class NoBounds(PriorBounds[Any]):
         if self.lower != -inf or self.upper != inf:
             msg = "lower and upper must be -inf and inf"
             raise ValueError(msg)
+
+        super().__post_init__()
 
     def logpdf(
         self,

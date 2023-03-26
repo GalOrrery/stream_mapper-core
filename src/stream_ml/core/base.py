@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABCMeta
-from dataclasses import KW_ONLY, InitVar, dataclass, field, fields
+from dataclasses import KW_ONLY, InitVar, dataclass, field, fields, replace
 from functools import reduce
 from math import inf
 import textwrap
@@ -188,6 +188,20 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
             msg = f"coord_bounds contains invalid keys {crnt_cbs.keys()}."
             raise ValueError(msg)
         self.coord_bounds = FrozenDict(cbs)
+
+        # Add scaling to the param bounds.
+        # TODO! unfreeze then freeze
+        for k, v in self.param_bounds.items():
+            if not isinstance(k, str):
+                raise TypeError
+
+            if not isinstance(v, FrozenDict):
+                self.param_bounds._dict[k] = replace(
+                    v, param_scaler=self.param_scaler[k]
+                )
+                continue
+            for k2, v2 in v.items():
+                v._dict[k2] = replace(v2, param_scaler=self.param_scaler[k, k2])
 
     def _net_init_default(self) -> Any | None:
         return None
