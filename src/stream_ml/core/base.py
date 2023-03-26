@@ -249,8 +249,6 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
             Zero everywhere except where the data are outside the
             coordinate bounds, where it is -inf.
         """
-        data = self.data_scaler.inverse_transform(data, names=data.names)
-
         lnp = self.xp.zeros_like(mpars[(WEIGHT_NAME,)])
         where = reduce(
             self.xp.logical_or,
@@ -278,9 +276,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         -------
         Array
         """
-        data = self.data_scaler.transform(
-            data[self.data_scaler.names], names=self.data_scaler.names
-        )
+        scaled_data = self.data_scaler.transform(data, names=self.data_scaler.names)
 
         lnp: Array = self.xp.zeros(()) if current_lnp is None else current_lnp
 
@@ -291,7 +287,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
             lnp = lnp + bounds.logpdf(mpars, data, self, lnp, xp=self.xp)
         # Priors
         for prior in self.priors:
-            lnp = lnp + prior.logpdf(mpars, data, self, lnp, xp=self.xp)
+            lnp = lnp + prior.logpdf(mpars, scaled_data, self, lnp, xp=self.xp)
 
         return lnp
 
