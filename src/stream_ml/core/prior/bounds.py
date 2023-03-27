@@ -36,18 +36,18 @@ class PriorBounds(PriorBase[Array]):
     upper: Array | float
     _: KW_ONLY
     param_name: FlatParamName | None = None
-    param_scaler: ParamScaler[Array] | None = None
+    scaler: ParamScaler[Array] | None = None
 
     def __post_init__(self) -> None:
         """Post-init."""
         self._scaled_bounds: tuple[Array, Array]
-        if self.param_scaler is not None:
+        if self.scaler is not None:
             object.__setattr__(
                 self,
                 "_scaled_bounds",
                 (
-                    self.param_scaler.transform(self.lower),
-                    self.param_scaler.transform(self.upper),
+                    self.scaler.transform(self.lower),
+                    self.scaler.transform(self.upper),
                 ),
             )
 

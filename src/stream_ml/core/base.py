@@ -195,12 +195,10 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
                 raise TypeError
 
             if not isinstance(v, FrozenDict):
-                self.param_bounds._dict[k] = replace(
-                    v, param_scaler=self.param_scaler[k]
-                )
+                self.param_bounds._dict[k] = replace(v, scaler=self.param_scaler[k])
                 continue
             for k2, v2 in v.items():
-                v._dict[k2] = replace(v2, param_scaler=self.param_scaler[k, k2])
+                v._dict[k2] = replace(v2, scaler=self.param_scaler[k, k2])
 
     def _net_init_default(self) -> Any | None:
         return None
