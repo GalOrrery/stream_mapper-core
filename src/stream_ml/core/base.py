@@ -190,7 +190,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
             raise ValueError(msg)
         self.coord_bounds = FrozenDict(cbs)
 
-        # Add scaling to the param bounds (TODO! unfreeze then freeze)
+        # Add scaling to the param bounds  # TODO! unfreeze then freeze
         for k, v in self.param_bounds.items():
             if not isinstance(k, str):
                 raise TypeError
