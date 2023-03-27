@@ -44,12 +44,7 @@ class Uniform(ModelBase[Array, NNModel]):
             if not self.xp.isfinite(a) or not self.xp.isfinite(b):
                 msg = f"a bound of coordinate {k} is not finite"
                 raise ValueError(msg)
-
-            a_ = self.data_scaler.transform(a, names=(k,))
-            b_ = self.data_scaler.transform(b, names=(k,))
-
-            _bma.append(b_ - a_)
-
+            _bma.append(b - a)
         self._ln_diffs = self.xp.log(self.xp.asarray(_bma)[None, :])
 
     def _net_init_default(self) -> NNModel:
@@ -86,8 +81,6 @@ class Uniform(ModelBase[Array, NNModel]):
         -------
         Array
         """
-        mpars = rescale(self, mpars)
-
         if mask is not None:
             indicator = mask[tuple(self.coord_bounds.keys())].array
         elif self.require_mask:
