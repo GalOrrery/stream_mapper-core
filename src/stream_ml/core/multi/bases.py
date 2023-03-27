@@ -13,6 +13,7 @@ from stream_ml.core.params import ParamBounds, ParamNames, Params
 from stream_ml.core.setup_package import CompiledShim
 from stream_ml.core.typing import Array, ArrayNamespace, BoundsT, NNModel
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
+from stream_ml.core.utils.scale.utils import rescale
 
 if TYPE_CHECKING:
     from stream_ml.core.data import Data
@@ -217,5 +218,5 @@ class ModelsBase(
         # included in the component priors.
         # FIXME! need to scale the data and the parameters.
         for prior in self.priors:  # Plugin for priors
-            lnp = lnp + prior.logpdf(mpars, data, self, lnp, xp=self.xp)
+            lnp = lnp + prior.logpdf(rescale(self, mpars), data, self, lnp, xp=self.xp)
         return lnp
