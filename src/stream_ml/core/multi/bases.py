@@ -215,8 +215,6 @@ class ModelsBase(
             lnp = lnp + m.ln_prior(mpars.get_prefixed(name + "."), data)
         # No need to do the parameter boundss here, since they are already
         # included in the component priors.
-        # Plugin for priors
-        # FIXME! the scaling of the data
-        for prior in self.priors:
+        for prior in self.priors:  # Plugin for priors
             lnp = lnp + prior.logpdf(mpars, data, self, lnp, xp=self.xp)
         return lnp
