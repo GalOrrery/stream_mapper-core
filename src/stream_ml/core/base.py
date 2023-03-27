@@ -274,8 +274,6 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         -------
         Array
         """
-        mpars = rescale(self, mpars)
-
         lnp: Array = self.xp.zeros(()) if current_lnp is None else current_lnp
 
         # Coordinate Bounds
