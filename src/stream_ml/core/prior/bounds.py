@@ -106,6 +106,28 @@ class PriorBounds(PriorBase[Array]):
 
 
 @dataclass(frozen=True)
+class ClippedBounds(PriorBounds[Any]):
+    """Clipped bounds."""
+
+    lower: float
+    upper: float
+
+    def __post_init__(self) -> None:
+        """Post-init."""
+        if self.lower >= self.upper:
+            msg = "lower must be less than upper"
+            raise ValueError(msg)
+
+        super().__post_init__()
+
+    def __call__(
+        self, pred: Array, data: Data[Array], model: Model[Array, NNModel], /
+    ) -> Array:
+        """Evaluate the forward step in the prior."""
+        return model.xp.clip(pred, *self.scaled_bounds)
+
+
+@dataclass(frozen=True)
 class NoBounds(PriorBounds[Any]):
     """No bounds."""
 
