@@ -189,8 +189,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
             raise ValueError(msg)
         self.coord_bounds = FrozenDict(cbs)
 
-        # Add scaling to the param bounds.
-        # TODO! unfreeze then freeze
+        # Add scaling to the param bounds (TODO! unfreeze then freeze)
         for k, v in self.param_bounds.items():
             if not isinstance(k, str):
                 raise TypeError
@@ -276,8 +275,6 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         -------
         Array
         """
-        scaled_data = self.data_scaler.transform(data, names=self.data_scaler.names)
-
         lnp: Array = self.xp.zeros(()) if current_lnp is None else current_lnp
 
         # Coordinate Bounds
@@ -287,7 +284,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
             lnp = lnp + bounds.logpdf(mpars, data, self, lnp, xp=self.xp)
         # Priors
         for prior in self.priors:
-            lnp = lnp + prior.logpdf(mpars, scaled_data, self, lnp, xp=self.xp)
+            lnp = lnp + prior.logpdf(mpars, data, self, lnp, xp=self.xp)
 
         return lnp
 
