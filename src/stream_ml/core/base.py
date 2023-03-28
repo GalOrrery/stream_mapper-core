@@ -21,7 +21,6 @@ from stream_ml.core.utils.compat import array_at
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 from stream_ml.core.utils.funcs import within_bounds
 from stream_ml.core.utils.scale.base import DataScaler  # noqa: TCH001
-from stream_ml.core.utils.scale.utils import rescale
 
 __all__: list[str] = []
 

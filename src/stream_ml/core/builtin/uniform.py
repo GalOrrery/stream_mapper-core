@@ -11,7 +11,6 @@ from stream_ml.core.params.names import ParamNamesField
 from stream_ml.core.prior.bounds import NoBounds
 from stream_ml.core.setup_package import WEIGHT_NAME
 from stream_ml.core.typing import Array, NNModel
-from stream_ml.core.utils.scale.utils import rescale
 
 __all__: list[str] = []
 
