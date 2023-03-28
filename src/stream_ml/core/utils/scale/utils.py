@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from stream_ml.core.utils.frozen_dict import FrozenDict
 
 
-def rescale(
+def scale_params(
     model: ModelBase[Array, NNModel] | ModelsBase[Array, NNModel], mpars: Params[Array]
 ) -> Params[Array]:
     """Rescale the parameters to the model's scale."""
