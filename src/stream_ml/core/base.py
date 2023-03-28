@@ -21,7 +21,6 @@ from stream_ml.core.utils.compat import array_at
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 from stream_ml.core.utils.funcs import within_bounds
 from stream_ml.core.utils.scale.base import DataScaler  # noqa: TCH001
-from stream_ml.core.utils.scale.utils import rescale
 
 __all__: list[str] = []
 
@@ -209,7 +208,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
     def unpack_params_from_arr(self, p_arr: Array, /) -> Params[Array]:
         """Unpack parameters into a dictionary.
 
-        This function takes a parameter array and unpacks it into a dictionary
+        This function takes the NN output array and unpacks it into a dictionary
         with the parameter names as keys.
 
         Parameters
@@ -223,7 +222,9 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         """
         pars: dict[str, Array | dict[str, Array]] = {}
         for i, k in enumerate(self.param_names.flats):
+            # First unscale
             v = self.param_scaler[k].inverse_transform(p_arr[:, i : i + 1])
+            # Then set in the nested dict structure
             set_param(pars, k, v)
         return freeze_params(pars)
 
@@ -274,8 +275,6 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         -------
         Array
         """
-        mpars = rescale(self, mpars)
-
         lnp: Array = self.xp.zeros(()) if current_lnp is None else current_lnp
 
         # Coordinate Bounds
