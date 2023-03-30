@@ -24,12 +24,12 @@ __all__: list[str] = []
 class SupportsXP(Protocol[Array]):
     """Protocol for objects that support array namespaces."""
 
-    _array_namespace_: ArrayNamespace[Array]
+    array_namespace: ArrayNamespace[Array]
 
     @property
     def xp(self) -> ArrayNamespace[Array]:
         """Array namespace."""
-        return self._array_namespace_
+        return self.array_namespace
 
 
 class SupportsXPNN(SupportsXP[Array], Protocol[Array, NNModel]):

@@ -5,8 +5,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Generic, Literal, Protocol
 
 from stream_ml.core.params.scales.core import (
-    IncompleteParamScalerMapping,
-    ParamScalerMapping,
+    IncompleteParamScalers,
+    ParamScalers,
     is_completable,
 )
 from stream_ml.core.typing import Array
@@ -34,10 +34,10 @@ class ParamScalerField(Generic[Array]):
 
     Parameters
     ----------
-    default : ParamScalerMapping or Mapping or None, optional
+    default : ParamScalers or Mapping or None, optional
         The default parameter bounds, by default `None`. If `None`, there are no
         default bounds and the parameter bounds must be specified in the Model
-        constructor. If not a `ParamScalerMapping` instance, it will be converted to
+        constructor. If not a `ParamScalers` instance, it will be converted to
         one.
 
     Notes
@@ -48,25 +48,25 @@ class ParamScalerField(Generic[Array]):
 
     def __init__(
         self,
-        default: ParamScalerMapping[Array]
+        default: ParamScalers[Array]
         | Mapping[str | EllipsisType, Mapping[str, ParamScaler[Array]]]
         | Literal[Sentinel.MISSING] = MISSING,
     ) -> None:
-        dft: ParamScalerMapping[Array] | IncompleteParamScalerMapping[Array] | Literal[
+        dft: ParamScalers[Array] | IncompleteParamScalers[Array] | Literal[
             Sentinel.MISSING
         ]
         if default is MISSING:
             dft = MISSING
-        elif isinstance(default, ParamScalerMapping | IncompleteParamScalerMapping):
+        elif isinstance(default, ParamScalers | IncompleteParamScalers):
             dft = default
         elif is_completable(default):
-            dft = ParamScalerMapping(default)  # e.g. fills in None -> NoBounds
+            dft = ParamScalers(default)  # e.g. fills in None -> NoBounds
         else:
-            dft = IncompleteParamScalerMapping(default)
+            dft = IncompleteParamScalers(default)
 
-        self._default: ParamScalerMapping[Array] | IncompleteParamScalerMapping[
-            Array
-        ] | Literal[Sentinel.MISSING]
+        self._default: ParamScalers[Array] | IncompleteParamScalers[Array] | Literal[
+            Sentinel.MISSING
+        ]
         self._default = dft
 
     def __set_name__(self, owner: type, name: str) -> None:
@@ -74,9 +74,9 @@ class ParamScalerField(Generic[Array]):
 
     def __get__(
         self, obj: object | None, _: type | None
-    ) -> ParamScalerMapping[Array] | IncompleteParamScalerMapping[Array]:
+    ) -> ParamScalers[Array] | IncompleteParamScalers[Array]:
         if obj is not None:
-            val: ParamScalerMapping[Array] = getattr(obj, self._name)
+            val: ParamScalers[Array] = getattr(obj, self._name)
             return val
 
         default = self._default
@@ -88,19 +88,19 @@ class ParamScalerField(Generic[Array]):
     def __set__(
         self,
         model: SupportsCoordandParamNames,
-        value: ParamScalerMapping[Array] | IncompleteParamScalerMapping[Array],
+        value: ParamScalers[Array] | IncompleteParamScalers[Array],
     ) -> None:
-        if isinstance(value, IncompleteParamScalerMapping):
+        if isinstance(value, IncompleteParamScalers):
             value = value.complete(
                 c for c in model.coord_names if c in model.param_names.top_level
             )
         else:
             # TODO! make sure minimal copying is done
-            value = ParamScalerMapping(value)
+            value = ParamScalers(value)
 
         if self._default is not MISSING:
             default = self._default
-            if isinstance(default, IncompleteParamScalerMapping):
+            if isinstance(default, IncompleteParamScalers):
                 default = default.complete(
                     c for c in model.coord_names if c in model.param_names.top_level
                 )

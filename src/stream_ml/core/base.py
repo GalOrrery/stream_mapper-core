@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABCMeta
-from dataclasses import KW_ONLY, InitVar, dataclass, field, fields, replace
+from dataclasses import KW_ONLY, dataclass, field, fields, replace
 from functools import reduce
 from math import inf
 import textwrap
@@ -133,7 +133,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
     net: NNField[NNModel] = NNField(default=None)
 
     _: KW_ONLY
-    array_namespace: InitVar[ArrayNamespace[Array]]
+    array_namespace: ArrayNamespace[Array]
     name: str | None = None  # the name of the model
 
     # Standardizer
@@ -147,7 +147,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
     # Model Parameters, generally produced by the neural network.
     param_names: ParamNamesField = ParamNamesField()
     param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array](ParamBounds())
-    param_scaler: ParamScalerField[Array] = ParamScalerField()
+    param_scalers: ParamScalerField[Array] = ParamScalerField()
 
     # Priors on the parameters.
     priors: tuple[PriorBase[Array], ...] = ()
@@ -157,7 +157,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
     def __new__(  # noqa: D102
         cls: type[Self],
         *args: Any,  # noqa: ARG003
-        array_namespace: ArrayNamespace[Array],
+        array_namespace: ArrayNamespace[Array] | None = None,
         **kwargs: Any,  # noqa: ARG003
     ) -> Self:
         # Create the model instance.
@@ -166,20 +166,28 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
 
         # Ensure that the array and nn namespaces are available to the dataclass
         # descriptor fields.
-        self._array_namespace_ = array_namespace
-        self._nn_namespace_ = NN_NAMESPACE[array_namespace]
+        xp: ArrayNamespace[Array] | None = (
+            getattr(cls, "array_namespace", None)
+            if array_namespace is None
+            else array_namespace
+        )
+        if xp is None:
+            msg = f"Model {cls} requires array_namespace"
+            raise TypeError(msg)
+        object.__setattr__(self, "array_namespace", xp)
+        object.__setattr__(self, "_nn_namespace_", NN_NAMESPACE[xp])
 
         return self
 
-    def __post_init__(self, array_namespace: ArrayNamespace[Array]) -> None:
+    def __post_init__(self) -> None:
         """Post-init validation."""
-        super().__post_init__(array_namespace=array_namespace)
+        super().__post_init__()
         self._mypyc_init_descriptor()  # TODO: Remove this when mypyc is fixed.
 
-        # Validate the param_names
-        if not self.param_names:
-            msg = "param_names must be specified"
-            raise ValueError(msg)
+        # # Validate the param_names  # TODO! how?
+        # if not self.param_names:
+        #     msg = "param_names must be specified"
+        #     raise ValueError(msg)
 
         # Make coord bounds if not provided
         crnt_cbs = dict(self.coord_bounds)
@@ -195,10 +203,10 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
                 raise TypeError
 
             if not isinstance(v, FrozenDict):
-                self.param_bounds._dict[k] = replace(v, scaler=self.param_scaler[k])
+                self.param_bounds._dict[k] = replace(v, scaler=self.param_scalers[k])
                 continue
             for k2, v2 in v.items():
-                v._dict[k2] = replace(v2, scaler=self.param_scaler[k, k2])
+                v._dict[k2] = replace(v2, scaler=self.param_scalers[k, k2])
 
     def _net_init_default(self) -> Any | None:
         return None
@@ -223,7 +231,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         pars: dict[str, Array | dict[str, Array]] = {}
         for i, k in enumerate(self.param_names.flats):
             # First unscale
-            v = self.param_scaler[k].inverse_transform(p_arr[:, i : i + 1])
+            v = self.param_scalers[k].inverse_transform(p_arr[:, i : i + 1])
             # Then set in the nested dict structure
             set_param(pars, k, v)
         return freeze_params(pars)

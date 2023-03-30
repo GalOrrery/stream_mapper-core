@@ -21,8 +21,9 @@ def scale_params(
 ) -> Params[Array]:
     """Rescale the parameters to the model's scale."""
     pars: dict[str, Any | FrozenDict[str, Any]] = {}
-    pars["weight"] = mpars["weight"]  # The weight is Identity
+    if "weight" in mpars:
+        pars["weight"] = mpars["weight"]  # The weight is Identity
     for kp in model.param_names.flats:
-        v = model.param_scaler[kp].transform(mpars[kp])
+        v = model.param_scalers[kp].transform(mpars[kp])
         set_param(pars, kp, v)
     return freeze_params(pars)
