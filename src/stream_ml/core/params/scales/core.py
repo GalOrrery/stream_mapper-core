@@ -12,7 +12,7 @@ from stream_ml.core.typing import Array
 from stream_ml.core.utils.frozen_dict import FrozenDict
 
 if TYPE_CHECKING:
-    Self = TypeVar("Self", bound="ParamScalerMapping[Array]")  # type: ignore[valid-type]  # noqa: E501
+    Self = TypeVar("Self", bound="ParamScalers[Array]")  # type: ignore[valid-type]  # noqa: E501
 
 T = TypeVar("T", bound=str | EllipsisType)
 
@@ -24,7 +24,7 @@ def _resolve_scaler(b: ParamScaler[Array] | None) -> ParamScaler[Array]:
     return Identity() if b is None else b
 
 
-class ParamScalerMappingBase(ParamThingyBase[T, ParamScaler[Array]]):
+class ParamScalersBase(ParamThingyBase[T, ParamScaler[Array]]):
     """Base class for parameter bounds."""
 
     _Object = ParamScaler
@@ -47,11 +47,11 @@ class ParamScalerMappingBase(ParamThingyBase[T, ParamScaler[Array]]):
         }
 
 
-class ParamScalerMapping(ParamScalerMappingBase[str, Array]):
+class ParamScalers(ParamScalersBase[str, Array]):
     """A frozen (hashable) dictionary of parameters."""
 
 
-class IncompleteParamScalerMapping(ParamScalerMappingBase[EllipsisType, Array]):
+class IncompleteParamScalers(ParamScalersBase[EllipsisType, Array]):
     """An incomplete parameter bounds."""
 
     @property
@@ -61,7 +61,7 @@ class IncompleteParamScalerMapping(ParamScalerMappingBase[EllipsisType, Array]):
 
     def complete(
         self, coord_names: tuple[str, ...] | Iterator[str]
-    ) -> ParamScalerMapping[Array]:
+    ) -> ParamScalers[Array]:
         """Complete the parameter bounds.
 
         Parameters
@@ -71,7 +71,7 @@ class IncompleteParamScalerMapping(ParamScalerMappingBase[EllipsisType, Array]):
 
         Returns
         -------
-        ParamScalerMapping
+        ParamScalers
             The completed parameter bounds.
         """
         m: dict[str, ParamScaler[Array] | FrozenDict[str, ParamScaler[Array]]] = {}
@@ -87,7 +87,7 @@ class IncompleteParamScalerMapping(ParamScalerMappingBase[EllipsisType, Array]):
             for cn in coord_names:
                 m[cn] = v
 
-        return ParamScalerMapping(m, __unsafe_skip_copy__=True)
+        return ParamScalers(m, __unsafe_skip_copy__=True)
 
 
 def is_completable(

@@ -23,6 +23,6 @@ def scale_params(
     pars: dict[str, Any | FrozenDict[str, Any]] = {}
     pars["weight"] = mpars["weight"]  # The weight is Identity
     for kp in model.param_names.flats:
-        v = model.param_scaler[kp].transform(mpars[kp])
+        v = model.param_scalers[kp].transform(mpars[kp])
         set_param(pars, kp, v)
     return freeze_params(pars)

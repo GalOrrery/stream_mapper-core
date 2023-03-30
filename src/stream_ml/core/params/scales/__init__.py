@@ -7,8 +7,8 @@ from stream_ml.core.params.scales.builtin import (
     StandardWidth,
 )
 from stream_ml.core.params.scales.core import (
-    IncompleteParamScalerMapping,
-    ParamScalerMapping,
+    IncompleteParamScalers,
+    ParamScalers,
 )
 from stream_ml.core.params.scales.field import ParamScalerField
 
@@ -17,7 +17,7 @@ __all__ = [
     "Identity",
     "StandardLocation",
     "StandardWidth",
-    "ParamScalerMapping",
-    "IncompleteParamScalerMapping",
+    "ParamScalers",
+    "IncompleteParamScalers",
     "ParamScalerField",
 ]
