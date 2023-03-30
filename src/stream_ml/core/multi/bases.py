@@ -27,7 +27,7 @@ def _get_namespace(
     components: FrozenDict[str, Model[Array, NNModel]]
 ) -> ArrayNamespace[Array]:
     """Get the array namespace."""
-    ns = {v._array_namespace_ for v in components.values()}
+    ns = {v.array_namespace for v in components.values()}
     if len(ns) != 1:
         msg = "all components must use the same array namespace."
         raise ValueError(msg)
@@ -55,8 +55,8 @@ class ModelsBase(
         """Post-init validation."""
         self._mypyc_init_descriptor()  # TODO: Remove this when mypyc is fixed.
 
-        self._array_namespace_ = _get_namespace(self.components)
-        self._nn_namespace_ = NN_NAMESPACE[self._array_namespace_]
+        self.array_namespace = _get_namespace(self.components)
+        self._nn_namespace_ = NN_NAMESPACE[self.array_namespace]
 
         # Check that there is at least one component
         if not self.components:
