@@ -116,7 +116,7 @@ class MixtureModel(ModelsBase[Array, NNModel]):
             "Array", sum(cast("Array", pars[f"{k}.weight"]) for k in self.components)
         )
 
-        # TODO! Allow for one model to also package parameters across.
+        # Allow for conversation between components
         for hook in self.unpack_params_hooks:
             pars = hook(pars)
 
