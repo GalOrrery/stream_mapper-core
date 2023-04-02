@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from abc import ABCMeta
-from collections.abc import Iterator, Mapping
-from dataclasses import KW_ONLY, dataclass
+from collections.abc import ItemsView, Iterator, KeysView, Mapping, ValuesView
+from dataclasses import KW_ONLY, dataclass, fields
 from typing import TYPE_CHECKING, Any, ClassVar, TypeVar
 
 from stream_ml.core.api import Model
@@ -145,6 +145,29 @@ class ModelsBase(
 
     def __hash__(self) -> int:
         return hash(tuple(self.keys()))
+
+    def keys(self) -> KeysView[str]:
+        """Return the components' keys."""
+        return self.components.keys()
+
+    def values(self) -> ValuesView[Model[Array, NNModel]]:
+        """Return the components' values."""
+        return self.components.values()
+
+    def items(self) -> ItemsView[str, Model[Array, NNModel]]:
+        """Return the components' items."""
+        return self.components.items()
+
+    # ===============================================================
+    # Dataclass
+
+    def __str__(self) -> str:
+        """Return the string representation."""
+        return (
+            f"{type(self).__name__}(\n\t"
+            + ",\n\t".join(f"{f.name}={getattr(self, f.name)}" for f in fields(self))
+            + "\n)"
+        )
 
     # ===============================================================
 
