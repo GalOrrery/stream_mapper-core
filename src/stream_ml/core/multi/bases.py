@@ -5,7 +5,7 @@ from __future__ import annotations
 from abc import ABCMeta
 from collections.abc import ItemsView, Iterator, KeysView, Mapping, ValuesView
 from dataclasses import KW_ONLY, dataclass, fields
-from typing import TYPE_CHECKING, Any, ClassVar, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol, TypeVar
 
 from stream_ml.core.api import Model
 from stream_ml.core.base import NN_NAMESPACE
@@ -34,6 +34,14 @@ def _get_namespace(
     return ns.pop()
 
 
+class UnpackParamsCallable(Protocol):
+    """Protocol for unpacking parameters."""
+
+    def __call__(self, *args: Any, **kwds: Any) -> Any:
+        """Callable."""
+        ...
+
+
 @dataclass
 class ModelsBase(
     Model[Array, NNModel],
@@ -48,6 +56,7 @@ class ModelsBase(
     _: KW_ONLY
     name: str | None = None  # the name of the model
     priors: tuple[PriorBase[Array], ...] = ()
+    unpack_params_hooks: tuple[UnpackParamsCallable, ...] = ()
 
     DEFAULT_BOUNDS: ClassVar[Any] = None  # TODO: ClassVar[PriorBase[Array]]
 
