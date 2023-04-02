@@ -45,6 +45,10 @@ class ArrayLike(Protocol):
         """Flatten."""
         ...
 
+    def reshape(self: Self, *shape: Any) -> Self:
+        """Reshape."""
+        ...
+
     # ========================================================================
     # Dunder methods
 
@@ -203,7 +207,12 @@ class ArrayNamespace(Protocol[Array]):
 
     @staticmethod
     def log(array: Array) -> Array:
-        """Logarithm."""
+        """Logarithm, base e."""
+        ...
+
+    @staticmethod
+    def log10(array: Array) -> Array:
+        """Logarithm, base 10."""
         ...
 
     @staticmethod
