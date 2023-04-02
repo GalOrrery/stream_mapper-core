@@ -9,6 +9,7 @@ from stream_ml.core.multi.bases import ModelsBase
 from stream_ml.core.params import ParamNames, Params
 from stream_ml.core.setup_package import WEIGHT_NAME
 from stream_ml.core.typing import Array, NNModel
+from stream_ml.core.utils.frozen_dict import FrozenDictField
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -47,6 +48,8 @@ class IndependentModels(ModelsBase[Array, NNModel]):
         mixture model.
     """
 
+    has_weight: FrozenDictField[str, bool] = FrozenDictField()
+
     def __post_init__(self) -> None:
         self._mypyc_init_descriptor()  # TODO: Remove this when mypyc is fixed.
 
@@ -63,6 +66,13 @@ class IndependentModels(ModelsBase[Array, NNModel]):
                 ),
             ),
         )
+
+        if self.has_weight.keys() != self.components.keys():
+            msg = "has_weight must match components"
+            raise ValueError(msg)
+        elif not any(self.has_weight.values()):
+            msg = "there must be at least one weight"
+            raise ValueError(msg)
 
         super().__post_init__()
 
@@ -86,18 +96,21 @@ class IndependentModels(ModelsBase[Array, NNModel]):
         # Unpack the parameters
         pars: dict[str, Array | Mapping[str, Array]] = {}
 
-        # FIXME! what should we do with the weights? the weight should be shared
-        # across all components. pars[WEIGHT_NAME] = p_arr[:, 0:1]
+        # Add the weight.  # TODO! more general index
+        pars[WEIGHT_NAME] = p_arr[:, 0:1]
 
         # Iterate through the components
-        j = 0
+        j: int = 1
         for n, m in self.components.items():  # iter thru models
             # Determine whether the model has parameters beyond the weight
             if len(m.param_names.flat) == 0:
                 continue
 
+            # number of parameters, minus the weight
+            delta = len(m.param_names.flat) - (1 if self.has_weight[n] else 0)
+
             # Get weight and relevant parameters by index
-            mp_arr = p_arr[:, [0, *list(range(j, j + len(m.param_names.flat) - 1))]]
+            mp_arr = p_arr[:, [0, *list(range(j, j + delta))]]
 
             # Skip empty (and incrementing the index)
             if mp_arr.shape[1] == 0:
@@ -107,7 +120,7 @@ class IndependentModels(ModelsBase[Array, NNModel]):
             pars.update(m.unpack_params_from_arr(mp_arr).add_prefix(n + "."))
 
             # Increment the index
-            j += len(m.param_names.flat) - 1
+            j += delta
 
         return Params(pars)
 
