@@ -122,6 +122,9 @@ class IndependentModels(ModelsBase[Array, NNModel]):
             # Increment the index
             j += delta
 
+        for hook in self.unpack_params_hooks:
+            pars = hook(pars)
+
         return Params(pars)
 
     # ===============================================================

@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-from dataclasses import KW_ONLY, dataclass
-from typing import TYPE_CHECKING, Protocol, cast
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, cast
 
 from stream_ml.core.multi.bases import ModelsBase
 from stream_ml.core.params import ParamNames, Params
 from stream_ml.core.setup_package import BACKGROUND_KEY, WEIGHT_NAME
 from stream_ml.core.typing import Array, NNModel
-from stream_ml.core.utils.frozen_dict import FrozenDictField
 
 __all__: list[str] = []
 
@@ -17,14 +16,6 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
 
     from stream_ml.core.data import Data
-
-
-class TieParamsCallable(Protocol):
-    """Callable for tying parameters."""
-
-    def __call__(self, params: Mapping[str, Array | Mapping[str, Array]], /) -> Array:
-        """Tie parameters."""
-        ...
 
 
 @dataclass
@@ -42,20 +33,11 @@ class MixtureModel(ModelsBase[Array, NNModel]):
         that this can be different from the name of the model when it is used in
         a mixture model (see :class:`~stream_ml.core.core.MixtureModel`).
 
-    tied_params : Mapping[str, Callable[[Params], Array]], optional keyword-only
-        Mapping of parameter names to functions that take the parameters of the
-        model and return the value of the tied parameter. This is useful for
-        tying parameters across models, e.g. the background and stream models
-        in a mixture model.
-
     priors : tuple[PriorBase, ...], optional keyword-only
         Mapping of parameter names to priors. This is useful for setting priors
         on parameters across models, e.g. the background and stream models in a
         mixture model.
     """
-
-    _: KW_ONLY
-    tied_params: FrozenDictField[str, TieParamsCallable] = FrozenDictField({})
 
     def __post_init__(self) -> None:
         # Add the param_names  # TODO: make sure no duplicates
@@ -134,9 +116,9 @@ class MixtureModel(ModelsBase[Array, NNModel]):
             "Array", sum(cast("Array", pars[f"{k}.weight"]) for k in self.components)
         )
 
-        # Add / update the dependent parameters
-        for name, tie in self.tied_params.items():
-            pars[name] = tie(pars)
+        # Allow for conversation between components
+        for hook in self.unpack_params_hooks:
+            pars = hook(pars)
 
         return Params(pars)
 
