@@ -7,8 +7,8 @@ from collections.abc import ItemsView, Iterator, KeysView, Mapping, ValuesView
 from dataclasses import KW_ONLY, dataclass, fields
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol, TypeVar
 
+from stream_ml.core._base import NN_NAMESPACE
 from stream_ml.core.api import Model
-from stream_ml.core.base import NN_NAMESPACE
 from stream_ml.core.params import ParamBounds, ParamNames, Params
 from stream_ml.core.params.scales.core import ParamScalers
 from stream_ml.core.setup_package import CompiledShim

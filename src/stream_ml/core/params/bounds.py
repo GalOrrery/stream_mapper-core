@@ -256,7 +256,7 @@ class ParamBoundsField(Generic[Array]):
             # Don't need to check if the default is completable, since it
             # merged with a complete value made by ``from_names``.
             # Also, it is validated against the model's parameter names.
-            # Both these are done in `stream_ml.core.base.Model`.
+            # Both these are done in `stream_ml.core.Model`.
             value = default | value
 
         # TODO: can this be done in the param_bounds field?

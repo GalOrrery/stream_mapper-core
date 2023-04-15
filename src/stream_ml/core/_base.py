@@ -154,7 +154,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
 
     DEFAULT_BOUNDS: ClassVar = NoBounds()  # TODO: ClassVar[PriorBounds[Any]]
 
-    def __new__(  # noqa: D102
+    def __new__(
         cls: type[Self],
         *args: Any,  # noqa: ARG003
         array_namespace: ArrayNamespace[Array] | None = None,
