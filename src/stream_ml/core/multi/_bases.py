@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Protocol, TypeVar
 from stream_ml.core.api import Model
 from stream_ml.core.base import NN_NAMESPACE
 from stream_ml.core.params import ParamBounds, ParamNames, Params
+from stream_ml.core.params.scales.core import ParamScalers
 from stream_ml.core.setup_package import CompiledShim
 from stream_ml.core.typing import Array, ArrayNamespace, BoundsT, NNModel
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
@@ -94,6 +95,12 @@ class ModelsBase(
             cps._dict.update({f"{n}_{k}": v for k, v in m.param_bounds.items()})
         self._param_bounds = cps
 
+        # Add the param_scalers  # TODO! not update internal to ParamScalers.
+        pss: ParamScalers[Array] = ParamScalers()
+        for n, m in self.components.items():
+            pss._dict.update({f"{n}_{k}": v for k, v in m.param_scalers.items()})
+        self._param_scalers = pss
+
         super().__post_init__()
 
     @property
@@ -138,6 +145,17 @@ class ModelsBase(
     def param_bounds(self, value: Any) -> None:
         """Set the parameter bounds."""
         msg = "cannot set param_bounds"
+        raise AttributeError(msg)
+
+    @property  # type: ignore[override]
+    def param_scalers(self) -> ParamScalers[Array]:
+        """Parameter scalers."""
+        return self._param_scalers
+
+    @param_scalers.setter  # hack to match the Protocol
+    def param_scalers(self, value: Any) -> None:
+        """Set the parameter scalers."""
+        msg = "cannot set param_scalers"
         raise AttributeError(msg)
 
     # ===============================================================

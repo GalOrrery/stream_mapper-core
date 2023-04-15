@@ -3,33 +3,24 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
-from stream_ml.core.multi.bases import ModelsBase
+from stream_ml.core.multi._bases import ModelsBase
 from stream_ml.core.params import ParamNames, Params
-from stream_ml.core.setup_package import WEIGHT_NAME
+from stream_ml.core.setup_package import BACKGROUND_KEY, WEIGHT_NAME
 from stream_ml.core.typing import Array, NNModel
-from stream_ml.core.utils.frozen_dict import FrozenDictField
+
+__all__: list[str] = []
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
     from stream_ml.core.data import Data
 
-__all__: list[str] = []
 
-
-@dataclass(unsafe_hash=True)
-class IndependentModels(ModelsBase[Array, NNModel]):
-    """Composite of a few models that acts like one model.
-
-    This is different from a mixture model in that the components are not
-    separate, but are instead combined into a single model. Practically, this
-    means:
-
-    - All the components have the same weight.
-    - The log-likelihoood of the composite model is the sum of the
-      log-likelihooods of the components, not the log-sum-exp.
+@dataclass
+class MixtureModel(ModelsBase[Array, NNModel]):
+    """Full Model.
 
     Parameters
     ----------
@@ -40,7 +31,7 @@ class IndependentModels(ModelsBase[Array, NNModel]):
     name : str or None, optional keyword-only
         The (internal) name of the model, e.g. 'stream' or 'background'. Note
         that this can be different from the name of the model when it is used in
-        a composite model.
+        a mixture model (see :class:`~stream_ml.core.core.MixtureModel`).
 
     priors : tuple[PriorBase, ...], optional keyword-only
         Mapping of parameter names to priors. This is useful for setting priors
@@ -48,31 +39,21 @@ class IndependentModels(ModelsBase[Array, NNModel]):
         mixture model.
     """
 
-    has_weight: FrozenDictField[str, bool] = FrozenDictField()
-
     def __post_init__(self) -> None:
-        self._mypyc_init_descriptor()  # TODO: Remove this when mypyc is fixed.
-
         # Add the param_names  # TODO: make sure no duplicates
-        # The first is the weight and it is shared across all components.
         self._param_names: ParamNames = ParamNames(
-            (
-                WEIGHT_NAME,
-                *tuple(
-                    (f"{c}.{p[0]}", p[1]) if isinstance(p, tuple) else f"{c}.{p}"
-                    for c, m in self.components.items()
-                    for p in m.param_names
-                    if p != WEIGHT_NAME
-                ),
-            ),
+            (f"{c}.{p[0]}", p[1]) if isinstance(p, tuple) else f"{c}.{p}"
+            for c, m in self.components.items()
+            for p in m.param_names
         )
 
-        if self.has_weight.keys() != self.components.keys():
-            msg = "has_weight must match components"
-            raise ValueError(msg)
-        elif not any(self.has_weight.values()):
-            msg = "there must be at least one weight"
-            raise ValueError(msg)
+        # Check if the model has a background component.
+        # If it does, then it must be the last component.
+        includes_bkg = BACKGROUND_KEY in self.components
+        if includes_bkg and tuple(self.components.keys())[-1] != BACKGROUND_KEY:
+            msg = "the background model must be the last component."
+            raise KeyError(msg)
+        self._includes_bkg: bool = includes_bkg
 
         super().__post_init__()
 
@@ -95,22 +76,30 @@ class IndependentModels(ModelsBase[Array, NNModel]):
         """
         # Unpack the parameters
         pars: dict[str, Array | Mapping[str, Array]] = {}
-
-        # Add the weight.  # TODO! more general index
-        pars[WEIGHT_NAME] = p_arr[:, 0:1]
-
-        # Iterate through the components
-        j: int = 1
+        j = 0
         for n, m in self.components.items():  # iter thru models
-            # Determine whether the model has parameters beyond the weight
-            if len(m.param_names.flat) == 0:
-                continue
+            # Get relevant parameters by index
+            mp_arr = p_arr[:, slice(j, j + len(m.param_names.flat))]
 
-            # number of parameters, minus the weight
-            delta = len(m.param_names.flat) - (1 if self.has_weight[n] else 0)
+            if n == BACKGROUND_KEY:
+                # The background is special, because it has a weight parameter
+                # that is defined as 1 - the sum of the other weights.
+                # So, we need to calculate the background weight from the
+                # other weights. Note that the background weight can be included
+                # in the parameter array, but it should not be determined by
+                # any network output, rather just a placeholder.
 
-            # Get weight and relevant parameters by index
-            mp_arr = p_arr[:, [0, *list(range(j, j + delta))]]
+                # The background weight is 1 - the other weights
+                bkg_weight: Array = 1 - sum(
+                    (
+                        cast("Array", pars[f"{k}.weight"])
+                        for k in tuple(self.components.keys())[:-1]
+                        # skipping the background, which is the last component
+                    ),
+                    start=self.xp.zeros((len(mp_arr), 1), dtype=mp_arr.dtype),
+                )
+                # It is the index-0 column of the array
+                mp_arr = self.xp.hstack((bkg_weight, mp_arr[:, 1:]))
 
             # Skip empty (and incrementing the index)
             if mp_arr.shape[1] == 0:
@@ -120,22 +109,27 @@ class IndependentModels(ModelsBase[Array, NNModel]):
             pars.update(m.unpack_params_from_arr(mp_arr).add_prefix(n + "."))
 
             # Increment the index
-            j += delta
+            j += len(m.param_names.flat)
 
+        # Always add the combined weight
+        pars[WEIGHT_NAME] = cast(
+            "Array", sum(cast("Array", pars[f"{k}.weight"]) for k in self.components)
+        )
+
+        # Allow for conversation between components
         for hook in self.unpack_params_hooks:
             pars = hook(pars)
 
         return Params(pars)
 
     # ===============================================================
-    # Statistics
 
     def ln_likelihood(
         self, mpars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log likelihood.
 
-        Just the summation of the individual log-likelihoods.
+        Just the log-sum-exp of the individual log-likelihoods.
 
         Parameters
         ----------
@@ -151,12 +145,15 @@ class IndependentModels(ModelsBase[Array, NNModel]):
         -------
         Array
         """
-        lnlik: Array = self.xp.zeros(())
-        for name, m in self.components.items():
-            lnlik = lnlik + m.ln_likelihood(
-                mpars.get_prefixed(name + "."),
+        # Get the parameters for each model, stripping the model name,
+        # and use that to evaluate the log likelihood for the model.
+        lnliks = tuple(
+            model.ln_likelihood(
+                mpars.get_prefixed(name),
                 data,
                 **self._get_prefixed_kwargs(name, kwargs),
             )
-
-        return lnlik / len(self.components)
+            for name, model in self.components.items()
+        )
+        # Sum over the models, keeping the data dimension
+        return self.xp.logsumexp(self.xp.hstack(lnliks), 1)[:, None]

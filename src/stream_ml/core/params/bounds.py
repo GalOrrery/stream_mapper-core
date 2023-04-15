@@ -15,7 +15,7 @@ from typing import (
     TypeVar,
 )
 
-from stream_ml.core.params.base import ParamThingyBase
+from stream_ml.core.params._base import ParamThingyBase
 from stream_ml.core.prior.bounds import NoBounds, PriorBounds
 from stream_ml.core.typing import Array
 from stream_ml.core.utils.frozen_dict import FrozenDict
