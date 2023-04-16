@@ -6,7 +6,7 @@ from collections.abc import Iterator, Mapping
 from types import EllipsisType
 from typing import TYPE_CHECKING, TypeGuard, TypeVar
 
-from stream_ml.core.params._base import ParamThingyBase
+from stream_ml.core.params._base import ParamXsBase
 from stream_ml.core.params.scales.builtin import Identity, ParamScaler
 from stream_ml.core.typing import Array
 from stream_ml.core.utils.frozen_dict import FrozenDict
@@ -24,7 +24,7 @@ def _resolve_scaler(b: ParamScaler[Array] | None) -> ParamScaler[Array]:
     return Identity() if b is None else b
 
 
-class ParamScalersBase(ParamThingyBase[T, ParamScaler[Array]]):
+class ParamScalersBase(ParamXsBase[T, ParamScaler[Array]]):
     """Base class for parameter bounds."""
 
     _Object = ParamScaler

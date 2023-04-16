@@ -15,7 +15,7 @@ from typing import (
     TypeVar,
 )
 
-from stream_ml.core.params._base import ParamThingyBase
+from stream_ml.core.params._base import ParamXsBase
 from stream_ml.core.prior.bounds import NoBounds, PriorBounds
 from stream_ml.core.typing import Array
 from stream_ml.core.utils.frozen_dict import FrozenDict
@@ -43,7 +43,7 @@ def _resolve_bound(b: PriorBounds[Array] | None) -> PriorBounds[Array]:
 # ===================================================================
 
 
-class ParamBoundsBase(ParamThingyBase[T, PriorBounds[Array]]):
+class ParamBoundsBase(ParamXsBase[T, PriorBounds[Array]]):
     """Base class for parameter bounds."""
 
     _Object = PriorBounds

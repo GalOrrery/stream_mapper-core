@@ -29,7 +29,7 @@ __all__: list[str] = []
 ##############################################################################
 
 
-class ParamThingyBase(
+class ParamXsBase(
     FrozenDict[str | T, Object | FrozenDict[str, Object]], metaclass=ABCMeta
 ):
     """Base class for parameterized objects."""
