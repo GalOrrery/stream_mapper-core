@@ -9,7 +9,7 @@ from stream_ml.core.prior.base import PriorBase
 from stream_ml.core.typing import Array, ArrayNamespace
 
 if TYPE_CHECKING:
-    from stream_ml.core.api import Model
+    from stream_ml.core._api import Model
     from stream_ml.core.data import Data
     from stream_ml.core.params.core import Params
     from stream_ml.core.typing.nn import NNModel

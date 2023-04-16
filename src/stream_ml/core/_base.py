@@ -9,7 +9,7 @@ from math import inf
 import textwrap
 from typing import TYPE_CHECKING, Any, ClassVar, Generic, Protocol, TypeVar, cast
 
-from stream_ml.core.api import Model
+from stream_ml.core._api import Model
 from stream_ml.core.params import ParamBounds, Params, freeze_params, set_param
 from stream_ml.core.params.bounds import ParamBoundsField
 from stream_ml.core.params.names import ParamNamesField
