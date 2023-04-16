@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
     from stream_ml.core._api import Model
     from stream_ml.core.data import Data
-    from stream_ml.core.params.core import Params
+    from stream_ml.core.params._core import Params
     from stream_ml.core.params.scales import ParamScaler
     from stream_ml.core.typing import NNModel
 

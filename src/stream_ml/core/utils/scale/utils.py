@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from stream_ml.core.params.core import freeze_params, set_param
+from stream_ml.core.params._core import freeze_params, set_param
 
 __all__: list[str] = []
 

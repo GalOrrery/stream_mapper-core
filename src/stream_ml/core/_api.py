@@ -5,8 +5,8 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol
 
+from stream_ml.core.params._core import Params, freeze_params, set_param
 from stream_ml.core.params.bounds import ParamBounds, ParamBoundsField
-from stream_ml.core.params.core import Params, freeze_params, set_param
 from stream_ml.core.params.names import ParamNamesField
 from stream_ml.core.params.scales.field import ParamScalerField
 from stream_ml.core.typing import Array, ArrayNamespace, NNModel
