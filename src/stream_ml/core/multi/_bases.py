@@ -92,13 +92,13 @@ class ModelsBase(
         # Add the param_bounds  # TODO! not update internal to ParamBounds.
         cps: ParamBounds[Array] = ParamBounds()
         for n, m in self.components.items():
-            cps._dict.update({f"{n}_{k}": v for k, v in m.param_bounds.items()})
+            cps._dict.update({f"{n}.{k}": v for k, v in m.param_bounds.items()})
         self._param_bounds = cps
 
         # Add the param_scalers  # TODO! not update internal to ParamScalers.
         pss: ParamScalers[Array] = ParamScalers()
         for n, m in self.components.items():
-            pss._dict.update({f"{n}_{k}": v for k, v in m.param_scalers.items()})
+            pss._dict.update({f"{n}.{k}": v for k, v in m.param_scalers.items()})
         self._param_scalers = pss
 
         super().__post_init__()
