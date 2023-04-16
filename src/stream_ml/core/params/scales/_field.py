@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Generic, Literal, Protocol
 
-from stream_ml.core.params.scales.core import (
+from stream_ml.core.params.scales._core import (
     IncompleteParamScalers,
     ParamScalers,
     is_completable,

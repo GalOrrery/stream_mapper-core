@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Protocol, TypeVar
 from stream_ml.core._api import Model
 from stream_ml.core._base import NN_NAMESPACE
 from stream_ml.core.params import ParamBounds, ParamNames, Params
-from stream_ml.core.params.scales.core import ParamScalers
+from stream_ml.core.params.scales._core import ParamScalers
 from stream_ml.core.setup_package import CompiledShim
 from stream_ml.core.typing import Array, ArrayNamespace, BoundsT, NNModel
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField

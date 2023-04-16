@@ -8,7 +8,7 @@ from stream_ml.core.params._core import (
 )
 from stream_ml.core.params.bounds import ParamBounds
 from stream_ml.core.params.names import ParamNames
-from stream_ml.core.params.scales.core import ParamScalers
+from stream_ml.core.params.scales._core import ParamScalers
 
 __all__ = [
     "Params",
