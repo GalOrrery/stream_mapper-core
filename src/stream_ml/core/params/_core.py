@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from typing import TypeVar, cast, overload
 
-from stream_ml.core.params.names import LEN_NAME_TUPLE
+from stream_ml.core.params.names._core import LEN_NAME_TUPLE
 from stream_ml.core.utils.frozen_dict import FrozenDict
 
 __all__: list[str] = []
