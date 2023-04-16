@@ -213,7 +213,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
 
     # ========================================================================
 
-    def unpack_params_from_arr(self, p_arr: Array, /) -> Params[Array]:
+    def unpack_params_from_arr(self, arr: Array, /) -> Params[Array]:
         """Unpack parameters into a dictionary.
 
         This function takes the NN output array and unpacks it into a dictionary
@@ -221,7 +221,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
 
         Parameters
         ----------
-        p_arr : Array, positional-only
+        arr : Array, positional-only
             Parameter array.
 
         Returns
@@ -231,7 +231,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         pars: dict[str, Array | dict[str, Array]] = {}
         for i, k in enumerate(self.param_names.flats):
             # First unscale
-            v = self.param_scalers[k].inverse_transform(p_arr[:, i : i + 1])
+            v = self.param_scalers[k].inverse_transform(arr[:, i : i + 1])
             # Then set in the nested dict structure
             set_param(pars, k, v)
         return freeze_params(pars)

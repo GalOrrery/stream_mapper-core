@@ -106,7 +106,7 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
         return freeze_params(pars)
 
     @abstractmethod
-    def unpack_params_from_arr(self, p_arr: Array) -> Params[Array]:
+    def unpack_params_from_arr(self, arr: Array) -> Params[Array]:
         """Unpack parameters into a dictionary.
 
         This function takes a parameter array and unpacks it into a dictionary
@@ -114,7 +114,7 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
 
         Parameters
         ----------
-        p_arr : Array
+        arr : Array
             Parameter array.
 
         Returns
