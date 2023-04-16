@@ -158,5 +158,4 @@ class IndependentModels(ModelsBase[Array, NNModel]):
                 data,
                 **self._get_prefixed_kwargs(name, kwargs),
             )
-
-        return lnlik / len(self.components)
+        return lnlik
