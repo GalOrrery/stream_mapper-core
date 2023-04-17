@@ -10,6 +10,7 @@ from stream_ml.core.params import ParamNames, Params
 from stream_ml.core.setup_package import WEIGHT_NAME
 from stream_ml.core.typing import Array, NNModel
 from stream_ml.core.utils.frozen_dict import FrozenDictField
+from stream_ml.core.utils.funcs import get_prefixed_kwargs
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -156,6 +157,6 @@ class IndependentModels(ModelsBase[Array, NNModel]):
             lnlik = lnlik + m.ln_likelihood(
                 mpars.get_prefixed(name + "."),
                 data,
-                **self._get_prefixed_kwargs(name, kwargs),
+                **get_prefixed_kwargs(name, kwargs),
             )
         return lnlik

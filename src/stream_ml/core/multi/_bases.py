@@ -5,7 +5,7 @@ from __future__ import annotations
 from abc import ABCMeta
 from collections.abc import ItemsView, Iterator, KeysView, Mapping, ValuesView
 from dataclasses import KW_ONLY, dataclass, fields
-from typing import TYPE_CHECKING, Any, ClassVar, Protocol, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol
 
 from stream_ml.core._api import Model
 from stream_ml.core._base import NN_NAMESPACE
@@ -18,8 +18,6 @@ from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 if TYPE_CHECKING:
     from stream_ml.core.data import Data
     from stream_ml.core.prior.base import PriorBase
-
-    V = TypeVar("V")
 
 __all__: list[str] = []
 
@@ -217,25 +215,6 @@ class ModelsBase(
             name.
         """
         return super().unpack_params(packed_pars)
-
-    @staticmethod
-    def _get_prefixed_kwargs(prefix: str, kwargs: dict[str, V]) -> dict[str, V]:
-        """Get the kwargs with a given prefix.
-
-        Parameters
-        ----------
-        prefix : str
-            Prefix.
-        kwargs : dict[str, V]
-            Keyword arguments.
-
-        Returns
-        -------
-        dict[str, V]
-        """
-        prefix = prefix + "_" if not prefix.endswith("_") else prefix
-        lp = len(prefix)
-        return {k[lp:]: v for k, v in kwargs.items() if k.startswith(prefix)}
 
     # ===============================================================
     # Statistics

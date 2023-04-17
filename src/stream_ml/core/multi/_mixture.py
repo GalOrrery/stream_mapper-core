@@ -9,6 +9,7 @@ from stream_ml.core.multi._bases import ModelsBase
 from stream_ml.core.params import ParamNames, Params
 from stream_ml.core.setup_package import BACKGROUND_KEY, WEIGHT_NAME
 from stream_ml.core.typing import Array, NNModel
+from stream_ml.core.utils.funcs import get_prefixed_kwargs
 
 __all__: list[str] = []
 
@@ -151,7 +152,7 @@ class MixtureModel(ModelsBase[Array, NNModel]):
             model.ln_likelihood(
                 mpars.get_prefixed(name),
                 data,
-                **self._get_prefixed_kwargs(name, kwargs),
+                **get_prefixed_kwargs(name, kwargs),
             )
             for name, model in self.components.items()
         )
