@@ -5,9 +5,10 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol
 
+from stream_ml.core.params._core import Params, freeze_params, set_param
 from stream_ml.core.params.bounds import ParamBounds, ParamBoundsField
-from stream_ml.core.params.core import Params, freeze_params, set_param
 from stream_ml.core.params.names import ParamNamesField
+from stream_ml.core.params.scales._field import ParamScalerField
 from stream_ml.core.typing import Array, ArrayNamespace, NNModel
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 
@@ -15,7 +16,7 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
 
     from stream_ml.core.data import Data
-    from stream_ml.core.prior.base import PriorBase
+    from stream_ml.core.prior._base import PriorBase
     from stream_ml.core.typing import BoundsT, NNNamespace
 
 __all__: list[str] = []
@@ -55,6 +56,7 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
     # Bounds on the coordinates and parameters.
     coord_bounds: FrozenDictField[str, BoundsT] = FrozenDictField(FrozenDict())
     param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array](ParamBounds())
+    param_scalers: ParamScalerField[Array] = ParamScalerField[Array]()
 
     # Priors on the parameters.
     priors: tuple[PriorBase[Array], ...] = ()
@@ -104,7 +106,7 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
         return freeze_params(pars)
 
     @abstractmethod
-    def unpack_params_from_arr(self, p_arr: Array) -> Params[Array]:
+    def unpack_params_from_arr(self, arr: Array) -> Params[Array]:
         """Unpack parameters into a dictionary.
 
         This function takes a parameter array and unpacks it into a dictionary
@@ -112,7 +114,7 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
 
         Parameters
         ----------
-        p_arr : Array
+        arr : Array
             Parameter array.
 
         Returns

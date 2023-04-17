@@ -4,13 +4,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from stream_ml.core.params.core import freeze_params, set_param
+from stream_ml.core.params._core import freeze_params, set_param
 
 __all__: list[str] = []
 
 if TYPE_CHECKING:
-    from stream_ml.core.base import ModelBase
-    from stream_ml.core.bases import ModelsBase
+    from stream_ml.core._base import ModelBase
+    from stream_ml.core.multi import ModelsBase
     from stream_ml.core.params import Params
     from stream_ml.core.typing import Array, NNModel
     from stream_ml.core.utils.frozen_dict import FrozenDict

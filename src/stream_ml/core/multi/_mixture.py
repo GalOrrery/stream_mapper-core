@@ -5,10 +5,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, cast
 
-from stream_ml.core.multi.bases import ModelsBase
+from stream_ml.core.multi._bases import ModelsBase
 from stream_ml.core.params import ParamNames, Params
 from stream_ml.core.setup_package import BACKGROUND_KEY, WEIGHT_NAME
 from stream_ml.core.typing import Array, NNModel
+from stream_ml.core.utils.funcs import get_prefixed_kwargs
 
 __all__: list[str] = []
 
@@ -59,7 +60,7 @@ class MixtureModel(ModelsBase[Array, NNModel]):
 
     # ===============================================================
 
-    def unpack_params_from_arr(self, p_arr: Array) -> Params[Array]:
+    def unpack_params_from_arr(self, arr: Array) -> Params[Array]:
         """Unpack parameters into a dictionary.
 
         This function takes a parameter array and unpacks it into a dictionary
@@ -67,7 +68,7 @@ class MixtureModel(ModelsBase[Array, NNModel]):
 
         Parameters
         ----------
-        p_arr : Array
+        arr : Array
             Parameter array.
 
         Returns
@@ -79,7 +80,7 @@ class MixtureModel(ModelsBase[Array, NNModel]):
         j = 0
         for n, m in self.components.items():  # iter thru models
             # Get relevant parameters by index
-            mp_arr = p_arr[:, slice(j, j + len(m.param_names.flat))]
+            marr = arr[:, slice(j, j + len(m.param_names.flat))]
 
             if n == BACKGROUND_KEY:
                 # The background is special, because it has a weight parameter
@@ -96,17 +97,17 @@ class MixtureModel(ModelsBase[Array, NNModel]):
                         for k in tuple(self.components.keys())[:-1]
                         # skipping the background, which is the last component
                     ),
-                    start=self.xp.zeros((len(mp_arr), 1), dtype=mp_arr.dtype),
+                    start=self.xp.zeros((len(marr), 1), dtype=marr.dtype),
                 )
                 # It is the index-0 column of the array
-                mp_arr = self.xp.hstack((bkg_weight, mp_arr[:, 1:]))
+                marr = self.xp.hstack((bkg_weight, marr[:, 1:]))
 
             # Skip empty (and incrementing the index)
-            if mp_arr.shape[1] == 0:
+            if marr.shape[1] == 0:
                 continue
 
             # Add the component's parameters, prefixed with the component name
-            pars.update(m.unpack_params_from_arr(mp_arr).add_prefix(n + "."))
+            pars.update(m.unpack_params_from_arr(marr).add_prefix(n + "."))
 
             # Increment the index
             j += len(m.param_names.flat)
@@ -151,7 +152,7 @@ class MixtureModel(ModelsBase[Array, NNModel]):
             model.ln_likelihood(
                 mpars.get_prefixed(name),
                 data,
-                **self._get_prefixed_kwargs(name, kwargs),
+                **get_prefixed_kwargs(name, kwargs),
             )
             for name, model in self.components.items()
         )

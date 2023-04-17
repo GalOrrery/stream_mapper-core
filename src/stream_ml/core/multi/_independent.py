@@ -5,11 +5,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from stream_ml.core.multi.bases import ModelsBase
+from stream_ml.core.multi._bases import ModelsBase
 from stream_ml.core.params import ParamNames, Params
 from stream_ml.core.setup_package import WEIGHT_NAME
 from stream_ml.core.typing import Array, NNModel
 from stream_ml.core.utils.frozen_dict import FrozenDictField
+from stream_ml.core.utils.funcs import get_prefixed_kwargs
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -78,7 +79,7 @@ class IndependentModels(ModelsBase[Array, NNModel]):
 
     # ===============================================================
 
-    def unpack_params_from_arr(self, p_arr: Array) -> Params[Array]:
+    def unpack_params_from_arr(self, arr: Array) -> Params[Array]:
         """Unpack parameters into a dictionary.
 
         This function takes a parameter array and unpacks it into a dictionary
@@ -86,7 +87,7 @@ class IndependentModels(ModelsBase[Array, NNModel]):
 
         Parameters
         ----------
-        p_arr : Array
+        arr : Array
             Parameter array.
 
         Returns
@@ -97,7 +98,7 @@ class IndependentModels(ModelsBase[Array, NNModel]):
         pars: dict[str, Array | Mapping[str, Array]] = {}
 
         # Add the weight.  # TODO! more general index
-        pars[WEIGHT_NAME] = p_arr[:, 0:1]
+        pars[WEIGHT_NAME] = arr[:, 0:1]
 
         # Iterate through the components
         j: int = 1
@@ -110,14 +111,14 @@ class IndependentModels(ModelsBase[Array, NNModel]):
             delta = len(m.param_names.flat) - (1 if self.has_weight[n] else 0)
 
             # Get weight and relevant parameters by index
-            mp_arr = p_arr[:, [0, *list(range(j, j + delta))]]
+            marr = arr[:, [0, *list(range(j, j + delta))]]
 
             # Skip empty (and incrementing the index)
-            if mp_arr.shape[1] == 0:
+            if marr.shape[1] == 0:
                 continue
 
             # Add the component's parameters, prefixed with the component name
-            pars.update(m.unpack_params_from_arr(mp_arr).add_prefix(n + "."))
+            pars.update(m.unpack_params_from_arr(marr).add_prefix(n + "."))
 
             # Increment the index
             j += delta
@@ -156,7 +157,6 @@ class IndependentModels(ModelsBase[Array, NNModel]):
             lnlik = lnlik + m.ln_likelihood(
                 mpars.get_prefixed(name + "."),
                 data,
-                **self._get_prefixed_kwargs(name, kwargs),
+                **get_prefixed_kwargs(name, kwargs),
             )
-
-        return lnlik / len(self.components)
+        return lnlik

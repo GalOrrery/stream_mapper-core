@@ -5,20 +5,19 @@ from __future__ import annotations
 from abc import ABCMeta
 from collections.abc import ItemsView, Iterator, KeysView, Mapping, ValuesView
 from dataclasses import KW_ONLY, dataclass, fields
-from typing import TYPE_CHECKING, Any, ClassVar, Protocol, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol
 
-from stream_ml.core.api import Model
-from stream_ml.core.base import NN_NAMESPACE
+from stream_ml.core._api import Model
+from stream_ml.core._base import NN_NAMESPACE
 from stream_ml.core.params import ParamBounds, ParamNames, Params
+from stream_ml.core.params.scales._core import ParamScalers
 from stream_ml.core.setup_package import CompiledShim
 from stream_ml.core.typing import Array, ArrayNamespace, BoundsT, NNModel
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
     from stream_ml.core.data import Data
-    from stream_ml.core.prior.base import PriorBase
-
-    V = TypeVar("V")
+    from stream_ml.core.prior._base import PriorBase
 
 __all__: list[str] = []
 
@@ -91,8 +90,14 @@ class ModelsBase(
         # Add the param_bounds  # TODO! not update internal to ParamBounds.
         cps: ParamBounds[Array] = ParamBounds()
         for n, m in self.components.items():
-            cps._dict.update({f"{n}_{k}": v for k, v in m.param_bounds.items()})
+            cps._dict.update({f"{n}.{k}": v for k, v in m.param_bounds.items()})
         self._param_bounds = cps
+
+        # Add the param_scalers  # TODO! not update internal to ParamScalers.
+        pss: ParamScalers[Array] = ParamScalers()
+        for n, m in self.components.items():
+            pss._dict.update({f"{n}.{k}": v for k, v in m.param_scalers.items()})
+        self._param_scalers = pss
 
         super().__post_init__()
 
@@ -138,6 +143,17 @@ class ModelsBase(
     def param_bounds(self, value: Any) -> None:
         """Set the parameter bounds."""
         msg = "cannot set param_bounds"
+        raise AttributeError(msg)
+
+    @property  # type: ignore[override]
+    def param_scalers(self) -> ParamScalers[Array]:
+        """Parameter scalers."""
+        return self._param_scalers
+
+    @param_scalers.setter  # hack to match the Protocol
+    def param_scalers(self, value: Any) -> None:
+        """Set the parameter scalers."""
+        msg = "cannot set param_scalers"
         raise AttributeError(msg)
 
     # ===============================================================
@@ -199,25 +215,6 @@ class ModelsBase(
             name.
         """
         return super().unpack_params(packed_pars)
-
-    @staticmethod
-    def _get_prefixed_kwargs(prefix: str, kwargs: dict[str, V]) -> dict[str, V]:
-        """Get the kwargs with a given prefix.
-
-        Parameters
-        ----------
-        prefix : str
-            Prefix.
-        kwargs : dict[str, V]
-            Keyword arguments.
-
-        Returns
-        -------
-        dict[str, V]
-        """
-        prefix = prefix + "_" if not prefix.endswith("_") else prefix
-        lp = len(prefix)
-        return {k[lp:]: v for k, v in kwargs.items() if k.startswith(prefix)}
 
     # ===============================================================
     # Statistics

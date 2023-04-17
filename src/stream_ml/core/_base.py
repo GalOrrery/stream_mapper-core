@@ -9,7 +9,7 @@ from math import inf
 import textwrap
 from typing import TYPE_CHECKING, Any, ClassVar, Generic, Protocol, TypeVar, cast
 
-from stream_ml.core.api import Model
+from stream_ml.core._api import Model
 from stream_ml.core.params import ParamBounds, Params, freeze_params, set_param
 from stream_ml.core.params.bounds import ParamBoundsField
 from stream_ml.core.params.names import ParamNamesField
@@ -27,7 +27,7 @@ __all__: list[str] = []
 
 if TYPE_CHECKING:
     from stream_ml.core.data import Data
-    from stream_ml.core.prior.base import PriorBase
+    from stream_ml.core.prior._base import PriorBase
 
     Self = TypeVar("Self", bound="ModelBase[Array, NNModel]")  # type: ignore[valid-type]  # noqa: E501
 
@@ -154,7 +154,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
 
     DEFAULT_BOUNDS: ClassVar = NoBounds()  # TODO: ClassVar[PriorBounds[Any]]
 
-    def __new__(  # noqa: D102
+    def __new__(
         cls: type[Self],
         *args: Any,  # noqa: ARG003
         array_namespace: ArrayNamespace[Array] | None = None,
@@ -213,7 +213,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
 
     # ========================================================================
 
-    def unpack_params_from_arr(self, p_arr: Array, /) -> Params[Array]:
+    def unpack_params_from_arr(self, arr: Array, /) -> Params[Array]:
         """Unpack parameters into a dictionary.
 
         This function takes the NN output array and unpacks it into a dictionary
@@ -221,7 +221,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
 
         Parameters
         ----------
-        p_arr : Array, positional-only
+        arr : Array, positional-only
             Parameter array.
 
         Returns
@@ -231,7 +231,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         pars: dict[str, Array | dict[str, Array]] = {}
         for i, k in enumerate(self.param_names.flats):
             # First unscale
-            v = self.param_scalers[k].inverse_transform(p_arr[:, i : i + 1])
+            v = self.param_scalers[k].inverse_transform(arr[:, i : i + 1])
             # Then set in the nested dict structure
             set_param(pars, k, v)
         return freeze_params(pars)

@@ -3,12 +3,33 @@
 from __future__ import annotations
 
 from functools import singledispatch
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeVar
 
 __all__: list[str] = []
 
 if TYPE_CHECKING:
     from stream_ml.core.typing.array import Array, ArrayNamespace
+
+    V = TypeVar("V")
+
+
+def get_prefixed_kwargs(prefix: str, kwargs: dict[str, V]) -> dict[str, V]:
+    """Get the kwargs with a given prefix.
+
+    Parameters
+    ----------
+    prefix : str
+        Prefix.
+    kwargs : dict[str, V]
+        Keyword arguments.
+
+    Returns
+    -------
+    dict[str, V]
+    """
+    prefix = prefix + "_" if not prefix.endswith("_") else prefix
+    lp = len(prefix)
+    return {k[lp:]: v for k, v in kwargs.items() if k.startswith(prefix)}
 
 
 @singledispatch
