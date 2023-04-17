@@ -8,7 +8,7 @@ from math import inf
 from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 from stream_ml.core.params.names._core import FlatParamName  # noqa: TCH001
-from stream_ml.core.prior.base import PriorBase
+from stream_ml.core.prior._base import PriorBase
 from stream_ml.core.typing import Array, ArrayNamespace
 from stream_ml.core.utils.compat import array_at
 from stream_ml.core.utils.funcs import within_bounds

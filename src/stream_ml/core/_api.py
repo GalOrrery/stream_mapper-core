@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
 
     from stream_ml.core.data import Data
-    from stream_ml.core.prior.base import PriorBase
+    from stream_ml.core.prior._base import PriorBase
     from stream_ml.core.typing import BoundsT, NNNamespace
 
 __all__: list[str] = []

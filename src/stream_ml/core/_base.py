@@ -27,7 +27,7 @@ __all__: list[str] = []
 
 if TYPE_CHECKING:
     from stream_ml.core.data import Data
-    from stream_ml.core.prior.base import PriorBase
+    from stream_ml.core.prior._base import PriorBase
 
     Self = TypeVar("Self", bound="ModelBase[Array, NNModel]")  # type: ignore[valid-type]  # noqa: E501
 

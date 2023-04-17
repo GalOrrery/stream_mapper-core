@@ -17,7 +17,7 @@ from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
     from stream_ml.core.data import Data
-    from stream_ml.core.prior.base import PriorBase
+    from stream_ml.core.prior._base import PriorBase
 
 __all__: list[str] = []
 
