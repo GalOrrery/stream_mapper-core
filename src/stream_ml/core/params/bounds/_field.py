@@ -80,10 +80,13 @@ class ParamBoundsField(Generic[Array]):
     def __get__(
         self, obj: object | None, _: type | None
     ) -> ParamBounds[Array] | IncompleteParamBounds[Array]:
+        # Accessing the descriptor on the class returns the default value.
         if obj is not None:
             val: ParamBounds[Array] = getattr(obj, self._name)
             return val
 
+        # Accessing the descriptor from the instance returns the default value
+        # unless the value is missing.
         default = self._default
         if default is MISSING:
             msg = f"no default value for {self._name}"

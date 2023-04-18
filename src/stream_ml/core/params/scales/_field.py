@@ -58,7 +58,7 @@ class ParamScalersField(Generic[Array]):
         elif isinstance(default, ParamScalers | IncompleteParamScalers):
             dft = default
         elif is_completable(default):
-            dft = ParamScalers(default)  # e.g. fills in None -> NoBounds
+            dft = ParamScalers(default)  # e.g. fills in None -> Identity
         else:
             dft = IncompleteParamScalers(default)
 
