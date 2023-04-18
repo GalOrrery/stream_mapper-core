@@ -8,8 +8,6 @@ from typing import TYPE_CHECKING, Any
 from stream_ml.core._base import ModelBase, NNField
 from stream_ml.core.params.bounds import ParamBoundsField
 from stream_ml.core.params.names import ParamNamesField
-from stream_ml.core.prior.bounds import NoBounds
-from stream_ml.core.setup_package import WEIGHT_NAME
 from stream_ml.core.typing import Array, NNModel
 
 __all__: list[str] = []
@@ -27,11 +25,8 @@ class Uniform(ModelBase[Array, NNModel]):
     net: NNField[NNModel] = NNField(default=None)
 
     _: KW_ONLY
-    param_names: ParamNamesField = ParamNamesField((WEIGHT_NAME,))
-    param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array](
-        {WEIGHT_NAME: NoBounds(param_name=(WEIGHT_NAME,))}
-        # TODO: eps, not 1e-10
-    )
+    param_names: ParamNamesField = ParamNamesField(())
+    param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array]({})
     require_mask: bool = False
 
     def __post_init__(self) -> None:
