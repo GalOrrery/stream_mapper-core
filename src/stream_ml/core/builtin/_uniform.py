@@ -39,11 +39,12 @@ class Uniform(ModelBase[Array, NNModel]):
         # First need to check that the bound are finite.
         _bma = []
         for k, (a, b) in self.coord_bounds.items():
-            if not self.xp.isfinite(a) or not self.xp.isfinite(b):
+            a_, b_ = self.xp.asarray(a), self.xp.asarray(b)
+            if not self.xp.isfinite(a_) or not self.xp.isfinite(b_):
                 msg = f"a bound of coordinate {k} is not finite"
                 raise ValueError(msg)
-            _bma.append(b - a)
-        self._ln_diffs = self.xp.log(self.xp.asarray(_bma)[None, :])
+            _bma.append(b_ - a_)
+        self._ln_liks = -self.xp.log(self.xp.asarray(_bma)[None, :])
 
     def _net_init_default(self) -> NNModel:
         return self.xpnn.Identity()
@@ -85,8 +86,7 @@ class Uniform(ModelBase[Array, NNModel]):
             msg = "mask is required"
             raise ValueError(msg)
         else:
-            indicator = self.xp.ones_like(self._ln_diffs, dtype=int)
+            indicator = self.xp.ones_like(self._ln_liks, dtype=int)
             # shape (1, F) so that it can broadcast with (N, F)
 
-        ln_wgt = self.xp.log(self.xp.clip(mpars[(WEIGHT_NAME,)], 1e-10))
-        return ln_wgt - (indicator * self._ln_diffs).sum(1)[:, None]
+        return (indicator * self._ln_liks).sum(1)[:, None]
