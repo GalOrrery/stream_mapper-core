@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from types import EllipsisType
-from typing import TYPE_CHECKING, ClassVar, Generic, Literal, Protocol, TypeVar
+from typing import TYPE_CHECKING, ClassVar, Generic, Protocol, TypeVar
 
 from stream_ml.core.params.bounds._core import (
     IncompleteParamBounds,
@@ -11,7 +11,7 @@ from stream_ml.core.params.bounds._core import (
     is_completable,
 )
 from stream_ml.core.typing import Array
-from stream_ml.core.utils.sentinel import MISSING, Sentinel
+from stream_ml.core.utils.sentinel import MISSING, MissingT
 
 __all__: list[str] = []
 
@@ -59,11 +59,9 @@ class ParamBoundsField(Generic[Array]):
             str | EllipsisType,
             PriorBounds[Array] | None | Mapping[str, PriorBounds[Array] | None],
         ]
-        | Literal[Sentinel.MISSING] = MISSING,
+        | MissingT = MISSING,
     ) -> None:
-        dft: ParamBounds[Array] | IncompleteParamBounds[Array] | Literal[
-            Sentinel.MISSING
-        ]
+        dft: ParamBounds[Array] | IncompleteParamBounds[Array] | MissingT
         if default is MISSING:
             dft = MISSING
         elif isinstance(default, ParamBounds | IncompleteParamBounds):
@@ -73,9 +71,7 @@ class ParamBoundsField(Generic[Array]):
         else:
             dft = IncompleteParamBounds(default)
 
-        self._default: ParamBounds[Array] | IncompleteParamBounds[Array] | Literal[
-            Sentinel.MISSING
-        ]
+        self._default: ParamBounds[Array] | IncompleteParamBounds[Array] | MissingT
         self._default = dft
 
     def __set_name__(self, owner: type, name: str) -> None:

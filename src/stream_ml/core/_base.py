@@ -21,13 +21,14 @@ from stream_ml.core.utils.compat import array_at
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 from stream_ml.core.utils.funcs import within_bounds
 from stream_ml.core.utils.scale import DataScaler  # noqa: TCH001
+from stream_ml.core.utils.sentinel import MISSING, MissingT
 
 __all__: list[str] = []
 
 
 if TYPE_CHECKING:
     from stream_ml.core.data import Data
-    from stream_ml.core.prior._base import PriorBase
+    from stream_ml.core.prior import PriorBase
 
     Self = TypeVar("Self", bound="ModelBase[Array, NNModel]")  # type: ignore[valid-type]  # noqa: E501
 
@@ -56,7 +57,7 @@ NN_NAMESPACE = cast(NNNamespaceMap, {})
 #####################################################################
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class NNField(Generic[NNModel]):
     """Dataclass descriptor for attached nn.
 
@@ -69,7 +70,7 @@ class NNField(Generic[NNModel]):
         - `None` : defer setting a value until model init.
     """
 
-    default: NNModel | None = None
+    default: NNModel | MissingT | None = MISSING
     _name: str = field(default="")
 
     def __set_name__(self, owner: type, name: str) -> None:
@@ -77,9 +78,12 @@ class NNField(Generic[NNModel]):
 
     def __get__(
         self, model: ModelBase[Array, NNModel] | None, model_cls: Any
-    ) -> NNModel | None:
+    ) -> NNModel | MissingT | None:
         if model is not None:
             return cast("NNModel", getattr(model, self._name))
+        elif self.default is MISSING:
+            msg = f"no default value for field {self._name!r}."
+            raise AttributeError(msg)
         return self.default
 
     def __set__(self, model: ModelBase[Array, NNModel], value: NNModel | None) -> None:
@@ -87,7 +91,7 @@ class NNField(Generic[NNModel]):
         # First need to ensure that the array and nn namespaces are set.
         net = model._net_init_default() if value is None else value
 
-        if net is None:
+        if net is MISSING:
             msg = "must provide a wrapped neural network."
             raise ValueError(msg)
 
@@ -130,7 +134,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         a mixture model (see :class:`~stream_ml.core.core.MixtureModel`).
     """
 
-    net: NNField[NNModel] = NNField(default=None)
+    net: NNField[NNModel] = NNField(default=MISSING)
 
     _: KW_ONLY
     array_namespace: ArrayNamespace[Array]
@@ -184,11 +188,6 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         super().__post_init__()
         self._mypyc_init_descriptor()  # TODO: Remove this when mypyc is fixed.
 
-        # # Validate the param_names  # TODO! how?
-        # if not self.param_names:
-        #     msg = "param_names must be specified"
-        #     raise ValueError(msg)
-
         # Make coord bounds if not provided
         crnt_cbs = dict(self.coord_bounds)
         cbs = {n: crnt_cbs.pop(n, (-inf, inf)) for n in self.coord_names}
@@ -208,7 +207,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
             for k2, v2 in v.items():
                 v._dict[k2] = replace(v2, scaler=self.param_scalers[k, k2])
 
-    def _net_init_default(self) -> Any | None:
+    def _net_init_default(self) -> Any | MissingT | None:
         return None
 
     # ========================================================================
