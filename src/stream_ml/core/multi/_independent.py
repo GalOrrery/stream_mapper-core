@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from stream_ml.core.multi._bases import ModelsBase
-from stream_ml.core.params import ParamNames, Params
+from stream_ml.core.params import ParamBounds, ParamNames, Params, ParamScalers
 from stream_ml.core.setup_package import WEIGHT_NAME
 from stream_ml.core.typing import Array, NNModel
 from stream_ml.core.utils.frozen_dict import FrozenDictField
@@ -54,6 +54,13 @@ class IndependentModels(ModelsBase[Array, NNModel]):
     def __post_init__(self) -> None:
         self._mypyc_init_descriptor()  # TODO: Remove this when mypyc is fixed.
 
+        if self.has_weight.keys() != self.components.keys():
+            msg = "has_weight must match components"
+            raise ValueError(msg)
+        elif not any(self.has_weight.values()):
+            msg = "there must be at least one weight"
+            raise ValueError(msg)
+
         # Add the param_names  # TODO: make sure no duplicates
         # The first is the weight and it is shared across all components.
         self._param_names: ParamNames = ParamNames(
@@ -68,14 +75,52 @@ class IndependentModels(ModelsBase[Array, NNModel]):
             ),
         )
 
-        if self.has_weight.keys() != self.components.keys():
-            msg = "has_weight must match components"
-            raise ValueError(msg)
-        elif not any(self.has_weight.values()):
-            msg = "there must be at least one weight"
-            raise ValueError(msg)
+        # Add the param_bounds  # TODO! not update internal to ParamBounds.
+        cps: ParamBounds[Array] = ParamBounds()
+        for n, m in self.components.items():
+            cps._dict.update({f"{n}.{k}": v for k, v in m.param_bounds.items()})
+        self._param_bounds = cps
+
+        # Add the param_scalers  # TODO! not update internal to ParamScalers.
+        pss: ParamScalers[Array] = ParamScalers()
+        for n, m in self.components.items():
+            pss._dict.update({f"{n}.{k}": v for k, v in m.param_scalers.items()})
+        self._param_scalers = pss
 
         super().__post_init__()
+
+    @property  # type: ignore[override]
+    def param_names(self) -> ParamNames:
+        """Parameter names."""
+        return self._param_names
+
+    @param_names.setter  # hack to match the Protocol
+    def param_names(self, value: Any) -> None:
+        """Set the parameter names."""
+        msg = "cannot set param_names"
+        raise AttributeError(msg)
+
+    @property  # type: ignore[override]
+    def param_bounds(self) -> ParamBounds[Array]:
+        """Coordinate names."""
+        return self._param_bounds
+
+    @param_bounds.setter  # hack to match the Protocol
+    def param_bounds(self, value: Any) -> None:
+        """Set the parameter bounds."""
+        msg = "cannot set param_bounds"
+        raise AttributeError(msg)
+
+    @property  # type: ignore[override]
+    def param_scalers(self) -> ParamScalers[Array]:
+        """Parameter scalers."""
+        return self._param_scalers
+
+    @param_scalers.setter  # hack to match the Protocol
+    def param_scalers(self, value: Any) -> None:
+        """Set the parameter scalers."""
+        msg = "cannot set param_scalers"
+        raise AttributeError(msg)
 
     # ===============================================================
 
