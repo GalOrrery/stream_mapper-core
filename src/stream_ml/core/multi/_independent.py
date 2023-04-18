@@ -155,8 +155,6 @@ class IndependentModels(ModelsBase[Array, NNModel]):
         lnlik: Array = self.xp.zeros(())
         for name, m in self.components.items():
             lnlik = lnlik + m.ln_likelihood(
-                mpars.get_prefixed(name + "."),
-                data,
-                **get_prefixed_kwargs(name, kwargs),
+                mpars.get_prefixed(name), data, **get_prefixed_kwargs(name, kwargs)
             )
         return lnlik
