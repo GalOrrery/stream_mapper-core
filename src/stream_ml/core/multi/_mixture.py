@@ -2,14 +2,21 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import KW_ONLY, dataclass, replace
 from typing import TYPE_CHECKING, cast
 
+from stream_ml.core import NNField
 from stream_ml.core.multi._bases import ModelsBase
-from stream_ml.core.params import Params
-from stream_ml.core.setup_package import BACKGROUND_KEY, WEIGHT_NAME
+from stream_ml.core.params import ParamBounds, ParamNames, Params
+from stream_ml.core.params.bounds import ParamBoundsField
+from stream_ml.core.params.scales import ParamScalersField
+from stream_ml.core.setup_package import BACKGROUND_KEY
 from stream_ml.core.typing import Array, NNModel
+from stream_ml.core.utils.cached_property import cached_property
+from stream_ml.core.utils.frozen_dict import FrozenDict
 from stream_ml.core.utils.funcs import get_prefixed_kwargs
+from stream_ml.core.utils.scale import DataScaler  # noqa: TCH001
+from stream_ml.core.utils.sentinel import MISSING
 
 __all__: list[str] = []
 
@@ -40,6 +47,22 @@ class MixtureModel(ModelsBase[Array, NNModel]):
         mixture model.
     """
 
+    net: NNField[NNModel] = NNField(default=MISSING)
+
+    _: KW_ONLY
+
+    # Standardizer
+    data_scaler: DataScaler
+
+    # Coordinates, indpendent and dependent.
+    indep_coord_names: tuple[str, ...] = ("phi1",)
+
+    # Model Parameters, generally produced by the neural network.
+    # param_names: ParamNamesField = ParamNamesField()
+    param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array](ParamBounds())
+    param_scalers: ParamScalersField[Array] = ParamScalersField()
+    # TODO! Have Identity as the default
+
     def __post_init__(self) -> None:
         super().__post_init__()
 
@@ -50,6 +73,22 @@ class MixtureModel(ModelsBase[Array, NNModel]):
             msg = "the background model must be the last component."
             raise KeyError(msg)
         self._includes_bkg: bool = includes_bkg
+
+        # Add scaling to the param bounds  # TODO! unfreeze then freeze
+        for k, v in self.param_bounds.items():
+            if not isinstance(k, str):
+                raise TypeError
+
+            if not isinstance(v, FrozenDict):
+                self.param_bounds._dict[k] = replace(v, scaler=self.param_scalers[k])
+                continue
+            for k2, v2 in v.items():
+                v._dict[k2] = replace(v2, scaler=self.param_scalers[k, k2])
+
+    @cached_property
+    def param_names(self) -> ParamNames:  # type: ignore[override]
+        """Parameter names."""
+        return ParamNames(tuple(f"{c}.weight" for c in self.components))
 
     # ===============================================================
 
@@ -73,9 +112,11 @@ class MixtureModel(ModelsBase[Array, NNModel]):
         j = 0
         for n, m in self.components.items():  # iter thru models
             # Get relevant parameters by index
-            marr = arr[:, slice(j, j + len(m.param_names.flat))]
+            marr = arr[:, slice(j + 1, j + 1 + len(m.param_names.flat))]
 
-            if n == BACKGROUND_KEY:
+            if n != BACKGROUND_KEY:
+                weight = arr[:, j : j + 1]
+            else:
                 # The background is special, because it has a weight parameter
                 # that is defined as 1 - the sum of the other weights.
                 # So, we need to calculate the background weight from the
@@ -84,7 +125,7 @@ class MixtureModel(ModelsBase[Array, NNModel]):
                 # any network output, rather just a placeholder.
 
                 # The background weight is 1 - the other weights
-                bkg_weight: Array = 1 - sum(
+                weight = 1 - sum(
                     (
                         cast("Array", pars[f"{k}.weight"])
                         for k in tuple(self.components.keys())[:-1]
@@ -92,23 +133,13 @@ class MixtureModel(ModelsBase[Array, NNModel]):
                     ),
                     start=self.xp.zeros((len(marr), 1), dtype=marr.dtype),
                 )
-                # It is the index-0 column of the array
-                marr = self.xp.hstack((bkg_weight, marr[:, 1:]))
-
-            # Skip empty (and incrementing the index)
-            if marr.shape[1] == 0:
-                continue
 
             # Add the component's parameters, prefixed with the component name
+            pars[n + ".weight"] = weight
             pars.update(m.unpack_params_from_arr(marr).add_prefix(n + "."))
 
-            # Increment the index
-            j += len(m.param_names.flat)
-
-        # Always add the combined weight
-        pars[WEIGHT_NAME] = cast(
-            "Array", sum(cast("Array", pars[f"{k}.weight"]) for k in self.components)
-        )
+            # Increment the index (weight + parameters)
+            j += len(m.param_names.flat) + 1
 
         # Allow for conversation between components
         for hook in self.unpack_params_hooks:

@@ -212,8 +212,10 @@ class ModelsBase(
         lnp: Array = self.xp.zeros(()) if current_lnp is None else current_lnp
         for name, m in self.components.items():
             lnp = lnp + m.ln_prior(mpars.get_prefixed(name + "."), data)
-        # No need to do the parameter boundss here, since they are already
-        # included in the component priors.
-        for prior in self.priors:  # Plugin for priors
+        # Parameter Bounds
+        for bounds in self.param_bounds.flatvalues():
+            lnp = lnp + bounds.logpdf(mpars, data, self, lnp, xp=self.xp)
+        # Plugin for priors
+        for prior in self.priors:
             lnp = lnp + prior.logpdf(mpars, data, self, lnp, xp=self.xp)
         return lnp
