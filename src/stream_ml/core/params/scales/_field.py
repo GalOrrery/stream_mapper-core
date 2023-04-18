@@ -29,7 +29,7 @@ class SupportsCoordandParamNames(Protocol):
     param_names: ParamNamesField
 
 
-class ParamScalerField(Generic[Array]):
+class ParamScalersField(Generic[Array]):
     """Dataclass descriptor for parameter bounds.
 
     Parameters
