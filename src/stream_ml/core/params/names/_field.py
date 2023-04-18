@@ -94,12 +94,11 @@ class ParamNamesField:
             val: ParamNames = getattr(obj, self._name)
             return val
 
-        default = self._default
-        if default is not MISSING:
-            return default
-        else:
+        if self._default is MISSING:
             msg = f"no default value for {self._name}"
             raise AttributeError(msg)
+
+        return self._default
 
     def __set__(
         self, model: SupportsCoordNames, value: ParamNames | IncompleteParamNames
