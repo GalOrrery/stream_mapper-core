@@ -27,9 +27,8 @@ def get_prefixed_kwargs(prefix: str, kwargs: dict[str, V]) -> dict[str, V]:
     -------
     dict[str, V]
     """
-    prefix = prefix + "_" if not prefix.endswith("_") else prefix
-    lp = len(prefix)
-    return {k[lp:]: v for k, v in kwargs.items() if k.startswith(prefix)}
+    p = prefix + "_" if not prefix.endswith("_") else prefix
+    return {k.removeprefix(p): v for k, v in kwargs.items() if k.startswith(p)}
 
 
 @singledispatch

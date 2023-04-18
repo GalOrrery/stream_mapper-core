@@ -9,15 +9,15 @@ from typing import TYPE_CHECKING, Any, ClassVar, Protocol
 
 from stream_ml.core._api import Model
 from stream_ml.core._base import NN_NAMESPACE
-from stream_ml.core.params import ParamBounds, ParamNames, Params
-from stream_ml.core.params.scales._core import ParamScalers
+from stream_ml.core.params import ParamNames
 from stream_ml.core.setup_package import CompiledShim
 from stream_ml.core.typing import Array, ArrayNamespace, BoundsT, NNModel
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
     from stream_ml.core.data import Data
-    from stream_ml.core.prior._base import PriorBase
+    from stream_ml.core.params import Params
+    from stream_ml.core.prior import PriorBase
 
 __all__: list[str] = []
 
@@ -84,20 +84,12 @@ class ModelsBase(
             cbs.update(m.coord_bounds)
         self._coord_bounds = FrozenDict(cbs)
 
-        # Hint the param_names
-        self._param_names: ParamNames
-
-        # Add the param_bounds  # TODO! not update internal to ParamBounds.
-        cps: ParamBounds[Array] = ParamBounds()
-        for n, m in self.components.items():
-            cps._dict.update({f"{n}.{k}": v for k, v in m.param_bounds.items()})
-        self._param_bounds = cps
-
-        # Add the param_scalers  # TODO! not update internal to ParamScalers.
-        pss: ParamScalers[Array] = ParamScalers()
-        for n, m in self.components.items():
-            pss._dict.update({f"{n}.{k}": v for k, v in m.param_scalers.items()})
-        self._param_scalers = pss
+        # Add the param_names  # TODO: make sure no duplicates
+        self._param_names: ParamNames = ParamNames(
+            (f"{c}.{p[0]}", p[1]) if isinstance(p, tuple) else f"{c}.{p}"
+            for c, m in self.components.items()
+            for p in m.param_names
+        )
 
         super().__post_init__()
 
@@ -113,17 +105,6 @@ class ModelsBase(
         raise AttributeError(msg)
 
     @property  # type: ignore[override]
-    def param_names(self) -> ParamNames:
-        """Parameter names."""
-        return self._param_names
-
-    @param_names.setter  # hack to match the Protocol
-    def param_names(self, value: Any) -> None:
-        """Set the parameter names."""
-        msg = "cannot set param_names"
-        raise AttributeError(msg)
-
-    @property  # type: ignore[override]
     def coord_bounds(self) -> FrozenDict[str, BoundsT]:
         """Coordinate names."""
         return self._coord_bounds
@@ -135,25 +116,14 @@ class ModelsBase(
         raise AttributeError(msg)
 
     @property  # type: ignore[override]
-    def param_bounds(self) -> ParamBounds[Array]:
-        """Coordinate names."""
-        return self._param_bounds
+    def param_names(self) -> ParamNames:
+        """Parameter names."""
+        return self._param_names
 
-    @param_bounds.setter  # hack to match the Protocol
-    def param_bounds(self, value: Any) -> None:
-        """Set the parameter bounds."""
-        msg = "cannot set param_bounds"
-        raise AttributeError(msg)
-
-    @property  # type: ignore[override]
-    def param_scalers(self) -> ParamScalers[Array]:
-        """Parameter scalers."""
-        return self._param_scalers
-
-    @param_scalers.setter  # hack to match the Protocol
-    def param_scalers(self, value: Any) -> None:
-        """Set the parameter scalers."""
-        msg = "cannot set param_scalers"
+    @param_names.setter  # hack to match the Protocol
+    def param_names(self, value: Any) -> None:
+        """Set the parameter names."""
+        msg = "cannot set param_names"
         raise AttributeError(msg)
 
     # ===============================================================

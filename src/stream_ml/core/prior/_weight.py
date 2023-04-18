@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 
 from stream_ml.core.params.scales.builtin import ParamScaler  # noqa: TCH001
 from stream_ml.core.prior._base import PriorBase
-from stream_ml.core.setup_package import WEIGHT_NAME
 from stream_ml.core.typing import Array, ArrayNamespace
 from stream_ml.core.utils.compat import array_at
 from stream_ml.core.utils.funcs import within_bounds
@@ -47,6 +46,7 @@ class HardThreshold(PriorBase[Array]):
     threshold: float = 5e-3
     set_to: float = 1e-10
     _: KW_ONLY
+    param_name: str
     coord_name: str = "phi1"
     lower: float = -inf
     upper: float = inf
@@ -109,9 +109,9 @@ class HardThreshold(PriorBase[Array]):
         Array
             The logpdf.
         """
-        lnp = xp.zeros_like(mpars[(WEIGHT_NAME,)])
+        lnp = xp.zeros_like(mpars[(self.param_name,)])
         where = within_bounds(data[self.coord_name], self.lower, self.upper) & (
-            mpars[(WEIGHT_NAME,)] > self.threshold
+            mpars[(self.param_name,)] > self.threshold
         )
         return array_at(lnp, where).set(-xp.inf)
 
@@ -133,7 +133,7 @@ class HardThreshold(PriorBase[Array]):
         -------
         Array
         """
-        i = model.param_names.flats.index((WEIGHT_NAME,))
+        i = model.param_names.flats.index((self.param_name,))
         where = within_bounds(data[self.coord_name].flatten(), *self.scaled_bounds) & (
             pred[:, i] < self.threshold
         )

@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import KW_ONLY, dataclass
 from typing import TYPE_CHECKING, Any
 
-from stream_ml.core._base import ModelBase
+from stream_ml.core._base import ModelBase, NNField
 from stream_ml.core.params.bounds import ParamBoundsField
 from stream_ml.core.params.names import ParamNamesField
 from stream_ml.core.prior.bounds import NoBounds
@@ -23,6 +23,8 @@ if TYPE_CHECKING:
 @dataclass(unsafe_hash=True)
 class Uniform(ModelBase[Array, NNModel]):
     """Uniform background model."""
+
+    net: NNField[NNModel] = NNField(default=None)
 
     _: KW_ONLY
     param_names: ParamNamesField = ParamNamesField((WEIGHT_NAME,))
@@ -46,8 +48,8 @@ class Uniform(ModelBase[Array, NNModel]):
             _bma.append(b_ - a_)
         self._ln_liks = -self.xp.log(self.xp.asarray(_bma)[None, :])
 
-    def _net_init_default(self) -> NNModel:
-        return self.xpnn.Identity()
+    def _net_init_default(self) -> NNModel | None:
+        return None
 
     # ========================================================================
     # Statistics
