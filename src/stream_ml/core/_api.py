@@ -61,7 +61,7 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
     # Priors on the parameters.
     priors: tuple[PriorBase[Array], ...] = ()
 
-    DEFAULT_BOUNDS: ClassVar  # TODO: PriorBounds[Any]
+    DEFAULT_PARAM_BOUNDS: ClassVar  # TODO: PriorBounds[Any]
 
     def __post_init__(self, *args: Any, **kwargs: Any) -> None:
         ...

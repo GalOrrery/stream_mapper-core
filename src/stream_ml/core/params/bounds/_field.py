@@ -32,7 +32,7 @@ class SupportsCoordandParamNames(Protocol):
 
     coord_names: tuple[str, ...]
     param_names: ParamNamesField
-    DEFAULT_BOUNDS: ClassVar
+    DEFAULT_PARAM_BOUNDS: ClassVar
 
 
 class ParamBoundsField(Generic[Array]):
@@ -122,7 +122,9 @@ class ParamBoundsField(Generic[Array]):
         # 2) Update from the user-specified bounds.
         # 3) Fix up the names so each bound references its parameter.
         value = (
-            ParamBounds.from_names(model.param_names, default=model.DEFAULT_BOUNDS)
+            ParamBounds.from_names(
+                model.param_names, default=model.DEFAULT_PARAM_BOUNDS
+            )
             | value
         )
         value._fixup_param_names()

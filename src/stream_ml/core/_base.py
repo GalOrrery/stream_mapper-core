@@ -156,7 +156,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
     # Priors on the parameters.
     priors: tuple[PriorBase[Array], ...] = ()
 
-    DEFAULT_BOUNDS: ClassVar = NoBounds()  # TODO: ClassVar[PriorBounds[Any]]
+    DEFAULT_PARAM_BOUNDS: ClassVar = NoBounds()  # TODO: ClassVar[PriorBounds[Any]]
 
     def __new__(
         cls: type[Self],
