@@ -5,6 +5,7 @@ from stream_ml.core.params.scales._core import (
     ParamScalers,
 )
 from stream_ml.core.params.scales._field import ParamScalerField
+from stream_ml.core.params.scales._utils import scale_params
 from stream_ml.core.params.scales.builtin import (
     Identity,
     ParamScaler,
@@ -20,4 +21,5 @@ __all__ = [
     "ParamScalers",
     "IncompleteParamScalers",
     "ParamScalerField",
+    "scale_params",
 ]
