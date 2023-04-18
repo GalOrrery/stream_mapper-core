@@ -268,9 +268,7 @@ class Data(Generic[Array]):
         return cast("ArrayT", TO_FORMAT_REGISTRY[(type(self.array), fmt)](self))
 
     @classmethod
-    def from_format(  # noqa: D417
-        cls, data: Any, /, fmt: str, **kwargs: Any
-    ) -> Data[Any]:
+    def from_format(cls, data: Any, /, fmt: str, **kwargs: Any) -> Data[Any]:
         """Convert the data from a different format.
 
         Parameters

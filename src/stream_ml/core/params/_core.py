@@ -197,12 +197,9 @@ def _set_param_params(
 ) -> Params[V]:
     if isinstance(key, str) or len(key) == 1:
         # We can shortcut copying sub-dicts
-        pum = {k: v for k, v in m._dict.items()}
+        pum = dict(m._dict.items())
         k = key if isinstance(key, str) else key[0]
-        if isinstance(value, dict):
-            pum[k] = FrozenDict(value)
-        else:
-            pum[k] = value
+        pum[k] = FrozenDict(value) if isinstance(value, dict) else value
         # Note this copies the dict one more time. It would be nice to avoid this.
         return type(m)(pum)
     else:
