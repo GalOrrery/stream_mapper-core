@@ -15,7 +15,7 @@ from stream_ml.core.params.bounds import ParamBoundsField
 from stream_ml.core.params.names import ParamNamesField
 from stream_ml.core.params.scales import ParamScalersField
 from stream_ml.core.prior.bounds import NoBounds
-from stream_ml.core.setup_package import WEIGHT_NAME, CompiledShim
+from stream_ml.core.setup_package import CompiledShim
 from stream_ml.core.typing import Array, ArrayNamespace, BoundsT, NNModel, NNNamespace
 from stream_ml.core.utils.compat import array_at
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
@@ -255,7 +255,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
             Zero everywhere except where the data are outside the
             coordinate bounds, where it is -inf.
         """
-        lnp = self.xp.zeros_like(mpars[(WEIGHT_NAME,)])
+        lnp = self.xp.zeros(data.array[:, 0].shape)
         where = reduce(
             self.xp.logical_or,
             (~within_bounds(data[k], *v) for k, v in self.coord_bounds.items()),
