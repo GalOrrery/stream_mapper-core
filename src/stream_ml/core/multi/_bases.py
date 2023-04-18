@@ -57,7 +57,7 @@ class ModelsBase(
     priors: tuple[PriorBase[Array], ...] = ()
     unpack_params_hooks: tuple[UnpackParamsCallable, ...] = ()
 
-    DEFAULT_BOUNDS: ClassVar[Any] = None  # TODO: ClassVar[PriorBase[Array]]
+    DEFAULT_PARAM_BOUNDS: ClassVar[Any] = None  # TODO: ClassVar[PriorBase[Array]]
 
     def __post_init__(self) -> None:
         """Post-init validation."""

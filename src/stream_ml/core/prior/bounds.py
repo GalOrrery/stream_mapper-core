@@ -13,7 +13,7 @@ from stream_ml.core.typing import Array, ArrayNamespace
 from stream_ml.core.utils.compat import array_at
 from stream_ml.core.utils.funcs import within_bounds
 
-__all__: list[str] = []
+__all__ = ["PriorBounds", "ClippedBounds", "NoBounds"]
 
 
 if TYPE_CHECKING:

@@ -2,23 +2,14 @@
 
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Literal,
-    Protocol,
-    TypeAlias,
-    TypeVar,
-    final,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Protocol, TypeAlias, TypeVar, final, overload
 
 from stream_ml.core.params.names._core import (
     IncompleteParamNames,
     ParamNames,
     is_complete,
 )
-from stream_ml.core.utils.sentinel import MISSING, Sentinel
+from stream_ml.core.utils.sentinel import MISSING, MissingT
 
 __all__: list[str] = []
 
@@ -66,11 +57,11 @@ class ParamNamesField:
         default: ParamNames
         | IncompleteParamNames
         | Sequence[IncompleteParamNameGroupT]
-        | Literal[Sentinel.MISSING] = MISSING,
+        | MissingT = MISSING,
         *,
         requires_all_coordinates: bool = True,
     ) -> None:
-        dft: ParamNames | IncompleteParamNames | Literal[Sentinel.MISSING]
+        dft: ParamNames | IncompleteParamNames | MissingT
         if default is MISSING:
             dft = MISSING
         elif isinstance(default, ParamNames | IncompleteParamNames):
@@ -80,7 +71,7 @@ class ParamNamesField:
         else:
             dft = IncompleteParamNames(default)
 
-        self._default: ParamNames | IncompleteParamNames | Literal[Sentinel.MISSING]
+        self._default: ParamNames | IncompleteParamNames | MissingT
         self._default = dft
 
         self.requires_all_coordinates = requires_all_coordinates
@@ -103,12 +94,11 @@ class ParamNamesField:
             val: ParamNames = getattr(obj, self._name)
             return val
 
-        default = self._default
-        if default is not MISSING:
-            return default
-        else:
+        if self._default is MISSING:
             msg = f"no default value for {self._name}"
             raise AttributeError(msg)
+
+        return self._default
 
     def __set__(
         self, model: SupportsCoordNames, value: ParamNames | IncompleteParamNames

@@ -12,10 +12,10 @@ from typing import (
 )
 
 from stream_ml.core.typing import Array
-from stream_ml.core.utils.scale.standard import StandardScaler
+from stream_ml.core.utils.scale import StandardScaler
 
 if TYPE_CHECKING:
-    from stream_ml.core.utils.scale.base import DataScaler
+    from stream_ml.core.utils.scale import DataScaler
 
 T = TypeVar("T", bound=str | EllipsisType)
 ParamScalerT = TypeVar("ParamScalerT", bound="ParamScaler[Array]")  # type: ignore[valid-type]  # noqa: E501

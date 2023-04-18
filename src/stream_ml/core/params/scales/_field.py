@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Generic, Literal, Protocol
+from typing import TYPE_CHECKING, Generic, Protocol
 
 from stream_ml.core.params.scales._core import (
     IncompleteParamScalers,
@@ -10,7 +10,7 @@ from stream_ml.core.params.scales._core import (
     is_completable,
 )
 from stream_ml.core.typing import Array
-from stream_ml.core.utils.sentinel import MISSING, Sentinel
+from stream_ml.core.utils.sentinel import MISSING, MissingT
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -29,7 +29,7 @@ class SupportsCoordandParamNames(Protocol):
     param_names: ParamNamesField
 
 
-class ParamScalerField(Generic[Array]):
+class ParamScalersField(Generic[Array]):
     """Dataclass descriptor for parameter bounds.
 
     Parameters
@@ -50,23 +50,19 @@ class ParamScalerField(Generic[Array]):
         self,
         default: ParamScalers[Array]
         | Mapping[str | EllipsisType, Mapping[str, ParamScaler[Array]]]
-        | Literal[Sentinel.MISSING] = MISSING,
+        | MissingT = MISSING,
     ) -> None:
-        dft: ParamScalers[Array] | IncompleteParamScalers[Array] | Literal[
-            Sentinel.MISSING
-        ]
+        dft: ParamScalers[Array] | IncompleteParamScalers[Array] | MissingT
         if default is MISSING:
             dft = MISSING
         elif isinstance(default, ParamScalers | IncompleteParamScalers):
             dft = default
         elif is_completable(default):
-            dft = ParamScalers(default)  # e.g. fills in None -> NoBounds
+            dft = ParamScalers(default)  # e.g. fills in None -> Identity
         else:
             dft = IncompleteParamScalers(default)
 
-        self._default: ParamScalers[Array] | IncompleteParamScalers[Array] | Literal[
-            Sentinel.MISSING
-        ]
+        self._default: ParamScalers[Array] | IncompleteParamScalers[Array] | MissingT
         self._default = dft
 
     def __set_name__(self, owner: type, name: str) -> None:

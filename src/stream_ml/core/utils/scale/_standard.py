@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, cast
 import numpy as np
 
 from stream_ml.core.data import Data
-from stream_ml.core.utils.scale.base import DataScaler, T
+from stream_ml.core.utils.scale._base import DataScaler, T
 
 __all__: list[str] = []
 

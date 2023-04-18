@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Protocol
 from stream_ml.core.params._core import Params, freeze_params, set_param
 from stream_ml.core.params.bounds import ParamBounds, ParamBoundsField
 from stream_ml.core.params.names import ParamNamesField
-from stream_ml.core.params.scales._field import ParamScalerField
+from stream_ml.core.params.scales._field import ParamScalersField
 from stream_ml.core.typing import Array, ArrayNamespace, NNModel
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 
@@ -56,12 +56,12 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
     # Bounds on the coordinates and parameters.
     coord_bounds: FrozenDictField[str, BoundsT] = FrozenDictField(FrozenDict())
     param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array](ParamBounds())
-    param_scalers: ParamScalerField[Array] = ParamScalerField[Array]()
+    param_scalers: ParamScalersField[Array] = ParamScalersField[Array]()
 
     # Priors on the parameters.
     priors: tuple[PriorBase[Array], ...] = ()
 
-    DEFAULT_BOUNDS: ClassVar  # TODO: PriorBounds[Any]
+    DEFAULT_PARAM_BOUNDS: ClassVar  # TODO: PriorBounds[Any]
 
     def __post_init__(self, *args: Any, **kwargs: Any) -> None:
         ...

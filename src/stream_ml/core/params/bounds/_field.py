@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from types import EllipsisType
-from typing import TYPE_CHECKING, ClassVar, Generic, Literal, Protocol, TypeVar
+from typing import TYPE_CHECKING, ClassVar, Generic, Protocol, TypeVar
 
 from stream_ml.core.params.bounds._core import (
     IncompleteParamBounds,
@@ -11,7 +11,7 @@ from stream_ml.core.params.bounds._core import (
     is_completable,
 )
 from stream_ml.core.typing import Array
-from stream_ml.core.utils.sentinel import MISSING, Sentinel
+from stream_ml.core.utils.sentinel import MISSING, MissingT
 
 __all__: list[str] = []
 
@@ -32,7 +32,7 @@ class SupportsCoordandParamNames(Protocol):
 
     coord_names: tuple[str, ...]
     param_names: ParamNamesField
-    DEFAULT_BOUNDS: ClassVar
+    DEFAULT_PARAM_BOUNDS: ClassVar
 
 
 class ParamBoundsField(Generic[Array]):
@@ -59,11 +59,9 @@ class ParamBoundsField(Generic[Array]):
             str | EllipsisType,
             PriorBounds[Array] | None | Mapping[str, PriorBounds[Array] | None],
         ]
-        | Literal[Sentinel.MISSING] = MISSING,
+        | MissingT = MISSING,
     ) -> None:
-        dft: ParamBounds[Array] | IncompleteParamBounds[Array] | Literal[
-            Sentinel.MISSING
-        ]
+        dft: ParamBounds[Array] | IncompleteParamBounds[Array] | MissingT
         if default is MISSING:
             dft = MISSING
         elif isinstance(default, ParamBounds | IncompleteParamBounds):
@@ -73,9 +71,7 @@ class ParamBoundsField(Generic[Array]):
         else:
             dft = IncompleteParamBounds(default)
 
-        self._default: ParamBounds[Array] | IncompleteParamBounds[Array] | Literal[
-            Sentinel.MISSING
-        ]
+        self._default: ParamBounds[Array] | IncompleteParamBounds[Array] | MissingT
         self._default = dft
 
     def __set_name__(self, owner: type, name: str) -> None:
@@ -84,10 +80,13 @@ class ParamBoundsField(Generic[Array]):
     def __get__(
         self, obj: object | None, _: type | None
     ) -> ParamBounds[Array] | IncompleteParamBounds[Array]:
+        # Accessing the descriptor on the class returns the default value.
         if obj is not None:
             val: ParamBounds[Array] = getattr(obj, self._name)
             return val
 
+        # Accessing the descriptor from the instance returns the default value
+        # unless the value is missing.
         default = self._default
         if default is MISSING:
             msg = f"no default value for {self._name}"
@@ -126,7 +125,9 @@ class ParamBoundsField(Generic[Array]):
         # 2) Update from the user-specified bounds.
         # 3) Fix up the names so each bound references its parameter.
         value = (
-            ParamBounds.from_names(model.param_names, default=model.DEFAULT_BOUNDS)
+            ParamBounds.from_names(
+                model.param_names, default=model.DEFAULT_PARAM_BOUNDS
+            )
             | value
         )
         value._fixup_param_names()

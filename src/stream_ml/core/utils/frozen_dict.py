@@ -39,9 +39,9 @@ from collections.abc import (
     ValuesView,
 )
 import textwrap
-from typing import Any, Generic, Literal, Protocol, TypeVar
+from typing import Any, Generic, Protocol, TypeVar
 
-from stream_ml.core.utils.sentinel import MISSING, Sentinel
+from stream_ml.core.utils.sentinel import MISSING, MissingT
 
 __all__ = ["FrozenDict", "freeze", "unfreeze"]
 
@@ -324,9 +324,9 @@ class FrozenDictField(Generic[K, V]):
         default: dict[K, V]
         | FrozenDict[K, V]
         | Sequence[tuple[K, V]]
-        | Literal[Sentinel.MISSING] = MISSING,
+        | MissingT = MISSING,
     ) -> None:
-        self._default: FrozenDict[K, V] | Literal[Sentinel.MISSING]
+        self._default: FrozenDict[K, V] | MissingT
         self._default = FrozenDict(default) if default is not MISSING else MISSING
 
     def __set_name__(self, owner: type, name: str) -> None:
