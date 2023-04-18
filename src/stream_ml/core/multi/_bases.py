@@ -115,6 +115,17 @@ class ModelsBase(
         msg = "cannot set coord_bounds"
         raise AttributeError(msg)
 
+    @property  # type: ignore[override]
+    def param_names(self) -> ParamNames:
+        """Parameter names."""
+        return self._param_names
+
+    @param_names.setter  # hack to match the Protocol
+    def param_names(self, value: Any) -> None:
+        """Set the parameter names."""
+        msg = "cannot set param_names"
+        raise AttributeError(msg)
+
     # ===============================================================
     # Mapping
 

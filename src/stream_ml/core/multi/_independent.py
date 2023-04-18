@@ -82,17 +82,6 @@ class IndependentModels(ModelsBase[Array, NNModel]):
         self._param_scalers = pss
 
     @property  # type: ignore[override]
-    def param_names(self) -> ParamNames:
-        """Parameter names."""
-        return self._param_names
-
-    @param_names.setter  # hack to match the Protocol
-    def param_names(self, value: Any) -> None:
-        """Set the parameter names."""
-        msg = "cannot set param_names"
-        raise AttributeError(msg)
-
-    @property  # type: ignore[override]
     def param_bounds(self) -> ParamBounds[Array]:
         """Coordinate names."""
         return self._param_bounds
