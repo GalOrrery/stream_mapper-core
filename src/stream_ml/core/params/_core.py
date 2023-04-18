@@ -82,13 +82,11 @@ class Params(FrozenDict[str, V | FrozenDict[str, V]]):
 
     def flatkeys(self) -> Iterable[str]:
         """Flat keys."""
-        for k, _ in self.flatitems():
-            yield k
+        return tuple(k for k, _ in self.flatitems())
 
     def flatvalues(self) -> Iterable[V]:
         """Flat values."""
-        for _, v in self.flatitems():
-            yield v
+        return tuple(v for _, v in self.flatitems())
 
     # =========================================================================
 
