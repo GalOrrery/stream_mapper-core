@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, cast
 
 from stream_ml.core.multi._bases import ModelsBase
-from stream_ml.core.params import ParamNames, Params
+from stream_ml.core.params import Params
 from stream_ml.core.setup_package import BACKGROUND_KEY, WEIGHT_NAME
 from stream_ml.core.typing import Array, NNModel
 from stream_ml.core.utils.funcs import get_prefixed_kwargs
@@ -41,12 +41,7 @@ class MixtureModel(ModelsBase[Array, NNModel]):
     """
 
     def __post_init__(self) -> None:
-        # Add the param_names  # TODO: make sure no duplicates
-        self._param_names: ParamNames = ParamNames(
-            (f"{c}.{p[0]}", p[1]) if isinstance(p, tuple) else f"{c}.{p}"
-            for c, m in self.components.items()
-            for p in m.param_names
-        )
+        super().__post_init__()
 
         # Check if the model has a background component.
         # If it does, then it must be the last component.
@@ -55,8 +50,6 @@ class MixtureModel(ModelsBase[Array, NNModel]):
             msg = "the background model must be the last component."
             raise KeyError(msg)
         self._includes_bkg: bool = includes_bkg
-
-        super().__post_init__()
 
     # ===============================================================
 

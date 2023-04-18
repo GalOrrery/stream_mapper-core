@@ -54,6 +54,8 @@ class IndependentModels(ModelsBase[Array, NNModel]):
     def __post_init__(self) -> None:
         self._mypyc_init_descriptor()  # TODO: Remove this when mypyc is fixed.
 
+        super().__post_init__()
+
         if self.has_weight.keys() != self.components.keys():
             msg = "has_weight must match components"
             raise ValueError(msg)
@@ -61,18 +63,10 @@ class IndependentModels(ModelsBase[Array, NNModel]):
             msg = "there must be at least one weight"
             raise ValueError(msg)
 
-        # Add the param_names  # TODO: make sure no duplicates
+        # Add the param_names
         # The first is the weight and it is shared across all components.
         self._param_names: ParamNames = ParamNames(
-            (
-                WEIGHT_NAME,
-                *tuple(
-                    (f"{c}.{p[0]}", p[1]) if isinstance(p, tuple) else f"{c}.{p}"
-                    for c, m in self.components.items()
-                    for p in m.param_names
-                    if p != WEIGHT_NAME
-                ),
-            ),
+            (WEIGHT_NAME, *tuple(self._param_names))
         )
 
         # Add the param_bounds  # TODO! not update internal to ParamBounds.
@@ -86,8 +80,6 @@ class IndependentModels(ModelsBase[Array, NNModel]):
         for n, m in self.components.items():
             pss._dict.update({f"{n}.{k}": v for k, v in m.param_scalers.items()})
         self._param_scalers = pss
-
-        super().__post_init__()
 
     @property  # type: ignore[override]
     def param_names(self) -> ParamNames:

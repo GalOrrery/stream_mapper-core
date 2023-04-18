@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Protocol
 
 from stream_ml.core._api import Model
 from stream_ml.core._base import NN_NAMESPACE
+from stream_ml.core.params import ParamNames
 from stream_ml.core.setup_package import CompiledShim
 from stream_ml.core.typing import Array, ArrayNamespace, BoundsT, NNModel
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
@@ -82,6 +83,13 @@ class ModelsBase(
         for m in self.components.values():
             cbs.update(m.coord_bounds)
         self._coord_bounds = FrozenDict(cbs)
+
+        # Add the param_names  # TODO: make sure no duplicates
+        self._param_names: ParamNames = ParamNames(
+            (f"{c}.{p[0]}", p[1]) if isinstance(p, tuple) else f"{c}.{p}"
+            for c, m in self.components.items()
+            for p in m.param_names
+        )
 
         super().__post_init__()
 
