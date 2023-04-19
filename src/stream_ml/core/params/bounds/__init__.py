@@ -8,7 +8,10 @@ from stream_ml.core.params.bounds._core import (
     ParamBoundsBase,
     is_completable,
 )
-from stream_ml.core.params.bounds._field import ParamBoundsField
+from stream_ml.core.params.bounds._field import (
+    MixtureParamBoundsField,
+    ParamBoundsField,
+)
 
 __all__ = [
     "ParamBoundsBase",
@@ -16,4 +19,5 @@ __all__ = [
     "IncompleteParamBounds",
     "is_completable",
     "ParamBoundsField",
+    "MixtureParamBoundsField",
 ]

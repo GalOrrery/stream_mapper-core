@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from stream_ml.core.multi._bases import ModelsBase
 from stream_ml.core.params import ParamBounds, ParamNames, Params, ParamScalers
-from stream_ml.core.setup_package import WEIGHT_NAME
 from stream_ml.core.typing import Array, NNModel
+from stream_ml.core.utils.cached_property import cached_property
 from stream_ml.core.utils.funcs import get_prefixed_kwargs
 
 if TYPE_CHECKING:
@@ -48,49 +48,30 @@ class IndependentModels(ModelsBase[Array, NNModel]):
         mixture model.
     """
 
-    def __post_init__(self) -> None:
-        self._mypyc_init_descriptor()  # TODO: Remove this when mypyc is fixed.
-        super().__post_init__()
-
-        # Add the param_names
-        # The first is the weight and it is shared across all components.
-        self._param_names: ParamNames = ParamNames(
-            (WEIGHT_NAME, *tuple(self._param_names))
+    @cached_property
+    def param_names(self) -> ParamNames:  # type: ignore[override]
+        return ParamNames(
+            (f"{c}.{p[0]}", p[1]) if isinstance(p, tuple) else f"{c}.{p}"
+            for c, m in self.components.items()
+            for p in m.param_names
         )
 
-        # Add the param_bounds  # TODO! not update internal to ParamBounds.
-        cps: ParamBounds[Array] = ParamBounds()
-        for n, m in self.components.items():
-            cps._dict.update({f"{n}.{k}": v for k, v in m.param_bounds.items()})
-        self._param_bounds = cps
-
-        # Add the param_scalers  # TODO! not update internal to ParamScalers.
-        pss: ParamScalers[Array] = ParamScalers()
-        for n, m in self.components.items():
-            pss._dict.update({f"{n}.{k}": v for k, v in m.param_scalers.items()})
-        self._param_scalers = pss
-
-    @property  # type: ignore[override]
-    def param_bounds(self) -> ParamBounds[Array]:
+    @cached_property
+    def param_bounds(self) -> ParamBounds[Array]:  # type: ignore[override]
         """Coordinate names."""
-        return self._param_bounds
+        cps = {}
+        for n, m in self.components.items():
+            cps.update({f"{n}.{k}": v for k, v in m.param_bounds.items()})
+        return ParamBounds[Array]()
 
-    @param_bounds.setter  # hack to match the Protocol
-    def param_bounds(self, value: Any) -> None:
-        """Set the parameter bounds."""
-        msg = "cannot set param_bounds"
-        raise AttributeError(msg)
-
-    @property  # type: ignore[override]
-    def param_scalers(self) -> ParamScalers[Array]:
+    @cached_property
+    def param_scalers(self) -> ParamScalers[Array]:  # type: ignore[override]
         """Parameter scalers."""
-        return self._param_scalers
-
-    @param_scalers.setter  # hack to match the Protocol
-    def param_scalers(self, value: Any) -> None:
-        """Set the parameter scalers."""
-        msg = "cannot set param_scalers"
-        raise AttributeError(msg)
+        # Add the param_scalers  # TODO! not update internal to ParamScalers.
+        pss = {}
+        for n, m in self.components.items():
+            pss.update({f"{n}.{k}": v for k, v in m.param_scalers.items()})
+        return ParamScalers[Array](pss)
 
     # ===============================================================
 

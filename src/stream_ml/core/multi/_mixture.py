@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, cast
 from stream_ml.core import NNField
 from stream_ml.core.multi._bases import ModelsBase
 from stream_ml.core.params import ParamBounds, ParamNames, Params
-from stream_ml.core.params.bounds import ParamBoundsField
+from stream_ml.core.params.bounds import MixtureParamBoundsField
 from stream_ml.core.params.scales import ParamScalersField
 from stream_ml.core.setup_package import BACKGROUND_KEY
 from stream_ml.core.typing import Array, NNModel
@@ -58,8 +58,10 @@ class MixtureModel(ModelsBase[Array, NNModel]):
     indep_coord_names: tuple[str, ...] = ("phi1",)
 
     # Model Parameters, generally produced by the neural network.
-    # param_names: ParamNamesField = ParamNamesField()
-    param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array](ParamBounds())
+    # param_names is a cached property.
+    param_bounds: MixtureParamBoundsField[Array] = MixtureParamBoundsField[Array](
+        ParamBounds()
+    )
     param_scalers: ParamScalersField[Array] = ParamScalersField()
     # TODO! Have Identity as the default
 
@@ -73,6 +75,7 @@ class MixtureModel(ModelsBase[Array, NNModel]):
             msg = "the background model must be the last component."
             raise KeyError(msg)
         self._includes_bkg: bool = includes_bkg
+        self._bkg_slc = slice(-1) if includes_bkg else slice(None)
 
         # Add scaling to the param bounds  # TODO! unfreeze then freeze
         for k, v in self.param_bounds.items():
@@ -88,7 +91,19 @@ class MixtureModel(ModelsBase[Array, NNModel]):
     @cached_property
     def param_names(self) -> ParamNames:  # type: ignore[override]
         """Parameter names."""
-        return ParamNames(tuple(f"{c}.weight" for c in self.components))
+        names: list[str | tuple[str, tuple[str, ...]]] = []
+        for c, m in self.components.items():
+            names.append(f"{c}.weight")
+            names.extend(
+                (f"{c}.{p[0]}", p[1]) if isinstance(p, tuple) else f"{c}.{p}"
+                for p in m.param_names
+            )
+        return ParamNames(names)
+
+    @cached_property
+    def mixture_param_names(self) -> ParamNames:
+        """Mixture parameter names."""
+        return ParamNames([f"{c}.weight" for c in self.components])
 
     # ===============================================================
 
@@ -109,11 +124,9 @@ class MixtureModel(ModelsBase[Array, NNModel]):
         """
         # Unpack the parameters
         pars: dict[str, Array | Mapping[str, Array]] = {}
-        j = 0
+        j: int = 0
         for n, m in self.components.items():  # iter thru models
-            # Get relevant parameters by index
-            marr = arr[:, slice(j + 1, j + 1 + len(m.param_names.flat))]
-
+            # Weight
             if n != BACKGROUND_KEY:
                 weight = arr[:, j : j + 1]
             else:
@@ -131,15 +144,19 @@ class MixtureModel(ModelsBase[Array, NNModel]):
                         for k in tuple(self.components.keys())[:-1]
                         # skipping the background, which is the last component
                     ),
-                    start=self.xp.zeros((len(marr), 1), dtype=marr.dtype),
+                    start=self.xp.zeros((len(arr), 1), dtype=arr.dtype),
                 )
 
             # Add the component's parameters, prefixed with the component name
             pars[n + ".weight"] = weight
-            pars.update(m.unpack_params_from_arr(marr).add_prefix(n + "."))
+            j += 1  # Increment the index (weight)
 
-            # Increment the index (weight + parameters)
-            j += len(m.param_names.flat) + 1
+            # Parameters
+            if len(m.param_names.flat) == 0:
+                continue
+            marr = arr[:, slice(j, j + len(m.param_names.flat))]
+            pars.update(m.unpack_params_from_arr(marr).add_prefix(n + "."))
+            j += len(m.param_names.flat)  # Increment the index (parameters)
 
         # Allow for conversation between components
         for hook in self.unpack_params_hooks:
