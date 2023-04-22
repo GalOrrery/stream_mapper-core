@@ -9,9 +9,9 @@ from typing import TYPE_CHECKING, Any, ClassVar, Protocol
 
 from stream_ml.core._api import Model
 from stream_ml.core._base import NN_NAMESPACE
-from stream_ml.core.params import ParamNames
 from stream_ml.core.setup_package import CompiledShim
 from stream_ml.core.typing import Array, ArrayNamespace, BoundsT, NNModel
+from stream_ml.core.utils.cached_property import cached_property
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
@@ -20,6 +20,9 @@ if TYPE_CHECKING:
     from stream_ml.core.prior import PriorBase
 
 __all__: list[str] = []
+
+
+_SET_MSG = "cannot set {} on this model."
 
 
 def _get_namespace(
@@ -71,60 +74,25 @@ class ModelsBase(
             msg = "must have at least one component."
             raise ValueError(msg)
 
-        # Add the coord_names
+        super().__post_init__()
+
+    @cached_property
+    def coord_names(self) -> tuple[str, ...]:  # type: ignore[override]
+        """Coordinate names."""
         cns: list[str] = []
         for m in self.components.values():
             cns.extend(c for c in m.coord_names if c not in cns)
-        self._coord_names: tuple[str, ...] = tuple(cns)
+        return tuple(cns)
 
+    @cached_property  # type: ignore[override]
+    def coord_bounds(self) -> FrozenDict[str, BoundsT]:
+        """Coordinate names."""
         # Add the coord_bounds
         # TODO: make sure duplicates have the same bounds
         cbs: dict[str, BoundsT] = {}
         for m in self.components.values():
             cbs.update(m.coord_bounds)
-        self._coord_bounds = FrozenDict(cbs)
-
-        # Add the param_names  # TODO: make sure no duplicates
-        self._param_names: ParamNames = ParamNames(
-            (f"{c}.{p[0]}", p[1]) if isinstance(p, tuple) else f"{c}.{p}"
-            for c, m in self.components.items()
-            for p in m.param_names
-        )
-
-        super().__post_init__()
-
-    @property
-    def coord_names(self) -> tuple[str, ...]:
-        """Coordinate names."""
-        return self._coord_names
-
-    @coord_names.setter  # hack to match the Protocol
-    def coord_names(self, value: Any) -> None:
-        """Set the coordinate names."""
-        msg = "cannot set coord_names"
-        raise AttributeError(msg)
-
-    @property  # type: ignore[override]
-    def coord_bounds(self) -> FrozenDict[str, BoundsT]:
-        """Coordinate names."""
-        return self._coord_bounds
-
-    @coord_bounds.setter  # hack to match the Protocol
-    def coord_bounds(self, value: Any) -> None:
-        """Set the coordinate bounds."""
-        msg = "cannot set coord_bounds"
-        raise AttributeError(msg)
-
-    @property  # type: ignore[override]
-    def param_names(self) -> ParamNames:
-        """Parameter names."""
-        return self._param_names
-
-    @param_names.setter  # hack to match the Protocol
-    def param_names(self, value: Any) -> None:
-        """Set the parameter names."""
-        msg = "cannot set param_names"
-        raise AttributeError(msg)
+        return FrozenDict(cbs)
 
     # ===============================================================
     # Mapping
@@ -212,8 +180,10 @@ class ModelsBase(
         lnp: Array = self.xp.zeros(()) if current_lnp is None else current_lnp
         for name, m in self.components.items():
             lnp = lnp + m.ln_prior(mpars.get_prefixed(name + "."), data)
-        # No need to do the parameter boundss here, since they are already
-        # included in the component priors.
-        for prior in self.priors:  # Plugin for priors
+        # Parameter Bounds
+        for bounds in self.param_bounds.flatvalues():
+            lnp = lnp + bounds.logpdf(mpars, data, self, lnp, xp=self.xp)
+        # Plugin for priors
+        for prior in self.priors:
             lnp = lnp + prior.logpdf(mpars, data, self, lnp, xp=self.xp)
         return lnp
