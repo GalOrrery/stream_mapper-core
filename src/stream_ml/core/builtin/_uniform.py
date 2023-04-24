@@ -78,7 +78,7 @@ class Uniform(ModelBase[Array, NNModel]):
         Array
         """
         if mask is not None:
-            indicator = mask[tuple(self.coord_bounds.keys())].array
+            indicator = self.xp.squeeze(mask[:, tuple(self.coord_bounds.keys())])
         elif self.require_mask:
             msg = "mask is required"
             raise ValueError(msg)

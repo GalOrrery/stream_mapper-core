@@ -283,3 +283,8 @@ class ArrayNamespace(Protocol[Array]):
     def sqrt(array: Array) -> Array:
         """Square root."""
         ...
+
+    @staticmethod
+    def squeeze(array: Array, axis: None | int | tuple[int, ...] = ...) -> Array:
+        """Squeeze."""
+        ...
