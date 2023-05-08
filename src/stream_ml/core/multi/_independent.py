@@ -129,7 +129,7 @@ class IndependentModels(ModelsBase[Array, NNModel]):
             # Add the component's parameters, prefixed with the component name
             # TODO: fix type ignore
             pars.update(
-                m.unpack_params_from_arr(marr, extras=mextras).add_prefix(n)  # type: ignore[arg-type]  # noqa: E501
+                m.unpack_params_from_arr(marr, extras=mextras).add_prefix(n + ".")  # type: ignore[arg-type]  # noqa: E501
             )
 
             # Increment the index
