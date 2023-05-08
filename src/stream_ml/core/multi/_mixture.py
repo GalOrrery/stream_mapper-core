@@ -107,7 +107,11 @@ class MixtureModel(ModelsBase[Array, NNModel]):
 
     # ===============================================================
 
-    def unpack_params_from_arr(self, arr: Array) -> Params[Array]:
+    def unpack_params_from_arr(
+        self,
+        arr: Array,
+        extras: dict[str | tuple[str] | tuple[str, str], Array] | None = None,
+    ) -> Params[Array]:
         """Unpack parameters into a dictionary.
 
         This function takes a parameter array and unpacks it into a dictionary
@@ -117,11 +121,15 @@ class MixtureModel(ModelsBase[Array, NNModel]):
         ----------
         arr : Array
             Parameter array.
+        extras : dict[str | tuple[str] | tuple[str, str], Array] | None, keyword-only
+            Extra arrays to add.
 
         Returns
         -------
         Params[Array]
         """
+        extras_ = {} if extras is None else extras
+
         # Unpack the parameters
         pars: dict[str, Array | Mapping[str, Array]] = {}
         j: int = 0
@@ -147,15 +155,19 @@ class MixtureModel(ModelsBase[Array, NNModel]):
                     start=self.xp.zeros((len(arr), 1), dtype=arr.dtype),
                 )
 
-            # Add the component's parameters, prefixed with the component name
-            pars[n + ".weight"] = weight
             j += 1  # Increment the index (weight)
 
             # Parameters
             if len(m.param_names.flat) == 0:
-                continue
+                # Add the component's parameters, prefixed with the component name
+                pars[f"{n}.weight"] = weight
+
             marr = arr[:, slice(j, j + len(m.param_names.flat))]
-            pars.update(m.unpack_params_from_arr(marr).add_prefix(n + "."))
+            pars.update(
+                m.unpack_params_from_arr(
+                    marr, extras=extras_ | {"weight": weight}
+                ).add_prefix(n + ".")
+            )
             j += len(m.param_names.flat)  # Increment the index (parameters)
 
         # Allow for conversation between components

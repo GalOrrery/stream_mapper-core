@@ -6,14 +6,18 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from stream_ml.core.multi._bases import ModelsBase
-from stream_ml.core.params import ParamBounds, ParamNames, Params, ParamScalers
+from stream_ml.core.params import (
+    ParamBounds,
+    ParamNames,
+    Params,
+    ParamScalers,
+    set_param,
+)
 from stream_ml.core.typing import Array, NNModel
 from stream_ml.core.utils.cached_property import cached_property
 from stream_ml.core.utils.funcs import get_prefixed_kwargs
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
-
     from stream_ml.core.data import Data
 
 __all__: list[str] = []
@@ -75,7 +79,11 @@ class IndependentModels(ModelsBase[Array, NNModel]):
 
     # ===============================================================
 
-    def unpack_params_from_arr(self, arr: Array) -> Params[Array]:
+    def unpack_params_from_arr(
+        self,
+        arr: Array,
+        extras: dict[str | tuple[str] | tuple[str, str], Array] | None = None,
+    ) -> Params[Array]:
         """Unpack parameters into a dictionary.
 
         This function takes a parameter array and unpacks it into a dictionary
@@ -85,13 +93,21 @@ class IndependentModels(ModelsBase[Array, NNModel]):
         ----------
         arr : Array
             Parameter array.
+        extras : dict[str | tuple[str] | tuple[str, str], Array] | None, optional
+            Extra parameters to add.
 
         Returns
         -------
         Params[Array]
         """
         # Unpack the parameters
-        pars: dict[str, Array | Mapping[str, Array]] = {}
+        pars: dict[str, Array | dict[str, Array]] = {}
+
+        mextras: dict[str, Array] | None = (
+            {"weight": extras["weight"]}
+            if extras is not None and "weight" in extras
+            else None
+        )
 
         # Iterate through the components
         j: int = 0
@@ -111,11 +127,19 @@ class IndependentModels(ModelsBase[Array, NNModel]):
                 continue
 
             # Add the component's parameters, prefixed with the component name
-            pars.update(m.unpack_params_from_arr(marr).add_prefix(n + "."))
+            # TODO: fix type ignore
+            pars.update(
+                m.unpack_params_from_arr(marr, extras=mextras).add_prefix(n)  # type: ignore[arg-type]  # noqa: E501
+            )
 
             # Increment the index
             j += delta
 
+        # Add the extras
+        for k, v in (extras or {}).items():
+            set_param(pars, k, v)
+
+        # Apply the unpack_params_hooks
         for hook in self.unpack_params_hooks:
             pars = hook(pars)
 
