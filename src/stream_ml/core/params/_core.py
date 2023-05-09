@@ -98,7 +98,7 @@ class Params(FrozenDict[str, V | FrozenDict[str, V]]):
 
     def add_prefix(self, prefix: str, /) -> Params[V]:
         """Add the prefix to the keys."""
-        return type(self)({f"{prefix}{k}": v for k, v in self.items()})
+        return add_prefix(self, prefix)
 
 
 #####################################################################
@@ -114,7 +114,7 @@ def unfreeze_params(
     /,
 ) -> dict[str, V | dict[str, V]]:
     """Unfreeze a mapping of parameters."""
-    return {k: v if not isinstance(v, Mapping) else dict(v) for k, v in pars.items()}
+    return {k: (v if not isinstance(v, Mapping) else dict(v)) for k, v in pars.items()}
 
 
 # -----------------------------------------------------
@@ -150,7 +150,7 @@ def set_param(
 
     Parameters
     ----------
-    m : Mapping[str, V | Mapping[str, V]], positional-only
+    m : MutableMapping[str, V | MutableMapping[str, V]], positional-only
         The dictionary to set the parameter on.
     key : str | tuple[str] | tuple[str, str]
         The key to set.
@@ -203,3 +203,28 @@ def _set_param_params(
     else:
         # Note this copies the dict one more time. It would be nice to avoid this.
         return type(m)(set_param(m.unfreeze(), key, value))
+
+
+# -----------------------------------------------------
+
+
+M = TypeVar("M", dict[str, V], Params[V])  # type: ignore[valid-type]
+
+
+def add_prefix(m: M, /, prefix: str) -> M:
+    """Add the prefix to the keys.
+
+    Parameters
+    ----------
+    m : Mapping, positional-only
+        The mapping to add the prefix to. Keys must be strings.
+    prefix : str
+        The prefix to add.
+
+    Returns
+    -------
+    Mapping
+        The mapping with the prefix added to the keys.
+        Same type as the input mapping.
+    """
+    return m.__class__({f"{prefix}{k}": v for k, v in m.items()})

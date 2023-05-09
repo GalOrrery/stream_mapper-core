@@ -3,11 +3,17 @@
 from __future__ import annotations
 
 from dataclasses import KW_ONLY, dataclass, replace
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Literal, cast, overload
 
 from stream_ml.core import NNField
 from stream_ml.core.multi._bases import ModelsBase
-from stream_ml.core.params import ParamBounds, ParamNames, Params
+from stream_ml.core.params import (
+    ParamBounds,
+    ParamNames,
+    Params,
+    add_prefix,
+    freeze_params,
+)
 from stream_ml.core.params.bounds import MixtureParamBoundsField
 from stream_ml.core.params.scales import ParamScalersField
 from stream_ml.core.setup_package import BACKGROUND_KEY
@@ -21,8 +27,7 @@ from stream_ml.core.utils.sentinel import MISSING
 __all__: list[str] = []
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
-
+    from stream_ml.core._api import ParamKeyFull, ParamsLikeDict
     from stream_ml.core.data import Data
 
 
@@ -107,7 +112,42 @@ class MixtureModel(ModelsBase[Array, NNModel]):
 
     # ===============================================================
 
-    def unpack_params_from_arr(self, arr: Array) -> Params[Array]:
+    @overload
+    def unpack_params_from_arr(
+        self,
+        arr: Array,
+        /,
+        extras: dict[ParamKeyFull, Array] | None,
+        *,
+        freeze: Literal[False],
+    ) -> ParamsLikeDict[Array]:
+        ...
+
+    @overload
+    def unpack_params_from_arr(
+        self,
+        arr: Array,
+        /,
+        extras: dict[ParamKeyFull, Array] | None,
+        *,
+        freeze: Literal[True] = ...,
+    ) -> Params[Array]:
+        ...
+
+    @overload
+    def unpack_params_from_arr(
+        self, arr: Array, /, extras: dict[ParamKeyFull, Array] | None, *, freeze: bool
+    ) -> Params[Array] | ParamsLikeDict[Array]:
+        ...
+
+    def unpack_params_from_arr(
+        self,
+        arr: Array,
+        /,
+        extras: dict[ParamKeyFull, Array] | None = None,
+        *,
+        freeze: bool = True,
+    ) -> Params[Array] | ParamsLikeDict[Array]:
         """Unpack parameters into a dictionary.
 
         This function takes a parameter array and unpacks it into a dictionary
@@ -117,13 +157,19 @@ class MixtureModel(ModelsBase[Array, NNModel]):
         ----------
         arr : Array
             Parameter array.
+        extras : dict[ParamKeyFull, Array] | None, keyword-only
+            Extra arrays to add.
+        freeze : bool, optional keyword-only
+            Whether to freeze the parameters. Default is `True`.
 
         Returns
         -------
         Params[Array]
         """
+        extras_: dict[ParamKeyFull, Array] = {} if extras is None else extras
+
         # Unpack the parameters
-        pars: dict[str, Array | Mapping[str, Array]] = {}
+        pars: ParamsLikeDict[Array] = {}
         j: int = 0
         for n, m in self.components.items():  # iter thru models
             # Weight
@@ -147,22 +193,37 @@ class MixtureModel(ModelsBase[Array, NNModel]):
                     start=self.xp.zeros((len(arr), 1), dtype=arr.dtype),
                 )
 
-            # Add the component's parameters, prefixed with the component name
-            pars[n + ".weight"] = weight
             j += 1  # Increment the index (weight)
 
-            # Parameters
+            # --- Parameters ---
+
+            # If there are no parameters, then just add the weight
             if len(m.param_names.flat) == 0:
+                # Add the component's parameters, prefixed with the component name
+                pars[f"{n}.weight"] = weight
                 continue
+
+            # Otherwise, get the relevant slice of the array
             marr = arr[:, slice(j, j + len(m.param_names.flat))]
-            pars.update(m.unpack_params_from_arr(marr).add_prefix(n + "."))
+
+            # Add the component's parameters, prefixed with the component name
+            pars.update(
+                add_prefix(
+                    m.unpack_params_from_arr(
+                        marr,
+                        extras=extras_ | {"weight": weight},  # pass the weight
+                        freeze=False,
+                    ),
+                    n + ".",
+                )
+            )
             j += len(m.param_names.flat)  # Increment the index (parameters)
 
         # Allow for conversation between components
         for hook in self.unpack_params_hooks:
             pars = hook(pars)
 
-        return Params(pars)
+        return freeze_params(pars) if freeze else pars
 
     # ===============================================================
 

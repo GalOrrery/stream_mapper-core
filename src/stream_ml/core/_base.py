@@ -7,7 +7,17 @@ from dataclasses import KW_ONLY, dataclass, field, fields, replace
 from functools import reduce
 from math import inf
 import textwrap
-from typing import TYPE_CHECKING, Any, ClassVar, Generic, Protocol, TypeVar, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Generic,
+    Literal,
+    Protocol,
+    TypeVar,
+    cast,
+    overload,
+)
 
 from stream_ml.core._api import Model
 from stream_ml.core.params import ParamBounds, Params, freeze_params, set_param
@@ -27,6 +37,7 @@ __all__: list[str] = []
 
 
 if TYPE_CHECKING:
+    from stream_ml.core._api import ParamKeyFull, ParamsLikeDict
     from stream_ml.core.data import Data
     from stream_ml.core.prior import PriorBase
 
@@ -212,7 +223,42 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
 
     # ========================================================================
 
-    def unpack_params_from_arr(self, arr: Array, /) -> Params[Array]:
+    @overload
+    def unpack_params_from_arr(
+        self,
+        arr: Array,
+        /,
+        extras: dict[ParamKeyFull, Array] | None,
+        *,
+        freeze: Literal[False],
+    ) -> ParamsLikeDict[Array]:
+        ...
+
+    @overload
+    def unpack_params_from_arr(
+        self,
+        arr: Array,
+        /,
+        extras: dict[ParamKeyFull, Array] | None,
+        *,
+        freeze: Literal[True] = ...,
+    ) -> Params[Array]:
+        ...
+
+    @overload
+    def unpack_params_from_arr(
+        self, arr: Array, /, extras: dict[ParamKeyFull, Array] | None, *, freeze: bool
+    ) -> Params[Array] | ParamsLikeDict[Array]:
+        ...
+
+    def unpack_params_from_arr(
+        self,
+        arr: Array,
+        /,
+        extras: dict[ParamKeyFull, Array] | None = None,
+        *,
+        freeze: bool = True,
+    ) -> Params[Array] | ParamsLikeDict[Array]:
         """Unpack parameters into a dictionary.
 
         This function takes the NN output array and unpacks it into a dictionary
@@ -222,18 +268,27 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         ----------
         arr : Array, positional-only
             Parameter array.
+        extras : dict[str | tuple[str] | tuple[str, str], Array] | None, keyword-only
+            Extra arrays to add.
+        freeze : bool, optional keyword-only
+            Whether to freeze the parameters. Default is `True`.
 
         Returns
         -------
         Params[Array]
         """
-        pars: dict[str, Array | dict[str, Array]] = {}
+        pars: ParamsLikeDict[Array] = {}
+        k: ParamKeyFull
         for i, k in enumerate(self.param_names.flats):
             # First unscale
             v = self.param_scalers[k].inverse_transform(arr[:, i : i + 1])
             # Then set in the nested dict structure
             set_param(pars, k, v)
-        return freeze_params(pars)
+
+        for k, v in (extras or {}).items():
+            set_param(pars, k, v)
+
+        return freeze_params(pars) if freeze else pars
 
     # ========================================================================
     # Statistics
