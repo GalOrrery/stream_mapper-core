@@ -195,17 +195,24 @@ class MixtureModel(ModelsBase[Array, NNModel]):
 
             j += 1  # Increment the index (weight)
 
-            # Parameters
+            # --- Parameters ---
+
+            # If there are no parameters, then just add the weight
             if len(m.param_names.flat) == 0:
                 # Add the component's parameters, prefixed with the component name
                 pars[f"{n}.weight"] = weight
+                continue
 
+            # Otherwise, get the relevant slice of the array
             marr = arr[:, slice(j, j + len(m.param_names.flat))]
 
+            # Add the component's parameters, prefixed with the component name
             pars.update(
                 add_prefix(
                     m.unpack_params_from_arr(
-                        marr, extras=extras_ | {"weight": weight}, freeze=False
+                        marr,
+                        extras=extras_ | {"weight": weight},  # pass the weight
+                        freeze=False,
                     ),
                     n + ".",
                 )
