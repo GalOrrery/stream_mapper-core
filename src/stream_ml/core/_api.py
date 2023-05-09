@@ -109,6 +109,7 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
         return freeze_params(pars)
 
     @overload
+    @abstractmethod
     def unpack_params_from_arr(
         self,
         arr: Array,
@@ -120,6 +121,7 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
         ...
 
     @overload
+    @abstractmethod
     def unpack_params_from_arr(
         self,
         arr: Array,
@@ -131,12 +133,13 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
         ...
 
     @overload
+    @abstractmethod
     def unpack_params_from_arr(
         self, arr: Array, /, extras: dict[ParamKeyFull, Array] | None, *, freeze: bool
     ) -> Params[Array] | ParamsLikeDict[Array]:
         ...
 
-    # TODO: make abstract
+    @abstractmethod
     def unpack_params_from_arr(
         self,
         arr: Array,
