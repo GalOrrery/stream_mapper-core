@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, ClassVar, Protocol
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Protocol, TypeAlias, overload
 
 from stream_ml.core.params._core import Params, freeze_params, set_param
 from stream_ml.core.params.bounds import ParamBounds, ParamBoundsField
@@ -18,6 +18,9 @@ if TYPE_CHECKING:
     from stream_ml.core.data import Data
     from stream_ml.core.prior._base import PriorBase
     from stream_ml.core.typing import BoundsT, NNNamespace
+
+    ParamKeyFull: TypeAlias = str | tuple[str] | tuple[str, str]
+    ParamsLikeDict: TypeAlias = dict[str, Array | dict[str, Array]]
 
 __all__: list[str] = []
 
@@ -90,7 +93,7 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
             Nested dictionary of parameters wth parameters grouped by coordinate
             name.
         """
-        pars: dict[str, Array | dict[str, Array]] = {}
+        pars: ParamsLikeDict[Array] = {}
 
         for k in packed_pars:
             # Find the non-coordinate-specific parameters.
@@ -105,13 +108,43 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
 
         return freeze_params(pars)
 
-    @abstractmethod
+    @overload
     def unpack_params_from_arr(
         self,
         arr: Array,
         /,
-        extras: dict[str | tuple[str] | tuple[str, str], Array] | None = None,
+        extras: dict[ParamKeyFull, Array] | None,
+        *,
+        freeze: Literal[False],
+    ) -> ParamsLikeDict[Array]:
+        ...
+
+    @overload
+    def unpack_params_from_arr(
+        self,
+        arr: Array,
+        /,
+        extras: dict[ParamKeyFull, Array] | None,
+        *,
+        freeze: Literal[True] = ...,
     ) -> Params[Array]:
+        ...
+
+    @overload
+    def unpack_params_from_arr(
+        self, arr: Array, /, extras: dict[ParamKeyFull, Array] | None, *, freeze: bool
+    ) -> Params[Array] | ParamsLikeDict[Array]:
+        ...
+
+    # TODO: make abstract
+    def unpack_params_from_arr(
+        self,
+        arr: Array,
+        /,
+        extras: dict[ParamKeyFull, Array] | None = None,
+        *,
+        freeze: bool = True,
+    ) -> Params[Array] | ParamsLikeDict[Array]:
         """Unpack parameters into a dictionary.
 
         This function takes a parameter array and unpacks it into a dictionary
@@ -123,6 +156,8 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
             Parameter array.
         extras : dict[str, Array] | None, optional
             Additional parameters to add.
+        freeze : bool, optional keyword-only
+            Whether to freeze the parameters. Default is `True`.
 
         Returns
         -------

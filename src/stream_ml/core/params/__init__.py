@@ -2,6 +2,7 @@
 
 from stream_ml.core.params._core import (
     Params,
+    add_prefix,
     freeze_params,
     set_param,
     unfreeze_params,
@@ -18,4 +19,5 @@ __all__ = [
     "freeze_params",
     "unfreeze_params",
     "set_param",
+    "add_prefix",
 ]

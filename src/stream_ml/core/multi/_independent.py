@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal, overload
 
 from stream_ml.core.multi._bases import ModelsBase
 from stream_ml.core.params import (
@@ -11,6 +11,8 @@ from stream_ml.core.params import (
     ParamNames,
     Params,
     ParamScalers,
+    add_prefix,
+    freeze_params,
     set_param,
 )
 from stream_ml.core.typing import Array, NNModel
@@ -18,6 +20,7 @@ from stream_ml.core.utils.cached_property import cached_property
 from stream_ml.core.utils.funcs import get_prefixed_kwargs
 
 if TYPE_CHECKING:
+    from stream_ml.core._api import ParamKeyFull, ParamsLikeDict
     from stream_ml.core.data import Data
 
 __all__: list[str] = []
@@ -79,11 +82,42 @@ class IndependentModels(ModelsBase[Array, NNModel]):
 
     # ===============================================================
 
+    @overload
     def unpack_params_from_arr(
         self,
         arr: Array,
-        extras: dict[str | tuple[str] | tuple[str, str], Array] | None = None,
+        /,
+        extras: dict[ParamKeyFull, Array] | None,
+        *,
+        freeze: Literal[False],
+    ) -> ParamsLikeDict[Array]:
+        ...
+
+    @overload
+    def unpack_params_from_arr(
+        self,
+        arr: Array,
+        /,
+        extras: dict[ParamKeyFull, Array] | None,
+        *,
+        freeze: Literal[True] = ...,
     ) -> Params[Array]:
+        ...
+
+    @overload
+    def unpack_params_from_arr(
+        self, arr: Array, /, extras: dict[ParamKeyFull, Array] | None, *, freeze: bool
+    ) -> Params[Array] | ParamsLikeDict[Array]:
+        ...
+
+    def unpack_params_from_arr(
+        self,
+        arr: Array,
+        /,
+        extras: dict[ParamKeyFull, Array] | None = None,
+        *,
+        freeze: bool = True,
+    ) -> Params[Array] | ParamsLikeDict[Array]:
         """Unpack parameters into a dictionary.
 
         This function takes a parameter array and unpacks it into a dictionary
@@ -93,17 +127,19 @@ class IndependentModels(ModelsBase[Array, NNModel]):
         ----------
         arr : Array
             Parameter array.
-        extras : dict[str | tuple[str] | tuple[str, str], Array] | None, optional
+        extras : dict[ParamKeyFull, Array] | None, optional
             Extra parameters to add.
+        freeze : bool, optional keyword-only
+            Whether to freeze the parameters. Default is `True`.
 
         Returns
         -------
         Params[Array]
         """
         # Unpack the parameters
-        pars: dict[str, Array | dict[str, Array]] = {}
+        pars: ParamsLikeDict[Array] = {}
 
-        mextras: dict[str, Array] | None = (
+        mextras: dict[ParamKeyFull, Array] | None = (
             {"weight": extras["weight"]}
             if extras is not None and "weight" in extras
             else None
@@ -127,9 +163,11 @@ class IndependentModels(ModelsBase[Array, NNModel]):
                 continue
 
             # Add the component's parameters, prefixed with the component name
-            # TODO: fix type ignore
             pars.update(
-                m.unpack_params_from_arr(marr, extras=mextras).add_prefix(n + ".")  # type: ignore[arg-type]  # noqa: E501
+                add_prefix(
+                    m.unpack_params_from_arr(marr, extras=mextras, freeze=False),
+                    n + ".",
+                )
             )
 
             # Increment the index
@@ -143,7 +181,7 @@ class IndependentModels(ModelsBase[Array, NNModel]):
         for hook in self.unpack_params_hooks:
             pars = hook(pars)
 
-        return Params(pars)
+        return freeze_params(pars) if freeze else pars
 
     # ===============================================================
     # Statistics
