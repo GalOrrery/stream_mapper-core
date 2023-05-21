@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any, Protocol, TypeVar
+from typing import Any, Protocol, TypeVar, runtime_checkable
 
-from stream_ml.core.typing.array import Array, Array_co
+from stream_ml.core.typing._array import Array, Array_co
 
 __all__: list[str] = []
 
@@ -42,6 +42,7 @@ class NNNamespace(Protocol[NNModel_co, Array_co]):
 # =============================================================================
 
 
+@runtime_checkable
 class NNModelProtocol(Protocol[Array]):
     """Protocol for Neufal Network Models."""
 

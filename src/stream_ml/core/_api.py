@@ -2,27 +2,16 @@
 
 from __future__ import annotations
 
-from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, Protocol, TypeAlias, overload
+__all__: list[str] = []
 
-from stream_ml.core.params._core import Params, freeze_params, set_param
-from stream_ml.core.params.bounds import ParamBounds, ParamBoundsField
-from stream_ml.core.params.names import ParamNamesField
-from stream_ml.core.params.scales._field import ParamScalersField
+from typing import TYPE_CHECKING, Any, Protocol
+
 from stream_ml.core.typing import Array, ArrayNamespace, NNModel
-from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
-
     from stream_ml.core.data import Data
-    from stream_ml.core.prior._base import PriorBase
-    from stream_ml.core.typing import BoundsT, NNNamespace
-
-    ParamKeyFull: TypeAlias = str | tuple[str] | tuple[str, str]
-    ParamsLikeDict: TypeAlias = dict[str, Array | dict[str, Array]]
-
-__all__: list[str] = []
+    from stream_ml.core.params._values import Params
+    from stream_ml.core.typing import NNNamespace
 
 
 class SupportsXP(Protocol[Array]):
@@ -47,151 +36,19 @@ class SupportsXPNN(SupportsXP[Array], Protocol[Array, NNModel]):
         return self._nn_namespace_
 
 
-class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
-    """Model base class."""
+class HasName(Protocol):
+    """Protocol for objects that have a name."""
 
     name: str | None
 
-    # Name of the coordinates and parameters.
-    coord_names: tuple[str, ...]
-    param_names: ParamNamesField = ParamNamesField()
 
-    # Bounds on the coordinates and parameters.
-    coord_bounds: FrozenDictField[str, BoundsT] = FrozenDictField(FrozenDict())
-    param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array](ParamBounds())
-    param_scalers: ParamScalersField[Array] = ParamScalersField[Array]()
+#####################################################################
+# Probabilities
 
-    # Priors on the parameters.
-    priors: tuple[PriorBase[Array], ...] = ()
 
-    DEFAULT_PARAM_BOUNDS: ClassVar  # TODO: PriorBounds[Any]
+class LnProbabilities(Protocol[Array]):
+    """Protocol for objects that support probabilities."""
 
-    def __post_init__(self, *args: Any, **kwargs: Any) -> None:
-        ...
-
-    # ========================================================================
-
-    @property
-    def ndim(self) -> int:
-        """Number of dimensions."""
-        return len(self.coord_names)
-
-    def unpack_params(self, packed_pars: Mapping[str, Array], /) -> Params[Array]:
-        """Unpack parameters into a dictionary.
-
-        This function takes a parameter array and unpacks it into a dictionary
-        with the parameter names as keys.
-
-        Parameters
-        ----------
-        packed_pars : Array, positional-only
-            Flat dictionary of parameters.
-
-        Returns
-        -------
-        Params[Array]
-            Nested dictionary of parameters wth parameters grouped by coordinate
-            name.
-        """
-        pars: ParamsLikeDict[Array] = {}
-
-        for k in packed_pars:
-            # Find the non-coordinate-specific parameters.
-            if k in self.param_bounds:
-                pars[k] = packed_pars[k]
-                continue
-
-            # separate the coordinate and parameter names.
-            coord_name, par_name = k.split("_", maxsplit=1)
-            # Add the parameter to the coordinate-specific dict.
-            set_param(pars, (coord_name, par_name), packed_pars[k])
-
-        return freeze_params(pars)
-
-    @overload
-    @abstractmethod
-    def unpack_params_from_arr(
-        self,
-        arr: Array,
-        /,
-        extras: dict[ParamKeyFull, Array] | None,
-        *,
-        freeze: Literal[False],
-    ) -> ParamsLikeDict[Array]:
-        ...
-
-    @overload
-    @abstractmethod
-    def unpack_params_from_arr(
-        self,
-        arr: Array,
-        /,
-        extras: dict[ParamKeyFull, Array] | None,
-        *,
-        freeze: Literal[True] = ...,
-    ) -> Params[Array]:
-        ...
-
-    @overload
-    @abstractmethod
-    def unpack_params_from_arr(
-        self, arr: Array, /, extras: dict[ParamKeyFull, Array] | None, *, freeze: bool
-    ) -> Params[Array] | ParamsLikeDict[Array]:
-        ...
-
-    @abstractmethod
-    def unpack_params_from_arr(
-        self,
-        arr: Array,
-        /,
-        extras: dict[ParamKeyFull, Array] | None = None,
-        *,
-        freeze: bool = True,
-    ) -> Params[Array] | ParamsLikeDict[Array]:
-        """Unpack parameters into a dictionary.
-
-        This function takes a parameter array and unpacks it into a dictionary
-        with the parameter names as keys.
-
-        Parameters
-        ----------
-        arr : Array, positional-only
-            Parameter array.
-        extras : dict[str, Array] | None, optional
-            Additional parameters to add.
-        freeze : bool, optional keyword-only
-            Whether to freeze the parameters. Default is `True`.
-
-        Returns
-        -------
-        Params[Array]
-        """
-        raise NotImplementedError
-
-    def pack_params_to_arr(self, mpars: Params[Array], /) -> Array:
-        """Pack model parameters into an array.
-
-        Parameters
-        ----------
-        mpars : Params[Array], positional-only
-            Model parameters. Note that these are different from the ML
-            parameters.
-
-        Returns
-        -------
-        Array
-        """
-        return self.xp.concatenate(
-            tuple(self.xp.atleast_1d(mpars[elt]) for elt in self.param_names.flats)
-        )
-
-    # ========================================================================
-    # Statistics
-
-    # ------------------------------------------------------------------------
-    # Elementwise versions
-
-    @abstractmethod
     def ln_likelihood(
         self, mpars: Params[Array], data: Data[Array], **kwargs: Any
     ) -> Array:
@@ -211,7 +68,7 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
         -------
         Array
         """
-        raise NotImplementedError
+        ...
 
     def ln_prior(
         self, mpars: Params[Array], data: Data[Array], current_lnp: Array | None = None
@@ -255,8 +112,9 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
         """
         return self.ln_likelihood(mpars, data, **kw) + self.ln_prior(mpars, data)
 
-    # ------------------------------------------------------------------------
-    # Scalar versions
+
+class TotalLnProbabilities(Protocol[Array]):
+    """Protocol for objects that support total probabilities."""
 
     def ln_likelihood_tot(
         self, mpars: Params[Array], data: Data[Array], **kwargs: Array
@@ -279,7 +137,7 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
         -------
         Array
         """
-        return self.ln_likelihood(mpars, data, **kwargs).sum()
+        ...
 
     def ln_prior_tot(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
@@ -296,7 +154,7 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
         -------
         Array
         """
-        return self.ln_prior(mpars, data).sum()
+        ...
 
     def ln_posterior_tot(
         self, mpars: Params[Array], data: Data[Array], **kw: Array
@@ -317,12 +175,11 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
         -------
         Array
         """
-        return self.ln_likelihood_tot(mpars, data, **kw) + self.ln_prior_tot(
-            mpars, data
-        )
+        ...
 
-    # ------------------------------------------------------------------------
-    # Non-logarithmic elementwise versions
+
+class Probabilities(Protocol[Array]):
+    """Protocol for objects that support probabilities."""
 
     def likelihood(
         self, mpars: Params[Array], data: Data[Array], **kwargs: Array
@@ -343,7 +200,7 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
         -------
         Array
         """
-        return self.xp.exp(self.ln_likelihood(mpars, data, **kwargs))
+        ...
 
     def prior(
         self, mpars: Params[Array], data: Data[Array], current_lnp: Array | None = None
@@ -364,7 +221,7 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
         -------
         Array
         """
-        return self.xp.exp(self.ln_prior(mpars, data, current_lnp))
+        ...
 
     def posterior(self, mpars: Params[Array], data: Data[Array], **kw: Array) -> Array:
         """Elementwise posterior.
@@ -383,10 +240,11 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
         -------
         Array
         """
-        return self.xp.exp(self.ln_posterior(mpars, data, **kw))
+        ...
 
-    # ------------------------------------------------------------------------
-    # Non-logarithmic scalar versions
+
+class TotalProbabilities(Protocol[Array]):
+    """Protocol for objects that support total probabilities."""
 
     def likelihood_tot(
         self, mpars: Params[Array], data: Data[Array], **kwargs: Array
@@ -409,7 +267,7 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
         -------
         Array
         """
-        return self.xp.exp(self.ln_likelihood_tot(mpars, data, **kwargs))
+        ...
 
     def prior_tot(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Total prior.
@@ -426,7 +284,7 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
         -------
         Array
         """
-        return self.xp.exp(self.ln_prior_tot(mpars, data))
+        ...
 
     def posterior_tot(
         self, mpars: Params[Array], data: Data[Array], **kw: Array
@@ -447,11 +305,4 @@ class Model(SupportsXPNN[Array, NNModel], Protocol[Array, NNModel]):
         -------
         Array
         """
-        return self.xp.exp(self.ln_posterior_tot(mpars, data, **kw))
-
-    # ========================================================================
-    # ML
-
-    def __call__(self, *args: Any, **kwds: Any) -> Array:
-        """Call the model."""
         ...

@@ -186,6 +186,11 @@ class ArrayNamespace(Protocol[Array]):
         ...
 
     @staticmethod
+    def expm1(array: Array) -> Array:
+        """Exponential minus 1."""
+        ...
+
+    @staticmethod
     def finfo(dtype: Any) -> FInfo:
         """Floating point info."""
         ...

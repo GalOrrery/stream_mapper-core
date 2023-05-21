@@ -117,7 +117,7 @@ where = ["src"]
   warn_redundant_casts = true
   warn_unused_configs = true
   warn_unreachable = true
-  exclude = '''(^|/)tests/'''
+  exclude = '''(^|/)docs/|(^|/)tests/'''
   plugins = ["numpy.typing.mypy_plugin",]
 
   [[tool.mypy.overrides]]
@@ -128,7 +128,9 @@ where = ["src"]
     ignore_errors = true
 
   [[tool.mypy.overrides]]
-    module = "astropy.*"
+    module = [
+      "astropy.*",
+    ]
     ignore_errors = true
     ignore_missing_imports = true
 
@@ -179,6 +181,9 @@ ignore = [
   "COM812",  # TrailingCommaMissing
   "COM818",  # TrailingCommaOnBareTupleProhibited
   "COM819",  # TrailingCommaProhibited
+
+  # RUF:
+  "RUF009",
 ]
 
 [tool.ruff.per-file-ignores]
@@ -190,7 +195,7 @@ ban-relative-imports = "all"
 [tool.ruff.isort]
 force-sort-within-sections = true
 known-first-party = ["stream_ml"]
-known-third-party = ["numpy", "pytest", "torch", "flax", "jax"]
+known-third-party = ["numpy", "pytest"]
 
 [tool.ruff.pylint]
 max-args = 6

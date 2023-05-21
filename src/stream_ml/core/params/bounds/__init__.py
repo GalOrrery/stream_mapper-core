@@ -1,23 +1,6 @@
 """Core feature."""
 
-from __future__ import annotations
+__all__ = ["PriorBounds", "NoBounds", "ClippedBounds"]
 
-from stream_ml.core.params.bounds._core import (
-    IncompleteParamBounds,
-    ParamBounds,
-    ParamBoundsBase,
-    is_completable,
-)
-from stream_ml.core.params.bounds._field import (
-    MixtureParamBoundsField,
-    ParamBoundsField,
-)
-
-__all__ = [
-    "ParamBoundsBase",
-    "ParamBounds",
-    "IncompleteParamBounds",
-    "is_completable",
-    "ParamBoundsField",
-    "MixtureParamBoundsField",
-]
+from stream_ml.core.params.bounds._base import PriorBounds
+from stream_ml.core.params.bounds._builtin import ClippedBounds, NoBounds

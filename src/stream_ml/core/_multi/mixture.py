@@ -2,33 +2,23 @@
 
 from __future__ import annotations
 
-from dataclasses import KW_ONLY, dataclass, replace
+__all__: list[str] = []
+
+from dataclasses import KW_ONLY, dataclass
 from typing import TYPE_CHECKING, Literal, cast, overload
 
 from stream_ml.core import NNField
-from stream_ml.core.multi._bases import ModelsBase
-from stream_ml.core.params import (
-    ParamBounds,
-    ParamNames,
-    Params,
-    add_prefix,
-    freeze_params,
-)
-from stream_ml.core.params.bounds import MixtureParamBoundsField
-from stream_ml.core.params.scales import ParamScalersField
+from stream_ml.core._multi.bases import ModelsBase
+from stream_ml.core.params import Params, add_prefix, freeze_params
 from stream_ml.core.setup_package import BACKGROUND_KEY
 from stream_ml.core.typing import Array, NNModel
-from stream_ml.core.utils.cached_property import cached_property
-from stream_ml.core.utils.frozen_dict import FrozenDict
 from stream_ml.core.utils.funcs import get_prefixed_kwargs
 from stream_ml.core.utils.scale import DataScaler  # noqa: TCH001
 from stream_ml.core.utils.sentinel import MISSING
 
-__all__: list[str] = []
-
 if TYPE_CHECKING:
-    from stream_ml.core._api import ParamKeyFull, ParamsLikeDict
     from stream_ml.core.data import Data
+    from stream_ml.core.typing import ParamNameAllOpts, ParamsLikeDict
 
 
 @dataclass
@@ -62,14 +52,6 @@ class MixtureModel(ModelsBase[Array, NNModel]):
     # Coordinates, indpendent and dependent.
     indep_coord_names: tuple[str, ...] = ("phi1",)
 
-    # Model Parameters, generally produced by the neural network.
-    # param_names is a cached property.
-    param_bounds: MixtureParamBoundsField[Array] = MixtureParamBoundsField[Array](
-        ParamBounds()
-    )
-    param_scalers: ParamScalersField[Array] = ParamScalersField()
-    # TODO! Have Identity as the default
-
     def __post_init__(self) -> None:
         super().__post_init__()
 
@@ -82,33 +64,16 @@ class MixtureModel(ModelsBase[Array, NNModel]):
         self._includes_bkg: bool = includes_bkg
         self._bkg_slc = slice(-1) if includes_bkg else slice(None)
 
-        # Add scaling to the param bounds  # TODO! unfreeze then freeze
-        for k, v in self.param_bounds.items():
-            if not isinstance(k, str):
-                raise TypeError
+        # # Add scaling to the param bounds  # TODO! unfreeze then freeze
+        # for k, v in self.param_bounds.items():
+        #     if not isinstance(k, str):
+        #         raise TypeError
 
-            if not isinstance(v, FrozenDict):
-                self.param_bounds._dict[k] = replace(v, scaler=self.param_scalers[k])
-                continue
-            for k2, v2 in v.items():
-                v._dict[k2] = replace(v2, scaler=self.param_scalers[k, k2])
-
-    @cached_property
-    def param_names(self) -> ParamNames:  # type: ignore[override]
-        """Parameter names."""
-        names: list[str | tuple[str, tuple[str, ...]]] = []
-        for c, m in self.components.items():
-            names.append(f"{c}.weight")
-            names.extend(
-                (f"{c}.{p[0]}", p[1]) if isinstance(p, tuple) else f"{c}.{p}"
-                for p in m.param_names
-            )
-        return ParamNames(names)
-
-    @cached_property
-    def mixture_param_names(self) -> ParamNames:
-        """Mixture parameter names."""
-        return ParamNames([f"{c}.weight" for c in self.components])
+        #     if not isinstance(v, FrozenDict):
+        #         self.param_bounds._dict[k] = replace(v, scaler=self.param_scalers[k])
+        #         continue
+        #     for k2, v2 in v.items():
+        #         v._dict[k2] = replace(v2, scaler=self.param_scalers[k, k2])
 
     # ===============================================================
 
@@ -117,7 +82,7 @@ class MixtureModel(ModelsBase[Array, NNModel]):
         self,
         arr: Array,
         /,
-        extras: dict[ParamKeyFull, Array] | None,
+        extras: dict[ParamNameAllOpts, Array] | None,
         *,
         freeze: Literal[False],
     ) -> ParamsLikeDict[Array]:
@@ -128,7 +93,7 @@ class MixtureModel(ModelsBase[Array, NNModel]):
         self,
         arr: Array,
         /,
-        extras: dict[ParamKeyFull, Array] | None,
+        extras: dict[ParamNameAllOpts, Array] | None,
         *,
         freeze: Literal[True] = ...,
     ) -> Params[Array]:
@@ -136,7 +101,12 @@ class MixtureModel(ModelsBase[Array, NNModel]):
 
     @overload
     def unpack_params_from_arr(
-        self, arr: Array, /, extras: dict[ParamKeyFull, Array] | None, *, freeze: bool
+        self,
+        arr: Array,
+        /,
+        extras: dict[ParamNameAllOpts, Array] | None,
+        *,
+        freeze: bool,
     ) -> Params[Array] | ParamsLikeDict[Array]:
         ...
 
@@ -144,7 +114,7 @@ class MixtureModel(ModelsBase[Array, NNModel]):
         self,
         arr: Array,
         /,
-        extras: dict[ParamKeyFull, Array] | None = None,
+        extras: dict[ParamNameAllOpts, Array] | None = None,
         *,
         freeze: bool = True,
     ) -> Params[Array] | ParamsLikeDict[Array]:
@@ -157,7 +127,7 @@ class MixtureModel(ModelsBase[Array, NNModel]):
         ----------
         arr : Array
             Parameter array.
-        extras : dict[ParamKeyFull, Array] | None, keyword-only
+        extras : dict[ParamNameAllOpts, Array] | None, keyword-only
             Extra arrays to add.
         freeze : bool, optional keyword-only
             Whether to freeze the parameters. Default is `True`.
@@ -166,7 +136,7 @@ class MixtureModel(ModelsBase[Array, NNModel]):
         -------
         Params[Array]
         """
-        extras_: dict[ParamKeyFull, Array] = {} if extras is None else extras
+        extras_: dict[ParamNameAllOpts, Array] = {} if extras is None else extras
 
         # Unpack the parameters
         pars: ParamsLikeDict[Array] = {}
@@ -197,14 +167,16 @@ class MixtureModel(ModelsBase[Array, NNModel]):
 
             # --- Parameters ---
 
+            delta = len(m.params.flatkeys())
+
             # If there are no parameters, then just add the weight
-            if len(m.param_names.flat) == 0:
+            if delta == 0:
                 # Add the component's parameters, prefixed with the component name
                 pars[f"{n}.weight"] = weight
                 continue
 
             # Otherwise, get the relevant slice of the array
-            marr = arr[:, slice(j, j + len(m.param_names.flat))]
+            marr = arr[:, slice(j, j + delta)]
 
             # Add the component's parameters, prefixed with the component name
             pars.update(
@@ -217,7 +189,7 @@ class MixtureModel(ModelsBase[Array, NNModel]):
                     n + ".",
                 )
             )
-            j += len(m.param_names.flat)  # Increment the index (parameters)
+            j += delta  # Increment the index (parameters)
 
         # Allow for conversation between components
         for hook in self.unpack_params_hooks:

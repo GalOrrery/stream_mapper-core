@@ -1,24 +1,26 @@
 """Core library for stream membership likelihood, with ML."""
 
 
-from stream_ml.core import builtin, params, prior, utils
-from stream_ml.core._api import Model
-from stream_ml.core._base import ModelBase, NNField
+from stream_ml.core import builtin, params, prior
+from stream_ml.core._core.api import Model as ModelAPI
+from stream_ml.core._core.base import ModelBase
+from stream_ml.core._core.field import NNField
+from stream_ml.core._multi.bases import ModelsBase
+from stream_ml.core._multi.independent import IndependentModels
+from stream_ml.core._multi.mixture import MixtureModel
 from stream_ml.core.data import Data
-from stream_ml.core.multi._independent import IndependentModels
-from stream_ml.core.multi._mixture import MixtureModel
 
 __all__ = [
     # classes
     "Data",
     # modules
-    "utils",
     "params",
     "prior",
     "builtin",
     # model classes
-    "Model",
+    "ModelAPI",
     "ModelBase",
+    "ModelsBase",
     "MixtureModel",
     "IndependentModels",
     # model related

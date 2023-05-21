@@ -2,50 +2,35 @@
 
 from __future__ import annotations
 
+__all__: list[str] = []
+
 from abc import ABCMeta
-from dataclasses import KW_ONLY, dataclass, field, fields, replace
+from dataclasses import KW_ONLY, dataclass, fields
 from functools import reduce
 from math import inf
 import textwrap
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-    Generic,
-    Literal,
-    Protocol,
-    TypeVar,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Literal, Protocol, TypeVar, cast, overload
 
-from stream_ml.core._api import Model
-from stream_ml.core.params import ParamBounds, Params, freeze_params, set_param
-from stream_ml.core.params.bounds import ParamBoundsField
-from stream_ml.core.params.names import ParamNamesField
-from stream_ml.core.params.scales import ParamScalersField
-from stream_ml.core.prior.bounds import NoBounds
+from stream_ml.core._core.api import Model
+from stream_ml.core._core.field import NNField
+from stream_ml.core.params._field import ModelParametersField
+from stream_ml.core.params._values import Params, freeze_params, set_param
 from stream_ml.core.setup_package import CompiledShim
-from stream_ml.core.typing import Array, ArrayNamespace, BoundsT, NNModel, NNNamespace
+from stream_ml.core.typing import Array, ArrayNamespace, BoundsT, NNModel
 from stream_ml.core.utils.compat import array_at
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 from stream_ml.core.utils.funcs import within_bounds
-from stream_ml.core.utils.scale import DataScaler  # noqa: TCH001
-from stream_ml.core.utils.sentinel import MISSING, MissingT
-
-__all__: list[str] = []
-
+from stream_ml.core.utils.scale._api import DataScaler  # noqa: TCH001
 
 if TYPE_CHECKING:
-    from stream_ml.core._api import ParamKeyFull, ParamsLikeDict
     from stream_ml.core.data import Data
     from stream_ml.core.prior import PriorBase
+    from stream_ml.core.typing import NNNamespace, ParamNameAllOpts, ParamsLikeDict
 
     Self = TypeVar("Self", bound="ModelBase[Array, NNModel]")  # type: ignore[valid-type]  # noqa: E501
 
 
 #####################################################################
-# PARAMETERS
 
 
 class NNNamespaceMap(Protocol):
@@ -68,50 +53,6 @@ NN_NAMESPACE = cast(NNNamespaceMap, {})
 #####################################################################
 
 
-@dataclass(frozen=True)
-class NNField(Generic[NNModel]):
-    """Dataclass descriptor for attached nn.
-
-    Parameters
-    ----------
-    default : NNModel | None, optional
-        Default value, by default `None`.
-
-        - `NNModel` : a value.
-        - `None` : defer setting a value until model init.
-    """
-
-    default: NNModel | MissingT | None = MISSING
-    _name: str = field(default="")
-
-    def __set_name__(self, owner: type, name: str) -> None:
-        object.__setattr__(self, "_name", "_" + name)
-
-    def __get__(
-        self, model: ModelBase[Array, NNModel] | None, model_cls: Any
-    ) -> NNModel | MissingT | None:
-        if model is not None:
-            return cast("NNModel", getattr(model, self._name))
-        elif self.default is MISSING:
-            msg = f"no default value for field {self._name!r}."
-            raise AttributeError(msg)
-        return self.default
-
-    def __set__(self, model: ModelBase[Array, NNModel], value: NNModel | None) -> None:
-        # Call the _net_init_default hook. This can be Any | None
-        # First need to ensure that the array and nn namespaces are set.
-        net = model._net_init_default() if value is None else value
-
-        if net is MISSING:
-            msg = "must provide a wrapped neural network."
-            raise ValueError(msg)
-
-        object.__setattr__(model, self._name, net)
-
-
-##############################################################################
-
-
 @dataclass(unsafe_hash=True)
 class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
     """Single-model base class.
@@ -132,20 +73,13 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         The bounds on the coordinates. If not provided, the bounds are
         (-inf, inf) for all coordinates.
 
-    param_names : `~stream_ml.core.params.ParamNames`, keyword-only
-        The names of the parameters. Parameters dependent on the coordinates are
-        grouped by the coordinate name.
-        E.g. ('weight', ('phi1', ('mu', 'sigma'))).
-    param_bounds : `~stream_ml.core.params.ParamBounds`, keyword-only
-        The bounds on the parameters.
-
     name : str or None, optional keyword-only
         The (internal) name of the model, e.g. 'stream' or 'background'. Note
         that this can be different from the name of the model when it is used in
         a mixture model (see :class:`~stream_ml.core.core.MixtureModel`).
     """
 
-    net: NNField[NNModel] = NNField(default=None)
+    net: NNField[NNModel] = NNField()
 
     _: KW_ONLY
     array_namespace: ArrayNamespace[Array]
@@ -160,14 +94,10 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
     coord_bounds: FrozenDictField[str, BoundsT] = FrozenDictField(FrozenDict())
 
     # Model Parameters, generally produced by the neural network.
-    param_names: ParamNamesField = ParamNamesField()
-    param_bounds: ParamBoundsField[Array] = ParamBoundsField[Array](ParamBounds())
-    param_scalers: ParamScalersField[Array] = ParamScalersField()
+    params: ModelParametersField[Array] = ModelParametersField[Array]()
 
     # Priors on the parameters.
     priors: tuple[PriorBase[Array], ...] = ()
-
-    DEFAULT_PARAM_BOUNDS: ClassVar = NoBounds()  # TODO: ClassVar[PriorBounds[Any]]
 
     def __new__(
         cls: type[Self],
@@ -207,20 +137,6 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
             raise ValueError(msg)
         self.coord_bounds = FrozenDict(cbs)
 
-        # Add scaling to the param bounds  # TODO! unfreeze then freeze
-        for k, v in self.param_bounds.items():
-            if not isinstance(k, str):
-                raise TypeError
-
-            if not isinstance(v, FrozenDict):
-                self.param_bounds._dict[k] = replace(v, scaler=self.param_scalers[k])
-                continue
-            for k2, v2 in v.items():
-                v._dict[k2] = replace(v2, scaler=self.param_scalers[k, k2])
-
-    def _net_init_default(self) -> Any | MissingT | None:
-        return None
-
     # ========================================================================
 
     @overload
@@ -228,7 +144,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         self,
         arr: Array,
         /,
-        extras: dict[ParamKeyFull, Array] | None,
+        extras: dict[ParamNameAllOpts, Array] | None,
         *,
         freeze: Literal[False],
     ) -> ParamsLikeDict[Array]:
@@ -239,7 +155,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         self,
         arr: Array,
         /,
-        extras: dict[ParamKeyFull, Array] | None,
+        extras: dict[ParamNameAllOpts, Array] | None,
         *,
         freeze: Literal[True] = ...,
     ) -> Params[Array]:
@@ -247,7 +163,12 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
 
     @overload
     def unpack_params_from_arr(
-        self, arr: Array, /, extras: dict[ParamKeyFull, Array] | None, *, freeze: bool
+        self,
+        arr: Array,
+        /,
+        extras: dict[ParamNameAllOpts, Array] | None,
+        *,
+        freeze: bool,
     ) -> Params[Array] | ParamsLikeDict[Array]:
         ...
 
@@ -255,7 +176,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         self,
         arr: Array,
         /,
-        extras: dict[ParamKeyFull, Array] | None = None,
+        extras: dict[ParamNameAllOpts, Array] | None = None,
         *,
         freeze: bool = True,
     ) -> Params[Array] | ParamsLikeDict[Array]:
@@ -268,7 +189,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         ----------
         arr : Array, positional-only
             Parameter array.
-        extras : dict[str | tuple[str] | tuple[str, str], Array] | None, keyword-only
+        extras : dict[ParamNameAllOpts, Array] | None, keyword-only
             Extra arrays to add.
         freeze : bool, optional keyword-only
             Whether to freeze the parameters. Default is `True`.
@@ -278,10 +199,10 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         Params[Array]
         """
         pars: ParamsLikeDict[Array] = {}
-        k: ParamKeyFull
-        for i, k in enumerate(self.param_names.flats):
+        k: ParamNameAllOpts
+        for i, (k, p) in enumerate(self.params.flatsitems()):
             # First unscale
-            v = self.param_scalers[k].inverse_transform(arr[:, i : i + 1])
+            v = p.scaler.inverse_transform(arr[:, i : i + 1])
             # Then set in the nested dict structure
             set_param(pars, k, v)
 
@@ -342,8 +263,8 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         # Coordinate Bounds
         lnp = lnp + self._ln_prior_coord_bnds(mpars, data)
         # Parameter Bounds
-        for bounds in self.param_bounds.flatvalues():
-            lnp = lnp + bounds.logpdf(mpars, data, self, lnp, xp=self.xp)
+        for p in self.params.flatvalues():
+            lnp = lnp + p.bounds.logpdf(mpars, data, self, lnp, xp=self.xp)
         # Priors
         for prior in self.priors:
             lnp = lnp + prior.logpdf(mpars, data, self, lnp, xp=self.xp)
@@ -369,8 +290,8 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
             Same as input.
         """
         # Parameter bounds
-        for bnd in self.param_bounds.flatvalues():
-            out = bnd(out, scaled_data, self)
+        for p in self.params.flatvalues():
+            out = p.bounds(out, scaled_data, self)
 
         # Other priors  # TODO: a better way to do the order of the priors.
         for prior in self.priors:
@@ -381,7 +302,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
     # Misc
 
     def __str__(self) -> str:
-        """Return string representation."""
+        """Return nicer string representation."""
         s = f"{self.__class__.__name__}(\n"
         s += "\n".join(
             textwrap.indent(f"{f.name}: {getattr(self, f.name)!s}", prefix="\t")

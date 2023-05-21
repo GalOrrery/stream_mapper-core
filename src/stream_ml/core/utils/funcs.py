@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, TypeVar
 __all__: list[str] = []
 
 if TYPE_CHECKING:
-    from stream_ml.core.typing.array import Array, ArrayNamespace
+    from stream_ml.core.typing import Array, ArrayNamespace
 
     V = TypeVar("V")
 

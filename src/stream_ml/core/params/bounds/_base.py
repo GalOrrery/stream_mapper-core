@@ -2,41 +2,38 @@
 
 from __future__ import annotations
 
-from abc import abstractmethod
-from dataclasses import KW_ONLY, dataclass
-from math import inf
-from typing import TYPE_CHECKING, Any, Literal, TypeVar
+__all__: list[str] = []
 
-from stream_ml.core.params.names._core import FlatParamName  # noqa: TCH001
-from stream_ml.core.prior._base import PriorBase
+from abc import ABCMeta, abstractmethod
+from dataclasses import KW_ONLY, dataclass
+from typing import TYPE_CHECKING, Generic, TypeVar
+
 from stream_ml.core.typing import Array, ArrayNamespace
 from stream_ml.core.utils.compat import array_at
 from stream_ml.core.utils.funcs import within_bounds
 
-__all__ = ["PriorBounds", "ClippedBounds", "NoBounds"]
-
-
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from stream_ml.core._api import Model
+    from stream_ml.core._core.api import Model
     from stream_ml.core.data import Data
-    from stream_ml.core.params._core import Params
-    from stream_ml.core.params.scales import ParamScaler
-    from stream_ml.core.typing import NNModel
+    from stream_ml.core.params import Params
+    from stream_ml.core.params.scaler import ParamScaler
+    from stream_ml.core.typing import NNModel, ParamNameTupleOpts
 
     Self = TypeVar("Self", bound="PriorBounds")  # type: ignore[type-arg]
 
 
 @dataclass(frozen=True)
-class PriorBounds(PriorBase[Array]):
+class PriorBounds(Generic[Array], metaclass=ABCMeta):
     """Base class for prior bounds."""
 
     lower: Array | float
     upper: Array | float
     _: KW_ONLY
-    param_name: FlatParamName | None = None
+    param_name: ParamNameTupleOpts | None = None
     scaler: ParamScaler[Array] | None = None
+    name: str | None = None  # the name of the prior
 
     def __post_init__(self) -> None:
         """Post-init."""
@@ -63,7 +60,33 @@ class PriorBounds(PriorBase[Array]):
         *,
         xp: ArrayNamespace[Array],
     ) -> Array:
-        """Evaluate the logpdf."""
+        """Evaluate the logpdf.
+
+        This log-pdf is added to the current logpdf. So if you want to set the
+        logpdf to a specific value, you can uses the `current_lnpdf` to set the
+        output value such that ``current_lnpdf + logpdf = <want>``.
+
+        Parameters
+        ----------
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
+        data : Data[Array], position-only
+            The data for which evaluate the prior.
+        model : Model, position-only
+            The model for which evaluate the prior.
+        current_lnpdf : Array | None, optional position-only
+            The current logpdf, by default `None`. This is useful for setting
+            the additive log-pdf to a specific value.
+
+        xp : ArrayNamespace[Array], keyword-only
+            The array namespace.
+
+        Returns
+        -------
+        Array
+            The logpdf.
+        """
         if self.param_name is None:
             msg = "need to set param_name"
             raise ValueError(msg)
@@ -77,7 +100,21 @@ class PriorBounds(PriorBase[Array]):
     def __call__(
         self, pred: Array, data: Data[Array], model: Model[Array, NNModel], /
     ) -> Array:
-        """Evaluate the forward step in the prior."""
+        """Evaluate the forward step in the prior.
+
+        Parameters
+        ----------
+        pred : Array, position-only
+            The input to evaluate the prior at.
+        data : Array, position-only
+            The data to evaluate the prior at.
+        model : `~stream_ml.core.Model`, position-only
+            The model to evaluate the prior at.
+
+        Returns
+        -------
+        Array
+        """
         ...
 
     # =========================================================================
@@ -100,66 +137,3 @@ class PriorBounds(PriorBase[Array]):
     def __iter__(self) -> Iterator[Array | float]:
         """Iterate over the bounds."""
         yield from self.bounds
-
-
-################################################################################
-
-
-@dataclass(frozen=True)
-class ClippedBounds(PriorBounds[Any]):
-    """Clipped bounds."""
-
-    lower: float
-    upper: float
-
-    def __post_init__(self) -> None:
-        """Post-init."""
-        if self.lower >= self.upper:
-            msg = "lower must be less than upper"
-            raise ValueError(msg)
-
-        super().__post_init__()
-
-    def __call__(
-        self, pred: Array, data: Data[Array], model: Model[Array, NNModel], /
-    ) -> Array:
-        """Evaluate the forward step in the prior."""
-        return model.xp.clip(pred, *self.scaled_bounds)
-
-
-@dataclass(frozen=True)
-class NoBounds(PriorBounds[Any]):
-    """No bounds."""
-
-    lower: float = -inf
-    upper: float = inf
-
-    def __post_init__(self) -> None:
-        """Post-init."""
-        if self.lower != -inf or self.upper != inf:
-            msg = "lower and upper must be -inf and inf"
-            raise ValueError(msg)
-
-        super().__post_init__()
-
-    def logpdf(
-        self,
-        mpars: Params[Array],
-        data: Data[Array],
-        model: Model[Array, NNModel],
-        current_lnpdf: Array | None = None,
-        /,
-        *,
-        xp: ArrayNamespace[Array],
-    ) -> Array | Literal[0]:
-        """Evaluate the logpdf."""
-        if self.param_name is None:
-            msg = "need to set param_name"
-            raise ValueError(msg)
-        return 0
-
-    def __call__(
-        self, pred: Array, data: Data[Array], model: Model[Array, NNModel], /
-    ) -> Array:
-        """Evaluate the forward step in the prior."""
-        return pred

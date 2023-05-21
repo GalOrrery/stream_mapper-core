@@ -5,12 +5,18 @@ from __future__ import annotations
 from abc import ABCMeta
 from collections.abc import ItemsView, Iterator, KeysView, Mapping, ValuesView
 from dataclasses import KW_ONLY, dataclass, fields
-from typing import TYPE_CHECKING, Any, ClassVar, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
-from stream_ml.core._api import Model
-from stream_ml.core._base import NN_NAMESPACE
+from stream_ml.core._core.api import Model
+from stream_ml.core._core.base import NN_NAMESPACE
 from stream_ml.core.setup_package import CompiledShim
-from stream_ml.core.typing import Array, ArrayNamespace, BoundsT, NNModel
+from stream_ml.core.typing import (
+    Array,
+    ArrayNamespace,
+    BoundsT,
+    NNModel,
+    ParamsLikeDict,
+)
 from stream_ml.core.utils.cached_property import cached_property
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 
@@ -36,10 +42,10 @@ def _get_namespace(
     return ns.pop()
 
 
-class UnpackParamsCallable(Protocol):
+class UnpackParamsCallable(Protocol[Array]):
     """Protocol for unpacking parameters."""
 
-    def __call__(self, *args: Any, **kwds: Any) -> Any:
+    def __call__(self, *args: Any, **kwds: Any) -> ParamsLikeDict[Array]:
         """Callable."""
         ...
 
@@ -58,9 +64,7 @@ class ModelsBase(
     _: KW_ONLY
     name: str | None = None  # the name of the model
     priors: tuple[PriorBase[Array], ...] = ()
-    unpack_params_hooks: tuple[UnpackParamsCallable, ...] = ()
-
-    DEFAULT_PARAM_BOUNDS: ClassVar[Any] = None  # TODO: ClassVar[PriorBase[Array]]
+    unpack_params_hooks: tuple[UnpackParamsCallable[Array], ...] = ()
 
     def __post_init__(self) -> None:
         """Post-init validation."""
@@ -133,28 +137,6 @@ class ModelsBase(
         )
 
     # ===============================================================
-
-    def unpack_params(self, packed_pars: Mapping[str, Array], /) -> Params[Array]:
-        """Unpack parameters into a dictionary.
-
-        Unpack a flat dictionary of parameters -- where keys have coordinate
-        name, parameter name, and model component name -- into a nested
-        dictionary with parameters grouped by coordinate name.
-
-        Parameters
-        ----------
-        packed_pars : Array, positional-only
-            Flat dictionary of parameters.
-
-        Returns
-        -------
-        Params
-            Nested dictionary of parameters wth parameters grouped by coordinate
-            name.
-        """
-        return super().unpack_params(packed_pars)
-
-    # ===============================================================
     # Statistics
 
     def ln_prior(
@@ -181,8 +163,8 @@ class ModelsBase(
         for name, m in self.components.items():
             lnp = lnp + m.ln_prior(mpars.get_prefixed(name + "."), data)
         # Parameter Bounds
-        for bounds in self.param_bounds.flatvalues():
-            lnp = lnp + bounds.logpdf(mpars, data, self, lnp, xp=self.xp)
+        for param in self.params.flatvalues():
+            lnp = lnp + param.bounds.logpdf(mpars, data, self, lnp, xp=self.xp)
         # Plugin for priors
         for prior in self.priors:
             lnp = lnp + prior.logpdf(mpars, data, self, lnp, xp=self.xp)

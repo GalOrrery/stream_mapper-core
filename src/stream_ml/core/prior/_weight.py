@@ -6,16 +6,16 @@ from dataclasses import KW_ONLY, dataclass
 from math import inf
 from typing import TYPE_CHECKING
 
-from stream_ml.core.params.scales.builtin import ParamScaler  # noqa: TCH001
+from stream_ml.core.params.scaler._api import ParamScaler  # noqa: TCH001
 from stream_ml.core.prior._base import PriorBase
 from stream_ml.core.typing import Array, ArrayNamespace
 from stream_ml.core.utils.compat import array_at
 from stream_ml.core.utils.funcs import within_bounds
 
 if TYPE_CHECKING:
-    from stream_ml.core._api import Model
+    from stream_ml.core._core.api import Model
     from stream_ml.core.data import Data
-    from stream_ml.core.params._core import Params
+    from stream_ml.core.params._values import Params
     from stream_ml.core.typing import NNModel
 
 __all__: list[str] = []
@@ -133,7 +133,7 @@ class HardThreshold(PriorBase[Array]):
         -------
         Array
         """
-        i = model.param_names.flats.index((self.param_name,))
+        i = model.params.flatskeys().index((self.param_name,))
         where = within_bounds(data[self.coord_name].flatten(), *self.scaled_bounds) & (
             pred[:, i] < self.threshold
         )
