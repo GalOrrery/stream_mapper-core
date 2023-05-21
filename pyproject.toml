@@ -166,8 +166,14 @@ ignore = [
   # flake8-return (RET)
   "RET505", "RET506", "RET507",
 
+  # Ruff
+  "RUF009",  # Do not perform function call in dataclass defaults
+
   # flake8-self (SLF)
   "SLF001",
+
+  # flake8-todos (TD)
+  "TD",
 
   # flake8-commas (COM)
   "COM812",  # TrailingCommaMissing
@@ -185,3 +191,6 @@ ban-relative-imports = "all"
 force-sort-within-sections = true
 known-first-party = ["stream_ml"]
 known-third-party = ["numpy", "pytest", "torch", "flax", "jax"]
+
+[tool.ruff.pylint]
+max-args = 6
