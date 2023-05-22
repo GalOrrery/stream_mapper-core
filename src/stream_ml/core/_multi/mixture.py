@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Literal, cast, overload
 from stream_ml.core import NNField
 from stream_ml.core._multi.bases import ModelsBase
 from stream_ml.core.params import Params, add_prefix, freeze_params
+from stream_ml.core.params._field import ModelParametersField
 from stream_ml.core.setup_package import BACKGROUND_KEY
 from stream_ml.core.typing import Array, NNModel
 from stream_ml.core.utils.funcs import get_prefixed_kwargs
@@ -51,6 +52,9 @@ class MixtureModel(ModelsBase[Array, NNModel]):
 
     # Coordinates, indpendent and dependent.
     indep_coord_names: tuple[str, ...] = ("phi1",)
+
+    # Model Parameters, generally produced by the neural network.
+    params: ModelParametersField[Array] = ModelParametersField[Array]()
 
     def __post_init__(self) -> None:
         super().__post_init__()

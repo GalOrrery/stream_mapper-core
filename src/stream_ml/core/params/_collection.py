@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any, cast, overload
 
 from stream_ml.core.params._core import ModelParameter
 from stream_ml.core.typing import Array
+from stream_ml.core.utils.cached_property import cached_noargmethod
 from stream_ml.core.utils.frozen_dict import FrozenDict
 
 if TYPE_CHECKING:
@@ -107,19 +108,19 @@ class ModelParameters(
     # Flats
     # Tuple keys are used to access the parameters.
 
-    # TODO: cache
+    @cached_noargmethod
     def flatsitems(
         self,
     ) -> tuple[tuple[ParamNameTupleOpts, ModelParameter[Array]], ...]:
         """Flattened items."""
         return tuple(_flats_iter(self))
 
-    # TODO: cache
+    @cached_noargmethod
     def flatskeys(self) -> tuple[ParamNameTupleOpts, ...]:
         """Flattened keys."""
         return tuple(k for k, _ in self.flatsitems())
 
-    # TODO: cache
+    @cached_noargmethod
     def flatsvalues(self) -> tuple[ModelParameter[Array], ...]:
         """Flattened values."""
         return tuple(v for _, v in self.flatsitems())
@@ -127,20 +128,19 @@ class ModelParameters(
     # =========================================================================
     # Flat
 
-    # TODO: cache
+    @cached_noargmethod
     def flatitems(self) -> tuple[tuple[str, ModelParameter[Array]], ...]:
         """Flat items."""
         return tuple(("_".join(k), v) for k, v in self.flatsitems())
 
-    # TODO: cache
+    @cached_noargmethod
     def flatkeys(self) -> tuple[str, ...]:
         """Flat keys."""
         return tuple(k for k, _ in self.flatitems())
 
-    # TODO: cache
     def flatvalues(self) -> tuple[ModelParameter[Array], ...]:
         """Flat values."""
-        return tuple(v for _, v in self.flatitems())
+        return self.flatsvalues()
 
 
 def _flats_iter(
