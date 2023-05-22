@@ -163,7 +163,18 @@ class Data(Generic[Array]):
 
     @overload
     def __getitem__(
-        self, key: tuple[int | slice | str | tuple[int | str, ...], ...], /
+        self,
+        key: tuple[
+            int
+            | str
+            | slice
+            | tuple[int, ...]
+            | tuple[str, ...]
+            | tuple[slice, ...]
+            | tuple[int | str | slice, ...],
+            ...,
+        ],
+        /,
     ) -> Array:
         ...
 
@@ -177,7 +188,16 @@ class Data(Generic[Array]):
         | tuple[int, ...]
         | tuple[str, ...]
         | tuple[slice, ...]
-        | tuple[int | slice | str | tuple[int | str, ...], ...],
+        | tuple[
+            int
+            | str
+            | slice
+            | tuple[int, ...]
+            | tuple[str, ...]
+            | tuple[slice, ...]
+            | tuple[int | str | slice, ...],
+            ...,
+        ],
         /,
     ) -> Array | Self:
         out: Array | Self
