@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from math import inf
 from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
-from stream_ml.core.params.bounds._base import PriorBounds
+from stream_ml.core.params.bounds._base import ParameterBounds
 from stream_ml.core.typing import Array
 
 if TYPE_CHECKING:
@@ -17,11 +17,11 @@ if TYPE_CHECKING:
     from stream_ml.core.params._values import Params
     from stream_ml.core.typing import ArrayNamespace, NNModel
 
-    Self = TypeVar("Self", bound="PriorBounds")  # type: ignore[type-arg]
+    Self = TypeVar("Self", bound="ParameterBounds")  # type: ignore[type-arg]
 
 
 @dataclass(frozen=True)
-class NoBounds(PriorBounds[Any]):
+class NoBounds(ParameterBounds[Any]):
     """No bounds."""
 
     lower: float = -inf
@@ -59,7 +59,7 @@ class NoBounds(PriorBounds[Any]):
 
 
 @dataclass(frozen=True)
-class ClippedBounds(PriorBounds[Array]):
+class ClippedBounds(ParameterBounds[Array]):
     """Clipped bounds."""
 
     lower: Array | float

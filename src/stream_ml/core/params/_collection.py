@@ -5,6 +5,8 @@ from __future__ import annotations
 __all__: list[str] = []
 
 from collections.abc import Iterable, Mapping
+from dataclasses import replace
+from itertools import chain
 from typing import TYPE_CHECKING, Any, cast, overload
 
 from stream_ml.core.params._core import ModelParameter
@@ -32,15 +34,19 @@ class ModelParameters(
         **kwargs: ModelParameter[Array] | Mapping[str, ModelParameter[Array]],
     ) -> None:
         # Freeze sub-dicts
-        d: dict[str, ModelParameter[Array] | FrozenDict[str, ModelParameter[Array]]] = {
-            k: v
-            if not isinstance(v, Mapping)
-            else FrozenDict[str, ModelParameter[Array]](v)
-            for k, v in dict(m, **kwargs).items()
-        }
-        super().__init__(d, __unsafe_skip_copy__=True)
+        d: dict[
+            str, ModelParameter[Array] | FrozenDict[str, ModelParameter[Array]]
+        ] = {}
 
-        # hint cached data
+        for k, v in chain(m.items(), kwargs.items()):
+            if not isinstance(v, Mapping):
+                d[k] = replace(v, param_name=(k,))
+            else:
+                d[k] = FrozenDict[str, ModelParameter[Array]](
+                    {k2: replace(v2, param_name=(k, k2)) for k2, v2 in v.items()}
+                )
+
+        super().__init__(d, __unsafe_skip_copy__=True)
 
     # =========================================================================
     # Mapping

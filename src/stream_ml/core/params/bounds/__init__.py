@@ -1,6 +1,6 @@
 """Core feature."""
 
-__all__ = ["PriorBounds", "NoBounds", "ClippedBounds"]
+__all__ = ["ParameterBounds", "NoBounds", "ClippedBounds"]
 
-from stream_ml.core.params.bounds._base import PriorBounds
+from stream_ml.core.params.bounds._base import ParameterBounds
 from stream_ml.core.params.bounds._builtin import ClippedBounds, NoBounds

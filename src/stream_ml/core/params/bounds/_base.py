@@ -8,7 +8,8 @@ from abc import ABCMeta, abstractmethod
 from dataclasses import KW_ONLY, dataclass
 from typing import TYPE_CHECKING, Generic, TypeVar
 
-from stream_ml.core.typing import Array, ArrayNamespace
+from stream_ml.core.params.scaler import ParamScaler  # noqa: TCH001
+from stream_ml.core.typing import Array, ArrayNamespace, ParamNameTupleOpts
 from stream_ml.core.utils.compat import array_at
 from stream_ml.core.utils.funcs import within_bounds
 
@@ -18,18 +19,18 @@ if TYPE_CHECKING:
     from stream_ml.core._core.api import Model
     from stream_ml.core.data import Data
     from stream_ml.core.params import Params
-    from stream_ml.core.params.scaler import ParamScaler
-    from stream_ml.core.typing import NNModel, ParamNameTupleOpts
+    from stream_ml.core.typing import NNModel
 
-    Self = TypeVar("Self", bound="PriorBounds")  # type: ignore[type-arg]
+    Self = TypeVar("Self", bound="ParameterBounds")  # type: ignore[type-arg]
 
 
 @dataclass(frozen=True)
-class PriorBounds(Generic[Array], metaclass=ABCMeta):
+class ParameterBounds(Generic[Array], metaclass=ABCMeta):
     """Base class for prior bounds."""
 
     lower: Array | float
     upper: Array | float
+
     _: KW_ONLY
     param_name: ParamNameTupleOpts | None = None
     scaler: ParamScaler[Array] | None = None
