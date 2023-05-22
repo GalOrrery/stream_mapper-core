@@ -41,6 +41,6 @@ class ModelScalerField:
 @dataclass(frozen=True)
 class ModelParameter(Generic[Array]):
     _: KW_ONLY
-    name: str | None
+    name: str | None = None
     bounds: PriorBounds[Array]
     scaler: ModelScalerField = ModelScalerField()
