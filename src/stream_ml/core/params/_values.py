@@ -187,9 +187,11 @@ def set_param(
     -------
     Mapping[str, V | Mapping[str, V]]
     """
-    if isinstance(m, Params):
-        return _set_param_params(m, key, value)
-    return _set_param_dict(m, key, value)
+    return (
+        _set_param_params(m, key, value)
+        if isinstance(m, Params)
+        else _set_param_dict(m, key, value)
+    )
 
 
 def _set_param_dict(

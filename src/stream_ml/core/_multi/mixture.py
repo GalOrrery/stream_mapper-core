@@ -64,17 +64,6 @@ class MixtureModel(ModelsBase[Array, NNModel]):
         self._includes_bkg: bool = includes_bkg
         self._bkg_slc = slice(-1) if includes_bkg else slice(None)
 
-        # # Add scaling to the param bounds  # TODO! unfreeze then freeze
-        # for k, v in self.param_bounds.items():
-        #     if not isinstance(k, str):
-        #         raise TypeError
-
-        #     if not isinstance(v, FrozenDict):
-        #         self.param_bounds._dict[k] = replace(v, scaler=self.param_scalers[k])
-        #         continue
-        #     for k2, v2 in v.items():
-        #         v._dict[k2] = replace(v2, scaler=self.param_scalers[k, k2])
-
     # ===============================================================
 
     @overload

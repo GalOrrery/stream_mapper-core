@@ -85,7 +85,6 @@ class PriorBounds(Generic[Array], metaclass=ABCMeta):
         Returns
         -------
         Array
-            The logpdf.
         """
         if self.param_name is None:
             msg = "need to set param_name"
