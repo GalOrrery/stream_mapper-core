@@ -1,7 +1,7 @@
 """Core library for stream membership likelihood, with ML."""
 
 
-from stream_ml.core import params, prior, utils
+from stream_ml.core import builtin, params, prior, utils
 from stream_ml.core._api import Model
 from stream_ml.core._base import ModelBase, NNField
 from stream_ml.core.data import Data
@@ -15,6 +15,7 @@ __all__ = [
     "utils",
     "params",
     "prior",
+    "builtin",
     # model classes
     "Model",
     "ModelBase",
