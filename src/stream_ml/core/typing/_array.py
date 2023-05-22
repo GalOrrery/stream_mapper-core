@@ -176,7 +176,9 @@ class ArrayNamespace(Protocol[Array]):
         ...
 
     @staticmethod
-    def concatenate(arrays: tuple[Array, ...], axis: int = 0, **kwargs: Any) -> Array:
+    def concatenate(
+        arrays: tuple[Array, ...] | list[Array], axis: int = 0, **kwargs: Any
+    ) -> Array:
         """Concatenate."""
         ...
 
