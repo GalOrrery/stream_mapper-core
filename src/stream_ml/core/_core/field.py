@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
 
 from stream_ml.core.typing import Array, NNModel
@@ -32,9 +32,9 @@ class NNField(Generic[NNModel]):
     """
 
     default: NNModel | MissingT = MISSING
-    _name: str = field(default="")
 
     def __set_name__(self, owner: type, name: str) -> None:
+        self._name: str
         object.__setattr__(self, "_name", "_" + name)
 
     def __get__(self, model: Model[Array, NNModel] | None, model_cls: Any) -> NNModel:

@@ -20,6 +20,8 @@ if TYPE_CHECKING:
 class Uniform(ModelBase[Array, NNModel]):
     """Uniform background model."""
 
+    net: None = None  # type: ignore[assignment]
+
     _: KW_ONLY
     require_mask: bool = False
 
@@ -36,14 +38,6 @@ class Uniform(ModelBase[Array, NNModel]):
                 raise ValueError(msg)
             _bma.append(b_ - a_)
         self._ln_liks = -self.xp.log(self.xp.asarray(_bma)[None, :])
-
-    @property  # type: ignore[misc, override]
-    def net(self) -> None:
-        return
-
-    @net.setter  # hack to make look writable
-    def net(self, _: Any) -> None:
-        pass
 
     # ========================================================================
     # Statistics
