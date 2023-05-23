@@ -9,6 +9,7 @@ from typing import (
     Final,
     Generic,
     Protocol,
+    TypeAlias,
     TypeGuard,
     TypeVar,
     cast,
@@ -26,12 +27,14 @@ if TYPE_CHECKING:
 
     ArrayLikeT = TypeVar("ArrayLikeT", bound=ArrayLike)
 
+    KeyT: TypeAlias = int | list[Any] | slice | tuple[int | list[Any] | slice, ...]
+
 
 #####################################################################
 # PARAMETERS
 
 
-_LEN_INDEXING_TUPLE: Final = 1
+_LEN_IDX_TUPLE: Final = 1
 
 
 #####################################################################
@@ -200,38 +203,133 @@ class Data(Generic[Array]):
         ],
         /,
     ) -> Array | Self:
-        out: Array | Self
-        if isinstance(key, str):  # get a column
-            out = cast("Array", self.array[:, self._n2k[key]])  # type: ignore[index] # noqa: E501
+        """Get an item or items from the data.
+
+        Parameters
+        ----------
+        key : Any
+            The key.
+
+        Returns
+        -------
+        Array | Self
+
+        Examples
+        --------
+        >>> data = Data(np.arange(12).reshape(3, 4), names=("a", "b", "c", "d"))
+
+        Normal indexing:
+
+        >>> data[0]  # get a row
+        Data(array([[0, 1, 2, 3]]), names=('a', 'b', 'c', 'd'))
+
+        >>> data[0:2]  # get a slice of rows
+        Data(array([[0, 1, 2, 3],
+                [4, 5, 6, 7]]), names=('a', 'b', 'c', 'd'))
+
+        >>> data[[0, 2]]  # get rows
+        Data(array([[0, 1, 2, 3],
+                [8, 9, 10, 11]]), names=('a', 'b', 'c', 'd'))
+
+        >>> data[np.array([0, 1], dtype=int)]  # get rows
+        Data(array([[0, 1, 2, 3],
+                [4, 5, 6, 7]]), names=('a', 'b', 'c', 'd'))
+
+        >>> data[:, 0]  # get a column
+        array([0, 4, 8])
+
+        >>> data[:, 0:2]  # get a slice of columns
+        Data(array([[0, 1],
+                [4, 5],
+                [8, 9]]), names=('a', 'b'))
+
+        >>> data[:, [0, 2]]  # get columns
+        Data(array([[0, 1],
+                [4, 5],
+                [8, 9]]), names=('a', 'b'))
+
+        >>> data[:, np.array([0, 1], dtype=int)]  # get columns
+        Data(array([[0, 1],
+                [4, 5],
+                [8, 9]]), names=('a', 'b'))
+
+        >>> data[0, 0]  # get an element
+        0
+
+        >>> data[0, 0:2]  # get columns of a row
+        Data(array([0, 1]), names=('a', 'b'))
+
+        >>> data[0, [0, 2]]  # get columns of a row
+        Data(array([0, 2]), names=('a', 'c'))
+
+        >>> data[0, np.array([0, 1], dtype=int)]  # get columns of a row
+        Data(array([0, 1]), names=('a', 'b'))
+
+        >>> data[[0, 2], :]  # get rows and columns
+        Data(array([[0, 1, 2, 3],
+                [8, 9, 10, 11]]), names=('a', 'b', 'c', 'd'))
+
+        Key indexing:
+
+        >>> data["a"]  # get a column
+        array([0, 4, 8])
+
+        >>> data[("a",)]  # get columns
+        Data(array([[0],
+                [4],
+                [8]]), names=('a',))
+
+        >>> data["a", "b"]  # get columns
+        Data(array([[0, 1],
+                [4, 5],
+                [8, 9]]), names=('a', 'b'))
+
+        >>> data[:, ("a", "b")]  # get columns
+        Data(array([[0, 1],
+                [4, 5],
+                [8, 9]]), names=('a', 'b'))
+
+        >>> data[:, ("a", "b"), None]  # get columns
+        Data(array([[[0],
+                [1]],
+
+                [[4],
+                [5]],
+
+                [[8],
+                [9]]]), names=('a', 'b'))
+        """
+        if isinstance(key, tuple):
+            if _all_strs(key):  # multiple columns
+                return type(self)(
+                    self._array[:, [self._n2k[k] for k in key]],  # type: ignore[index]
+                    names=key,
+                )
+            elif len(key) > _LEN_IDX_TUPLE and isinstance(key[1], int):  # get column
+                return cast("Array", self._array[key])  # type: ignore[index]
+
+            array: Array = self._array[(key[0], _parse_key_elt(key[1], self._n2k), *key[2:])]  # type: ignore[index]  # noqa: E501
+            if array.ndim == 1:
+                array = array[None, :]
+
+            if isinstance(key[1], slice):
+                names = self.names[key[1]]
+            elif isinstance(key[1], int):
+                names = (self.names[key[1]],)
+            elif isinstance(key[1], str):
+                names = (key[1],)
+            else:
+                names = tuple(
+                    (i if isinstance(i, str) else str(self._names[i])) for i in key[1]
+                )
+
+            return type(self)(array, names=names)
 
         elif isinstance(key, int):  # get a row
-            out = type(self)(self.array[None, key], names=self.names)  # type: ignore[index] # noqa: E501
-
-        elif isinstance(key, slice | list) or _is_arraylike(key):  # get rows
-            out = type(self)(self.array[key], names=self.names)  # type: ignore[index]
-
-        elif isinstance(key, tuple) and len(key) >= _LEN_INDEXING_TUPLE:
-            if _all_strs(key):  # multiple columns
-                names = key
-                key = (slice(None), tuple(self._n2k[k] for k in key))
-                out = type(self)(self.array[key], names=names)  # type: ignore[index]
-            elif isinstance(key[1], str):
-                key = (key[0], self._n2k[key[1]], *key[2:])
-                out = cast("Array", self.array[key])  # type: ignore[index]
-            elif isinstance(key[1], tuple):
-                key = (
-                    key[0],
-                    tuple(self._n2k[k] if isinstance(k, str) else k for k in key[1]),
-                    *key[2:],
-                )
-                out = cast("Array", self.array[key])  # type: ignore[index]
-            else:
-                out = cast("Array", self.array[key])  # type: ignore[index]
-
-        else:
-            out = cast("Array", self.array[key])  # type: ignore[index]
-
-        return out
+            return type(self)(self._array[None, key, :], names=self._names)  # type: ignore[index]  # noqa: E501
+        elif isinstance(key, str):  # get a column
+            return cast("Array", self._array[:, self._n2k[key]])  # type: ignore[index]
+        return type(self)(self._array[key], names=self._names)  # type: ignore[index]
 
     # =========================================================================
     # Mapping methods
@@ -305,6 +403,39 @@ class Data(Generic[Array]):
             The converted data.
         """
         return FROM_FORMAT_REGISTRY[fmt](data, **kwargs)
+
+
+def _parse_key_elt(key: Any, n2k: dict[str, int]) -> KeyT:
+    """Parse a key.
+
+    Parameters
+    ----------
+    key : Any
+        The key to parse.
+    n2k : dict[str, int]
+        The name to index mapping.
+
+    Returns
+    -------
+    int | slice | tuple[int | slice, ...]
+    """
+    if isinstance(key, int):
+        return key
+    elif isinstance(key, str):
+        return n2k[key]
+    elif isinstance(key, list) or _is_arraylike(key):
+        return [n2k[k] if isinstance(k, str) else k for k in key]
+    elif isinstance(key, slice):
+        return slice(
+            n2k[key.start] if isinstance(key.start, str) else key.start,
+            n2k[key.stop] if isinstance(key.stop, str) else key.stop,
+            key.step,
+        )
+    elif isinstance(key, tuple):
+        return tuple(n2k[k] for k in key) if _all_strs(key) else key
+    else:
+        msg = f"Invalid key type: {type(key)}"
+        raise TypeError(msg)
 
 
 ###############################################################################
