@@ -6,6 +6,7 @@ from collections.abc import Iterable, Mapping
 import itertools
 from typing import TYPE_CHECKING, TypeVar, cast, overload
 
+from stream_ml.core.setup_package import PACK_PARAM_JOIN
 from stream_ml.core.utils.frozen_dict import FrozenDict
 
 __all__: list[str] = []
@@ -91,7 +92,7 @@ class Params(FrozenDict[str, V | FrozenDict[str, V]]):
 
     def flatitems(self) -> tuple[tuple[str, V], ...]:
         """Flat items."""
-        return tuple(("_".join(k), v) for k, v in _flats_iter(self))
+        return tuple((PACK_PARAM_JOIN.join(k), v) for k, v in _flats_iter(self))
 
     # TODO: cache
     def flatkeys(self) -> tuple[str, ...]:

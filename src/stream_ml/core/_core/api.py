@@ -18,6 +18,7 @@ from stream_ml.core._api import (
 )
 from stream_ml.core.params._field import ModelParametersField
 from stream_ml.core.params._values import Params, freeze_params, set_param
+from stream_ml.core.setup_package import PACK_PARAM_JOIN
 from stream_ml.core.typing import Array, NNModel
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 
@@ -79,7 +80,6 @@ class Model(
             name.
         """
         pars: ParamsLikeDict[Array] = {}
-
         for k in packed_pars:
             # Find the non-coordinate-specific parameters.
             if k in self.params:
@@ -87,7 +87,7 @@ class Model(
                 continue
 
             # separate the coordinate and parameter names.
-            coord_name, par_name = k.split("_", maxsplit=1)
+            coord_name, par_name = k.split(PACK_PARAM_JOIN, maxsplit=1)
             # Add the parameter to the coordinate-specific dict.
             set_param(pars, (coord_name, par_name), packed_pars[k])
 

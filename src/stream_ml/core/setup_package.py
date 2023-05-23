@@ -11,6 +11,7 @@ __all__: list[str] = []
 
 WEIGHT_NAME: Final = "weight"
 BACKGROUND_KEY: Final = "background"
+PACK_PARAM_JOIN: Final = "_"
 IS_COMPILED = hasattr(Data, "__mypyc_attrs__")
 
 

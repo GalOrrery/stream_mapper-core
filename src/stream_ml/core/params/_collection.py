@@ -10,6 +10,7 @@ from itertools import chain
 from typing import TYPE_CHECKING, Any, cast, overload
 
 from stream_ml.core.params._core import ModelParameter
+from stream_ml.core.setup_package import PACK_PARAM_JOIN
 from stream_ml.core.typing import Array
 from stream_ml.core.utils.cached_property import cached_noargmethod
 from stream_ml.core.utils.frozen_dict import FrozenDict
@@ -131,7 +132,7 @@ class ModelParameters(
     @cached_noargmethod
     def flatitems(self) -> tuple[tuple[str, ModelParameter[Array]], ...]:
         """Flat items."""
-        return tuple(("_".join(k), v) for k, v in self.flatsitems())
+        return tuple((PACK_PARAM_JOIN.join(k), v) for k, v in self.flatsitems())
 
     @cached_noargmethod
     def flatkeys(self) -> tuple[str, ...]:
