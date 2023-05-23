@@ -2,15 +2,16 @@
 
 from __future__ import annotations
 
+__all__: list[str] = []
+
 from dataclasses import dataclass
 from types import EllipsisType
 from typing import (
     TYPE_CHECKING,
-    Protocol,
     TypeVar,
-    runtime_checkable,
 )
 
+from stream_ml.core.params.scaler._api import ParamScaler
 from stream_ml.core.typing import Array
 from stream_ml.core.utils.scale import StandardScaler
 
@@ -20,46 +21,12 @@ if TYPE_CHECKING:
 T = TypeVar("T", bound=str | EllipsisType)
 ParamScalerT = TypeVar("ParamScalerT", bound="ParamScaler[Array]")  # type: ignore[valid-type]  # noqa: E501
 
-__all__: list[str] = []
-
-
-@runtime_checkable
-class ParamScaler(Protocol[Array]):
-    """Protocol for parameter scalers."""
-
-    def transform(self, data: Array | float) -> Array | float:
-        """Transform the data."""
-        ...
-
-    def inverse_transform(self, data: Array) -> Array:
-        """Inverse transform the data."""
-        ...
-
-    @classmethod
-    def from_data_scaler(
-        cls: type[ParamScalerT], scaler: DataScaler, name: str
-    ) -> ParamScalerT:
-        """Construct from ``DataScaler`` object.
-
-        Parameters
-        ----------
-        scaler : `stream_ml.core.utils.scale.DataScaler`
-            The scaler object.
-        name : str
-            The name of the scaling to extract.
-
-        Returns
-        -------
-        ``ParamScaler``
-        """
-        ...
-
 
 @dataclass(frozen=True)
 class Identity(ParamScaler[Array]):
     """Identity scaler."""
 
-    def transform(self, data: Array | float) -> Array | float:
+    def transform(self, data: Array | float) -> Array | float:  # type: ignore[override]
         """Transform the data."""
         return data
 
@@ -91,12 +58,12 @@ class Identity(ParamScaler[Array]):
 class StandardLocation(ParamScaler[Array]):
     """Standard scaler for a location, which need mean and scale."""
 
-    mean: Array
-    scale: Array
+    mean: Array | float
+    scale: Array | float
 
-    def transform(self, data: Array | float) -> Array | float:
+    def transform(self, data: Array | float) -> Array:
         """Transform the data."""
-        return (data - self.mean) / self.scale
+        return (data - self.mean) / self.scale  # type: ignore[return-value]
 
     def inverse_transform(self, data: Array) -> Array:
         """Inverse transform the data."""
@@ -131,11 +98,11 @@ class StandardLocation(ParamScaler[Array]):
 class StandardWidth(ParamScaler[Array]):
     """Standard scaler for a width, which needs only the scale."""
 
-    scale: Array
+    scale: Array | float
 
-    def transform(self, data: Array | float) -> Array | float:
+    def transform(self, data: Array | float) -> Array:
         """Transform the data."""
-        return data / self.scale
+        return data / self.scale  # type: ignore[return-value]
 
     def inverse_transform(self, data: Array) -> Array:
         """Inverse transform the data."""

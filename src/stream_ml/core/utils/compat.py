@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
+__all__: list[str] = []
+
 from abc import abstractmethod
 from functools import singledispatch
 from typing import Any, Protocol
 
 from stream_ml.core.typing import Array
-
-__all__: list[str] = []
 
 
 class ArrayAt(Protocol[Array]):

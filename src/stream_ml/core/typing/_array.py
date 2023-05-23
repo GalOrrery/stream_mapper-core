@@ -176,13 +176,20 @@ class ArrayNamespace(Protocol[Array]):
         ...
 
     @staticmethod
-    def concatenate(arrays: tuple[Array, ...], axis: int = 0, **kwargs: Any) -> Array:
+    def concatenate(
+        arrays: tuple[Array, ...] | list[Array], axis: int = 0, **kwargs: Any
+    ) -> Array:
         """Concatenate."""
         ...
 
     @staticmethod
     def exp(array: Array) -> Array:
         """Exponential."""
+        ...
+
+    @staticmethod
+    def expm1(array: Array) -> Array:
+        """Exponential minus 1."""
         ...
 
     @staticmethod

@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any, Protocol, TypeVar
-
 __all__: list[str] = []
 
+from typing import Any, Protocol, TypeVar
 
 T = TypeVar("T")
 

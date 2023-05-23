@@ -2,28 +2,23 @@
 
 from __future__ import annotations
 
+__all__: list[str] = []
+
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal, overload
 
-from stream_ml.core.multi._bases import ModelsBase
-from stream_ml.core.params import (
-    ParamBounds,
-    ParamNames,
-    Params,
-    ParamScalers,
-    add_prefix,
-    freeze_params,
-    set_param,
-)
+from stream_ml.core._multi.bases import ModelsBase
+from stream_ml.core.params._collection import ModelParameters
+from stream_ml.core.params._values import Params, add_prefix, freeze_params, set_param
 from stream_ml.core.typing import Array, NNModel
 from stream_ml.core.utils.cached_property import cached_property
 from stream_ml.core.utils.funcs import get_prefixed_kwargs
 
 if TYPE_CHECKING:
-    from stream_ml.core._api import ParamKeyFull, ParamsLikeDict
     from stream_ml.core.data import Data
-
-__all__: list[str] = []
+    from stream_ml.core.params._core import ModelParameter
+    from stream_ml.core.typing import ParamNameAllOpts, ParamsLikeDict
+    from stream_ml.core.utils.frozen_dict import FrozenDict
 
 
 @dataclass(unsafe_hash=True)
@@ -56,29 +51,13 @@ class IndependentModels(ModelsBase[Array, NNModel]):
     """
 
     @cached_property
-    def param_names(self) -> ParamNames:  # type: ignore[override]
-        return ParamNames(
-            (f"{c}.{p[0]}", p[1]) if isinstance(p, tuple) else f"{c}.{p}"
-            for c, m in self.components.items()
-            for p in m.param_names
-        )
-
-    @cached_property
-    def param_bounds(self) -> ParamBounds[Array]:  # type: ignore[override]
-        """Coordinate names."""
-        cps = {}
+    def params(self) -> ModelParameters[Array]:  # type: ignore[override]
+        cps: dict[
+            str, ModelParameter[Array] | FrozenDict[str, ModelParameter[Array]]
+        ] = {}
         for n, m in self.components.items():
-            cps.update({f"{n}.{k}": v for k, v in m.param_bounds.items()})
-        return ParamBounds[Array]()
-
-    @cached_property
-    def param_scalers(self) -> ParamScalers[Array]:  # type: ignore[override]
-        """Parameter scalers."""
-        # Add the param_scalers  # TODO! not update internal to ParamScalers.
-        pss = {}
-        for n, m in self.components.items():
-            pss.update({f"{n}.{k}": v for k, v in m.param_scalers.items()})
-        return ParamScalers[Array](pss)
+            cps.update({f"{n}.{k}": v for k, v in m.params.items()})
+        return ModelParameters[Array](cps)
 
     # ===============================================================
 
@@ -87,7 +66,7 @@ class IndependentModels(ModelsBase[Array, NNModel]):
         self,
         arr: Array,
         /,
-        extras: dict[ParamKeyFull, Array] | None,
+        extras: dict[ParamNameAllOpts, Array] | None,
         *,
         freeze: Literal[False],
     ) -> ParamsLikeDict[Array]:
@@ -98,7 +77,7 @@ class IndependentModels(ModelsBase[Array, NNModel]):
         self,
         arr: Array,
         /,
-        extras: dict[ParamKeyFull, Array] | None,
+        extras: dict[ParamNameAllOpts, Array] | None,
         *,
         freeze: Literal[True] = ...,
     ) -> Params[Array]:
@@ -106,7 +85,12 @@ class IndependentModels(ModelsBase[Array, NNModel]):
 
     @overload
     def unpack_params_from_arr(
-        self, arr: Array, /, extras: dict[ParamKeyFull, Array] | None, *, freeze: bool
+        self,
+        arr: Array,
+        /,
+        extras: dict[ParamNameAllOpts, Array] | None,
+        *,
+        freeze: bool,
     ) -> Params[Array] | ParamsLikeDict[Array]:
         ...
 
@@ -114,7 +98,7 @@ class IndependentModels(ModelsBase[Array, NNModel]):
         self,
         arr: Array,
         /,
-        extras: dict[ParamKeyFull, Array] | None = None,
+        extras: dict[ParamNameAllOpts, Array] | None = None,
         *,
         freeze: bool = True,
     ) -> Params[Array] | ParamsLikeDict[Array]:
@@ -127,7 +111,7 @@ class IndependentModels(ModelsBase[Array, NNModel]):
         ----------
         arr : Array
             Parameter array.
-        extras : dict[ParamKeyFull, Array] | None, optional
+        extras : dict[ParamNameAllOpts, Array] | None, optional
             Extra parameters to add.
         freeze : bool, optional keyword-only
             Whether to freeze the parameters. Default is `True`.
@@ -139,7 +123,7 @@ class IndependentModels(ModelsBase[Array, NNModel]):
         # Unpack the parameters
         pars: ParamsLikeDict[Array] = {}
 
-        mextras: dict[ParamKeyFull, Array] | None = (
+        mextras: dict[ParamNameAllOpts, Array] | None = (
             {"weight": extras["weight"]}
             if extras is not None and "weight" in extras
             else None
@@ -148,12 +132,12 @@ class IndependentModels(ModelsBase[Array, NNModel]):
         # Iterate through the components
         j: int = 0
         for n, m in self.components.items():  # iter thru models
-            # Determine whether the model has parameters beyond the weight
-            if len(m.param_names.flat) == 0:
-                continue
+            # number of parameters
+            delta = len(m.params.flatkeys())
 
-            # number of parameters, minus the weight
-            delta = len(m.param_names.flat)
+            # Determine whether the model has parameters
+            if delta == 0:
+                continue
 
             # Get weight and relevant parameters by index
             marr = arr[:, list(range(j, j + delta))]

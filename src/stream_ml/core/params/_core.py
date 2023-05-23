@@ -1,230 +1,67 @@
-"""Core feature."""
+"""Parameter."""
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping
-from typing import TypeVar, cast, overload
-
-from stream_ml.core.params.names._core import LEN_NAME_TUPLE
-from stream_ml.core.utils.frozen_dict import FrozenDict
-
 __all__: list[str] = []
 
+from dataclasses import KW_ONLY, dataclass, replace
+from typing import TYPE_CHECKING, Any, Generic, cast
 
-V = TypeVar("V")
+from stream_ml.core.params.bounds._base import ParameterBounds  # noqa: TCH001
+from stream_ml.core.params.scaler._builtin import Identity
+from stream_ml.core.typing import Array, ParamNameTupleOpts
+
+if TYPE_CHECKING:
+    from stream_ml.core.params.scaler._api import ParamScaler
 
 
-#####################################################################
+@dataclass(frozen=True)
+class ModelScalerField:
+    def __set_name__(self, owner: type, name: str) -> None:
+        self._name: str
+        object.__setattr__(self, "_name", "_" + name)
 
+    def __get__(
+        self, model: ModelParameter[Array] | None, model_cls: Any
+    ) -> ParamScaler[Array]:
+        if model is None:
+            msg = f"no default value for {self._name!r}."
+            raise AttributeError(msg)
 
-class Params(FrozenDict[str, V | FrozenDict[str, V]]):
-    """Parameter dictionary."""
+        return cast("ParamScaler[Array]", getattr(model, self._name))
 
-    def __init__(
-        self,
-        m: Mapping[str, V | Mapping[str, V]] = {},
-        /,
-        **kwargs: V | Mapping[str, V],
+    def __set__(
+        self, model: ModelParameter[Array], value: ParamScaler[Array] | None
     ) -> None:
-        # Freeze sub-dicts
-        d: dict[str, V | FrozenDict[str, V]] = {
-            k: v if not isinstance(v, Mapping) else FrozenDict[str, V](v)
-            for k, v in dict(m, **kwargs).items()
-        }
-        super().__init__(d, __unsafe_skip_copy__=True)
-
-    # -----------------------------------------------------
-
-    @overload
-    def __getitem__(self, key: str) -> V | FrozenDict[str, V]:
-        ...
-
-    @overload
-    def __getitem__(self, key: tuple[str]) -> V:
-        ...
-
-    @overload
-    def __getitem__(self, key: tuple[str, str]) -> V:
-        ...
-
-    def __getitem__(
-        self, key: str | tuple[str] | tuple[str, str]
-    ) -> V | FrozenDict[str, V]:
-        if isinstance(key, str):
-            value = self._dict[key]
-        elif len(key) == 1:
-            value = self._dict[key[0]]
-        elif len(key) == LEN_NAME_TUPLE:
-            key = cast("tuple[str, str]", key)  # TODO: remove cast
-            cm = self._dict[key[0]]
-            if not isinstance(cm, Mapping):
-                raise KeyError(str(key))
-            value = cm[key[1]]
-        else:
-            raise KeyError(str(key))
-        return value
-
-    def unfreeze(self) -> dict[str, V | dict[str, V]]:  # type: ignore[override]
-        """Unfreeze the parameters."""
-        return unfreeze_params(self)
-
-    # =========================================================================
-    # Flat
-
-    def flatitems(self) -> Iterable[tuple[str, V]]:
-        """Flat items."""
-        for k, v in self.items():
-            if not isinstance(v, Mapping):
-                yield k, v
-            else:
-                for k2, v2 in v.items():
-                    yield f"{k}_{k2}", v2
-
-    def flatkeys(self) -> Iterable[str]:
-        """Flat keys."""
-        return tuple(k for k, _ in self.flatitems())
-
-    def flatvalues(self) -> Iterable[V]:
-        """Flat values."""
-        return tuple(v for _, v in self.flatitems())
-
-    # =========================================================================
-
-    def get_prefixed(self, prefix: str) -> Params[V]:
-        """Get the keys starting with the prefix, stripped of that prefix."""
-        prefix = prefix + "." if not prefix.endswith(".") else prefix
-        lp = len(prefix)
-        return type(self)({k[lp:]: v for k, v in self.items() if k.startswith(prefix)})
-
-    def add_prefix(self, prefix: str, /) -> Params[V]:
-        """Add the prefix to the keys."""
-        return add_prefix(self, prefix)
+        object.__setattr__(
+            model, self._name, value if value is not None else Identity()
+        )
 
 
-#####################################################################
-
-
-def freeze_params(m: Mapping[str, V | Mapping[str, V]], /) -> Params[V]:
-    """Freeze a mapping of parameters."""
-    return Params(m)
-
-
-def unfreeze_params(
-    pars: Params[V],
-    /,
-) -> dict[str, V | dict[str, V]]:
-    """Unfreeze a mapping of parameters."""
-    return {k: (v if not isinstance(v, Mapping) else dict(v)) for k, v in pars.items()}
-
-
-# -----------------------------------------------------
-
-
-@overload
-def set_param(
-    m: dict[str, V | dict[str, V]],
-    /,
-    key: str | tuple[str] | tuple[str, str],
-    value: V | dict[str, V],
-) -> dict[str, V | dict[str, V]]:
-    ...
-
-
-@overload
-def set_param(
-    m: Params[V],
-    /,
-    key: str | tuple[str] | tuple[str, str],
-    value: V | dict[str, V],
-) -> Params[V]:
-    ...
-
-
-def set_param(
-    m: dict[str, V | dict[str, V]] | Params[V],
-    /,
-    key: str | tuple[str] | tuple[str, str],
-    value: V | dict[str, V],
-) -> dict[str, V | dict[str, V]] | Params[V]:
-    """Set a parameter on a Params or Params-like dictionary.
+@dataclass(frozen=True)
+class ModelParameter(Generic[Array]):
+    """Model parameter.
 
     Parameters
     ----------
-    m : MutableMapping[str, V | MutableMapping[str, V]], positional-only
-        The dictionary to set the parameter on.
-    key : str | tuple[str] | tuple[str, str]
-        The key to set.
-    value : V | dict[str, V]
-        The value to set.
+    bounds : ParameterBounds, optional keyword-only
+        The bounds of the parameter, by default :class:`stream_ml.core.ParameterBounds`.
+    scaler : ParamScaler, optional keyword-only
+        The scaler for the parameter.
 
-    Returns
-    -------
-    Mapping[str, V | Mapping[str, V]]
+    param_name : tuple[str] | tuple[str, str] | None, optional keyword-only
+        The name of the parameter in the :class:`stream_ml.core.ModelParameters`
+        dict, by default `None`.
     """
-    if isinstance(m, Params):
-        return _set_param_params(m, key, value)
-    return _set_param_dict(m, key, value)
 
+    _: KW_ONLY
+    bounds: ParameterBounds[Array]
+    scaler: ModelScalerField = ModelScalerField()
+    param_name: ParamNameTupleOpts | None = None
 
-def _set_param_dict(
-    m: dict[str, V | dict[str, V]],
-    /,
-    key: str | tuple[str] | tuple[str, str],
-    value: V | dict[str, V],
-) -> dict[str, V | dict[str, V]]:
-    if isinstance(key, str):
-        m[key] = value
-    elif len(key) == 1:
-        m[key[0]] = value
-    else:
-        key = cast("tuple[str, str]", key)  # TODO: remove cast
-        if key[0] not in m:
-            m[key[0]] = {}
-        if not isinstance((cm := m[key[0]]), dict):
-            raise KeyError(str(key))
-        cm[key[1]] = value  # type: ignore[assignment]
-
-    return m
-
-
-def _set_param_params(
-    m: Params[V],
-    /,
-    key: str | tuple[str] | tuple[str, str],
-    value: V | dict[str, V],
-) -> Params[V]:
-    if isinstance(key, str) or len(key) == 1:
-        # We can shortcut copying sub-dicts
-        pum = dict(m._dict.items())
-        k = key if isinstance(key, str) else key[0]
-        pum[k] = FrozenDict(value) if isinstance(value, dict) else value
-        # Note this copies the dict one more time. It would be nice to avoid this.
-        return type(m)(pum)
-    else:
-        # Note this copies the dict one more time. It would be nice to avoid this.
-        return type(m)(set_param(m.unfreeze(), key, value))
-
-
-# -----------------------------------------------------
-
-
-M = TypeVar("M", dict[str, V], Params[V])  # type: ignore[valid-type]
-
-
-def add_prefix(m: M, /, prefix: str) -> M:
-    """Add the prefix to the keys.
-
-    Parameters
-    ----------
-    m : Mapping, positional-only
-        The mapping to add the prefix to. Keys must be strings.
-    prefix : str
-        The prefix to add.
-
-    Returns
-    -------
-    Mapping
-        The mapping with the prefix added to the keys.
-        Same type as the input mapping.
-    """
-    return m.__class__({f"{prefix}{k}": v for k, v in m.items()})
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "bounds",
+            replace(self.bounds, scaler=self.scaler, param_name=self.param_name),
+        )

@@ -2,12 +2,26 @@
 
 from __future__ import annotations
 
+__all__ = [
+    "Array",
+    "Array_co",
+    "ArrayLike",
+    "ArrayNamespace",
+    "BoundsT",
+    "NNNamespace",
+    "NNModel",
+    "ParamNameTupleOpts",
+]
+
+
 from typing import TypeAlias
 
-from stream_ml.core.typing.array import Array, ArrayLike, ArrayNamespace
-from stream_ml.core.typing.nn import NNModel, NNNamespace
-
-__all__ = ["Array", "ArrayLike", "ArrayNamespace", "BoundsT", "NNNamespace", "NNModel"]
-
+from stream_ml.core.typing._array import Array, Array_co, ArrayLike, ArrayNamespace
+from stream_ml.core.typing._nn import NNModel, NNNamespace
 
 BoundsT: TypeAlias = tuple[float, float]
+
+ParamNameTupleOpts: TypeAlias = tuple[str] | tuple[str, str]
+ParamNameAllOpts: TypeAlias = str | ParamNameTupleOpts
+
+ParamsLikeDict: TypeAlias = dict[str, Array | dict[str, Array]]

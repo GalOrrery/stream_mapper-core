@@ -2,21 +2,20 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast, overload
-
 __all__: list[str] = []
+
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast, overload
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
 
 R = TypeVar("R")
-Self = TypeVar("Self", bound="cached_property[R]")  # type: ignore[valid-type]
+Self = TypeVar("Self", bound="cached_[R]")  # type: ignore[valid-type]
 
 
-class cached_property(Generic[R]):  # noqa: N801
-    """Emulate PyProperty_Type() in Objects/descrobject.c."""
-
+class cached_(Generic[R]):  # noqa: N801
     def __init__(
         self,
         fget: Callable[[Any], R] | None = None,
@@ -36,26 +35,6 @@ class cached_property(Generic[R]):  # noqa: N801
     def __set_name__(self, owner: type, name: str, /) -> None:
         self._name = name
         self._name_private = "_" + name
-
-    @overload
-    def __get__(self: Self, obj: None, objtype: type | None = None) -> Self:
-        ...
-
-    @overload
-    def __get__(self, obj: object, objtype: type | None = None) -> R:
-        ...
-
-    def __get__(
-        self: Self, obj: object | None, objtype: type | None = None
-    ) -> Self | R:
-        if obj is None:
-            return self
-        if not hasattr(self, self._name_private):
-            if self.fget is None:
-                f"property '{self._name}' has no getter"
-                raise AttributeError
-            object.__setattr__(obj, self._name_private, self.fget(obj))
-        return cast("R", getattr(obj, self._name_private))
 
     def __set__(self, obj: object, value: Any) -> None:
         if self.fset is None:
@@ -89,3 +68,59 @@ class cached_property(Generic[R]):  # noqa: N801
         prop._name = self._name
         prop._name_private = self._name_private
         return prop
+
+
+class cached_property(cached_[R]):  # noqa: N801
+    """Emulate PyProperty_Type() in Objects/descrobject.c."""
+
+    @overload
+    def __get__(self: Self, obj: None, objtype: type | None = None) -> Self:
+        ...
+
+    @overload
+    def __get__(self, obj: object, objtype: type | None = None) -> R:
+        ...
+
+    def __get__(
+        self: Self, obj: object | None, objtype: type | None = None
+    ) -> Self | R:
+        if obj is None:
+            return self
+        if not hasattr(obj, self._name_private):
+            if self.fget is None:
+                f"property '{self._name}' has no getter"
+                raise AttributeError
+            object.__setattr__(obj, self._name_private, self.fget(obj))
+        return cast("R", getattr(obj, self._name_private))
+
+
+@dataclass(frozen=True, slots=True)
+class WrappedValue(Generic[R]):
+    value: R
+
+    def __call__(self) -> R:
+        return self.value
+
+
+class cached_noargmethod(cached_[R]):  # noqa: N801
+    @overload
+    def __get__(self: Self, obj: None, objtype: type | None = None) -> Self:
+        ...
+
+    @overload
+    def __get__(self, obj: object, objtype: type | None = None) -> Callable[[], R]:
+        ...
+
+    def __get__(
+        self: Self, obj: object | None, objtype: type | None = None
+    ) -> Self | Callable[[], R]:
+        if obj is None:
+            return self
+        if not hasattr(obj, self._name_private):
+            if self.fget is None:
+                f"property '{self._name}' has no getter"
+                raise AttributeError
+
+            object.__setattr__(obj, self._name_private, WrappedValue(self.fget(obj)))
+
+        return cast("Callable[[], R]", getattr(obj, self._name_private))

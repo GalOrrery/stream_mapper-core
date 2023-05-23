@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+__all__: list[str] = []
+
 from typing import TYPE_CHECKING, Any, cast
 
 from numpy.lib.recfunctions import (
@@ -10,8 +12,6 @@ from numpy.lib.recfunctions import (
 )
 
 from stream_ml.core.data import FROM_FORMAT_REGISTRY, TO_FORMAT_REGISTRY, Data
-
-__all__: list[str] = []
 
 if TYPE_CHECKING:
     from astropy.table import Table

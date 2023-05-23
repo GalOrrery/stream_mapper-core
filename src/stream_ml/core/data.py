@@ -24,8 +24,7 @@ if TYPE_CHECKING:
 
     Self = TypeVar("Self", bound="Data[Array]")  # type: ignore[valid-type]
 
-    ArrayT = TypeVar("ArrayT", bound=ArrayLike)
-    T = TypeVar("T")
+    ArrayLikeT = TypeVar("ArrayLikeT", bound=ArrayLike)
 
 
 #####################################################################
@@ -164,7 +163,18 @@ class Data(Generic[Array]):
 
     @overload
     def __getitem__(
-        self, key: tuple[int | slice | str | tuple[int | str, ...], ...], /
+        self,
+        key: tuple[
+            int
+            | str
+            | slice
+            | tuple[int, ...]
+            | tuple[str, ...]
+            | tuple[slice, ...]
+            | tuple[int | str | slice, ...],
+            ...,
+        ],
+        /,
     ) -> Array:
         ...
 
@@ -178,7 +188,16 @@ class Data(Generic[Array]):
         | tuple[int, ...]
         | tuple[str, ...]
         | tuple[slice, ...]
-        | tuple[int | slice | str | tuple[int | str, ...], ...],
+        | tuple[
+            int
+            | str
+            | slice
+            | tuple[int, ...]
+            | tuple[str, ...]
+            | tuple[slice, ...]
+            | tuple[int | str | slice, ...],
+            ...,
+        ],
         /,
     ) -> Array | Self:
         out: Array | Self
@@ -237,7 +256,7 @@ class Data(Generic[Array]):
         """Convert to a JAX array."""
         return self.array
 
-    def astype(self, fmt: type[ArrayT], /) -> Data[ArrayT]:
+    def astype(self, fmt: type[ArrayLikeT], /) -> Data[ArrayLikeT]:
         """Convert the data to a different format.
 
         Parameters
@@ -250,9 +269,9 @@ class Data(Generic[Array]):
         Data
             The converted data.
         """
-        return cast("Data[ArrayT]", ASTYPE_REGISTRY[(type(self.array), fmt)](self))
+        return cast("Data[ArrayLikeT]", ASTYPE_REGISTRY[(type(self.array), fmt)](self))
 
-    def to_format(self, fmt: type[ArrayT], /) -> ArrayT:
+    def to_format(self, fmt: type[ArrayLikeT], /) -> ArrayLikeT:
         """Convert the data to a different format.
 
         Parameters
@@ -265,7 +284,7 @@ class Data(Generic[Array]):
         Data
             The converted data.
         """
-        return cast("ArrayT", TO_FORMAT_REGISTRY[(type(self.array), fmt)](self))
+        return cast("ArrayLikeT", TO_FORMAT_REGISTRY[(type(self.array), fmt)](self))
 
     @classmethod
     def from_format(cls, data: Any, /, fmt: str, **kwargs: Any) -> Data[Any]:
