@@ -420,9 +420,9 @@ def _parse_key_elt(key: Any, n2k: dict[str, int]) -> KeyT:
     int | slice | tuple[int | slice, ...]
     """
     if isinstance(key, int):
-        return key
+        return (key,)
     elif isinstance(key, str):
-        return n2k[key]
+        return (n2k[key],)
     elif isinstance(key, list) or _is_arraylike(key):
         return [n2k[k] if isinstance(k, str) else k for k in key]
     elif isinstance(key, slice):
