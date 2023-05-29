@@ -249,6 +249,11 @@ class ArrayNamespace(Protocol[Array]):
         ...
 
     @staticmethod
+    def sum(array: Array, /, axis: int | None = None) -> Array:  # noqa: A003
+        """Sum."""
+        ...
+
+    @staticmethod
     def zeros(*args: Any, dtype: Any = ..., **kwargs: Any) -> Array:
         """Zeros.
 

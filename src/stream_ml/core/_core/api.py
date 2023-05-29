@@ -181,17 +181,15 @@ class Model(
     def ln_likelihood_tot(
         self, mpars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
-        return self.ln_likelihood(mpars, data, **kwargs).sum()
+        return self.xp.sum(self.ln_likelihood(mpars, data, **kwargs))
 
     def ln_prior_tot(self, mpars: Params[Array], data: Data[Array]) -> Array:
-        return self.ln_prior(mpars, data).sum()
+        return self.xp.sum(self.ln_prior(mpars, data))
 
     def ln_posterior_tot(
         self, mpars: Params[Array], data: Data[Array], **kw: Array
     ) -> Array:
-        return self.ln_likelihood_tot(mpars, data, **kw) + self.ln_prior_tot(
-            mpars, data
-        )
+        return self.xp.sum(self.ln_posterior(mpars, data, **kw))
 
     # ------------------------------------------------------------------------
     # Non-logarithmic elementwise versions
