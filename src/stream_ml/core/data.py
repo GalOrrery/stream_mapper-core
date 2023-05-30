@@ -77,7 +77,7 @@ class Data(Generic[Array]):
     array: Array
     _: KW_ONLY
     names: tuple[str, ...]
-    _n2k: dict[str, int] = field(init=False, repr=False)
+    _n2k: dict[str, int] = field(init=False, repr=False, hash=False, compare=False)
 
     def __post_init__(self) -> None:
         # Check that the number of names matches the number of columns.
