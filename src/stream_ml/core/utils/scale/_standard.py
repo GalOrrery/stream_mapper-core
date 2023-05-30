@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, cast
 import numpy as np
 
 from stream_ml.core.data import Data
+from stream_ml.core.utils.compat import get_namespace
 from stream_ml.core.utils.scale._api import DataScaler, T
 
 __all__: list[str] = []
@@ -33,7 +34,7 @@ class StandardScaler(DataScaler):
         data : Array, positional-only
             The data used to compute the mean and standard deviation.
         names : tuple[str, ...], optional
-            The names of the columns to scale.
+            The names of columns in `data`.
 
         Returns
         -------
@@ -42,17 +43,18 @@ class StandardScaler(DataScaler):
         if isinstance(data, Data):
             data = data[names].array
 
-        ncols = data.shape[1]
-        self.mean = np.array([np.nanmean(np.array(data[:, i])) for i in range(ncols)])
-        self.scale = np.array([np.nanstd(np.array(data[:, i])) for i in range(ncols)])
+        xp = get_namespace(data)
+
+        self.mean = xp.mean(data, 0).flatten()
+        self.scale = xp.std(data, 0).flatten()
         self.names = names
 
         return self
 
     def transform(self, data: T, /, names: tuple[str, ...]) -> T:
         """Standardize a dataset along the features axis."""
-        mean = np.array([self.mean[self.names.index(name)] for name in names])
-        scale = np.array([self.scale[self.names.index(name)] for name in names])
+        mean = self.mean[[self.names.index(n) for n in names]]
+        scale = self.scale[[self.names.index(n) for n in names]]
 
         return cast(T, _transform(data, mean, scale, names=names))
 
@@ -68,10 +70,7 @@ class StandardScaler(DataScaler):
         **kwargs: Any,
     ) -> T:
         """Scale back the data to the original representation."""
-        return cast(
-            T,
-            _transform_inv(data, self.mean, self.scale, names=names),
-        )
+        return cast(T, _transform_inv(data, self.mean, self.scale, names=names))
 
 
 # ============================================================================
@@ -107,11 +106,7 @@ def _transform_inv(data: Any, mean: Any, scale: Any, /, names: tuple[str, ...]) 
 
 @_transform_inv.register(Data)
 def _transform_inv_data(
-    data: Data[Array],
-    mean: Array,
-    scale: Array,
-    /,
-    names: tuple[str, ...],
+    data: Data[Array], mean: Array, scale: Array, /, names: tuple[str, ...]
 ) -> Data[Array]:
     shape = (-1,) + (1,) * (len(data.array.shape) - 2)
     mean_ = np.array([mean[data.names.index(name)] for name in names]).reshape(shape)
