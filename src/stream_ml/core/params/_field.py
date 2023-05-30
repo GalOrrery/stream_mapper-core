@@ -1,8 +1,10 @@
 """Parameter."""
 
+from collections.abc import Mapping
 from typing import Generic, Protocol, final
 
 from stream_ml.core.params._collection import ModelParameters
+from stream_ml.core.params._core import ModelParameter
 from stream_ml.core.typing import Array
 
 __all__: list[str] = []
@@ -31,7 +33,10 @@ class ModelParametersField(Generic[Array]):
         msg = f"no default value for {self._name}"
         raise AttributeError(msg)
 
-    def __set__(self, model: SupportsCoordNames, value: ModelParameters[Array]) -> None:
-        # TODO: allow input to be many types, cast to Params
-        # TODO! validation
+    def __set__(
+        self,
+        model: SupportsCoordNames,
+        value: ModelParameters[Array]
+        | Mapping[str, ModelParameter[Array] | Mapping[str, ModelParameter[Array]]],
+    ) -> None:
         object.__setattr__(model, self._name, ModelParameters[Array](value))

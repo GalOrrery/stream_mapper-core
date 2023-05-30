@@ -28,6 +28,11 @@ class Params(FrozenDict[str, V | FrozenDict[str, V]]):
         /,
         **kwargs: V | Mapping[str, V],
     ) -> None:
+        # Shortcut if `m` is Params and there's no kwargs
+        if isinstance(m, Params) and not kwargs:
+            super().__init__(m._dict, __unsafe_skip_copy__=True)
+            return
+
         # Freeze sub-dicts
         d: dict[str, V | FrozenDict[str, V]] = {
             k: (v if not isinstance(v, Mapping) else FrozenDict[str, V](v))
