@@ -6,9 +6,12 @@ __all__: list[str] = []
 
 from abc import abstractmethod
 from functools import singledispatch
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 from stream_ml.core.typing import Array
+
+if TYPE_CHECKING:
+    from stream_ml.core.typing import ArrayNamespace
 
 
 class ArrayAt(Protocol[Array]):
@@ -42,3 +45,21 @@ def array_at(array: Array, idx: Any, /, *, inplace: bool = True) -> ArrayAt[Arra
         Setter.
     """
     raise NotImplementedError
+
+
+@singledispatch
+def get_namespace(array: Array, /) -> ArrayNamespace[Array]:
+    """Get the namespace of the array.
+
+    Parameters
+    ----------
+    array : Array
+        Array to get the namespace of.
+
+    Returns
+    -------
+    ArrayNamespace[Array]
+        Namespace.
+    """
+    msg = f"unknown array type {type(array)}."
+    raise NotImplementedError(msg)
