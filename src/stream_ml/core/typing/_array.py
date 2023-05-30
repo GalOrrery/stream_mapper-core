@@ -236,6 +236,11 @@ class ArrayNamespace(Protocol[Array]):
         ...
 
     @staticmethod
+    def mean(array: Array, /, axis: int | None = None) -> Array:
+        """Mean."""
+        ...
+
+    @staticmethod
     def ones(*args: Any, dtype: Any = ..., **kwargs: Any) -> Array:
         """Ones.
 
@@ -284,6 +289,11 @@ class ArrayNamespace(Protocol[Array]):
     @staticmethod
     def sigmoid(array: Array) -> Array:
         """Sigmoid."""
+        ...
+
+    @staticmethod
+    def std(array: Array, /, axis: int | None = None) -> Array:
+        """Standard deviation."""
         ...
 
     @staticmethod
