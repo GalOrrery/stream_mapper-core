@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import KW_ONLY, dataclass, field
 from textwrap import indent
 from typing import (
     TYPE_CHECKING,
@@ -54,7 +55,7 @@ def _is_arraylike(obj: Any) -> TypeGuard[ArrayLike]:
     return hasattr(obj, "dtype") and hasattr(obj, "shape")
 
 
-# @dataclass(frozen=True)  # TODO: when mypyc supports generic dataclasses
+@dataclass(frozen=True, slots=True)
 class Data(Generic[Array]):
     """Labelled data.
 
@@ -73,25 +74,10 @@ class Data(Generic[Array]):
         If the number of names does not match the number of columns in `data`.
     """
 
-    def __init__(self, array: Array, /, *, names: tuple[str, ...]) -> None:
-        super().__init__()
-
-        self._array = array
-        self._names = names
-
-        self.__post_init__()
-
-    @property
-    def array(self) -> Array:
-        """The underlying array."""
-        return self._array
-
-    @property
-    def names(self) -> tuple[str, ...]:
-        """The names of the features."""
-        return self._names
-
-    # =========================================================================
+    array: Array
+    _: KW_ONLY
+    names: tuple[str, ...]
+    _n2k: dict[str, int] = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         # Check that the number of names matches the number of columns.
@@ -104,12 +90,15 @@ class Data(Generic[Array]):
 
         # Map names to column indices. This could be a ``@cached_property``, but
         # it's not worth the overhead.
-        self._n2k: dict[str, int]
         object.__setattr__(self, "_n2k", {name: i for i, name in enumerate(self.names)})
+
+    # =========================================================================
 
     def __getattr__(self, key: str) -> Any:
         """Get an attribute of the underlying array."""
         return getattr(self.array, key)
+
+    # =========================================================================
 
     def __len__(self) -> int:
         return len(self.array)
@@ -302,13 +291,13 @@ class Data(Generic[Array]):
         if isinstance(key, tuple):
             if _all_strs(key):  # multiple columns
                 return type(self)(
-                    self._array[:, [self._n2k[k] for k in key]],  # type: ignore[index]
+                    self.array[:, [self._n2k[k] for k in key]],  # type: ignore[index]
                     names=key,
                 )
             elif len(key) > _LEN_IDX_TUPLE and isinstance(key[1], int):  # get column
-                return cast("Array", self._array[key])  # type: ignore[index]
+                return cast("Array", self.array[key])  # type: ignore[index]
 
-            array: Array = self._array[(key[0], _parse_key_elt(key[1], self._n2k), *key[2:])]  # type: ignore[index]  # noqa: E501
+            array: Array = self.array[(key[0], _parse_key_elt(key[1], self._n2k), *key[2:])]  # type: ignore[index]  # noqa: E501
             if array.ndim == 1:
                 array = array[None, :]
 
@@ -320,16 +309,16 @@ class Data(Generic[Array]):
                 names = (key[1],)
             else:
                 names = tuple(
-                    (i if isinstance(i, str) else str(self._names[i])) for i in key[1]
+                    (i if isinstance(i, str) else str(self.names[i])) for i in key[1]
                 )
 
             return type(self)(array, names=names)
 
         elif isinstance(key, int):  # get a row
-            return type(self)(self._array[None, key, :], names=self._names)  # type: ignore[index]  # noqa: E501
+            return type(self)(self.array[None, key, :], names=self.names)  # type: ignore[index]  # noqa: E501
         elif isinstance(key, str):  # get a column
-            return cast("Array", self._array[:, self._n2k[key]])  # type: ignore[index]
-        return type(self)(self._array[key], names=self._names)  # type: ignore[index]
+            return cast("Array", self.array[:, self._n2k[key]])  # type: ignore[index]
+        return type(self)(self.array[key], names=self.names)  # type: ignore[index]
 
     # =========================================================================
     # Mapping methods
