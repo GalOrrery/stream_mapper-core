@@ -4,7 +4,7 @@ from __future__ import annotations
 
 __all__: list[str] = []
 
-from dataclasses import KW_ONLY, dataclass, replace
+from dataclasses import KW_ONLY, dataclass, field, replace
 from typing import TYPE_CHECKING, Any, Generic, cast
 
 from stream_ml.core.params.bounds._base import ParameterBounds  # noqa: TCH001
@@ -15,10 +15,13 @@ if TYPE_CHECKING:
     from stream_ml.core.params.scaler._api import ParamScaler
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class ModelScalerField:
+    """Dataclass descriptor for parameter scalers."""
+
+    _name: str = field(init=False)
+
     def __set_name__(self, owner: type, name: str) -> None:
-        self._name: str
         object.__setattr__(self, "_name", "_" + name)
 
     def __get__(

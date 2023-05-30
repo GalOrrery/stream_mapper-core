@@ -35,6 +35,11 @@ class ModelParameters(
         /,
         **kwargs: ModelParameter[Array] | Mapping[str, ModelParameter[Array]],
     ) -> None:
+        # Shortcut if `m` is ModelParameters and there's no kwargs
+        if isinstance(m, ModelParameters) and not kwargs:
+            super().__init__(m._dict, __unsafe_skip_copy__=True)
+            return
+
         # Freeze sub-dicts
         d: dict[
             str, ModelParameter[Array] | FrozenDict[str, ModelParameter[Array]]
