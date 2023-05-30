@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
-from dataclasses import KW_ONLY, dataclass
+from dataclasses import KW_ONLY, InitVar, dataclass
 from math import inf
 from typing import TYPE_CHECKING
 
-from stream_ml.core.params.scaler._api import ParamScaler  # noqa: TCH001
 from stream_ml.core.prior._base import PriorBase
 from stream_ml.core.typing import Array, ArrayNamespace
 from stream_ml.core.utils.compat import array_at
 from stream_ml.core.utils.funcs import within_bounds
+from stream_ml.core.utils.scale import DataScaler  # noqa: TCH001
 
 if TYPE_CHECKING:
     from stream_ml.core._core.api import Model
@@ -51,9 +51,9 @@ class HardThreshold(PriorBase[Array]):
     lower: float = -inf
     upper: float = inf
 
-    scaler: ParamScaler[Array]
+    data_scaler: InitVar[DataScaler]
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, data_scaler: DataScaler) -> None:
         """Post-init."""
         super().__post_init__()
         if self.lower > self.upper:
@@ -64,7 +64,10 @@ class HardThreshold(PriorBase[Array]):
         object.__setattr__(
             self,
             "scaled_bounds",
-            (self.scaler.transform(self.lower), self.scaler.transform(self.upper)),
+            (
+                data_scaler.transform(self.lower, names=(self.coord_name,)),
+                data_scaler.transform(self.upper, names=(self.coord_name,)),
+            ),
         )
 
     @property
