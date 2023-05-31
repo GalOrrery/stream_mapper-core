@@ -9,10 +9,17 @@ from typing import TYPE_CHECKING, Literal, cast, overload
 
 from stream_ml.core import NNField
 from stream_ml.core._multi.bases import ModelsBase
-from stream_ml.core.params import Params, add_prefix, freeze_params
+from stream_ml.core.params import (
+    ModelParameter,
+    ModelParameters,
+    Params,
+    add_prefix,
+    freeze_params,
+)
 from stream_ml.core.params._field import ModelParametersField
 from stream_ml.core.setup_package import BACKGROUND_KEY
 from stream_ml.core.typing import Array, NNModel
+from stream_ml.core.utils.cached_property import cached_property
 from stream_ml.core.utils.funcs import get_prefixed_kwargs
 from stream_ml.core.utils.scale import DataScaler  # noqa: TCH001
 from stream_ml.core.utils.sentinel import MISSING
@@ -20,6 +27,7 @@ from stream_ml.core.utils.sentinel import MISSING
 if TYPE_CHECKING:
     from stream_ml.core.data import Data
     from stream_ml.core.typing import ParamNameAllOpts, ParamsLikeDict
+    from stream_ml.core.utils.frozen_dict import FrozenDict
 
 
 @dataclass
@@ -67,6 +75,16 @@ class MixtureModel(ModelsBase[Array, NNModel]):
             raise KeyError(msg)
         self._includes_bkg: bool = includes_bkg
         self._bkg_slc = slice(-1) if includes_bkg else slice(None)
+
+    @cached_property
+    def composite_params(self) -> ModelParameters[Array]:  # type: ignore[override]
+        cps: dict[
+            str, ModelParameter[Array] | FrozenDict[str, ModelParameter[Array]]
+        ] = {}
+        for n, m in self.components.items():
+            cps[f"{n}.weight"] = self.params[f"{n}.weight"]
+            cps.update({f"{n}.{k}": v for k, v in m.params.items()})
+        return ModelParameters[Array](cps)
 
     # ===============================================================
 
