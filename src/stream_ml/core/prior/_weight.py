@@ -14,6 +14,7 @@ from stream_ml.core.utils.scale import DataScaler  # noqa: TCH001
 
 if TYPE_CHECKING:
     from stream_ml.core._core.api import Model
+    from stream_ml.core._multi.bases import ModelsBase
     from stream_ml.core.data import Data
     from stream_ml.core.params._values import Params
     from stream_ml.core.typing import NNModel
@@ -119,7 +120,7 @@ class HardThreshold(PriorBase[Array]):
         return array_at(lnp, where).set(-xp.inf)
 
     def __call__(
-        self, pred: Array, data: Data[Array], model: Model[Array, NNModel]
+        self, pred: Array, data: Data[Array], model: ModelsBase[Array, NNModel]  # type: ignore[override]  # noqa: E501
     ) -> Array:
         """Evaluate the forward step in the prior.
 
@@ -136,7 +137,7 @@ class HardThreshold(PriorBase[Array]):
         -------
         Array
         """
-        i = model.params.flatskeys().index((self.param_name,))
+        i = model.composite_params.flatskeys().index((self.param_name,))
         where = within_bounds(data[self.coord_name].flatten(), *self.scaled_bounds) & (
             pred[:, i] < self.threshold
         )

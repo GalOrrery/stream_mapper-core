@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from abc import ABCMeta
+from abc import ABCMeta, abstractmethod
 from collections.abc import ItemsView, Iterator, KeysView, Mapping, ValuesView
 from dataclasses import KW_ONLY, dataclass, fields
 from typing import TYPE_CHECKING, Any, Protocol
@@ -22,7 +22,7 @@ from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
     from stream_ml.core.data import Data
-    from stream_ml.core.params import Params
+    from stream_ml.core.params import ModelParameters, Params
     from stream_ml.core.prior import PriorBase
 
 __all__: list[str] = []
@@ -97,6 +97,12 @@ class ModelsBase(
         for m in self.components.values():
             cbs.update(m.coord_bounds)
         return FrozenDict(cbs)
+
+    @property
+    @abstractmethod
+    def composite_params(self) -> ModelParameters[Array]:
+        """Composite parameters."""
+        return self.params
 
     # ===============================================================
     # Mapping

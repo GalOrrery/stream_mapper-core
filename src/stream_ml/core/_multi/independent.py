@@ -59,6 +59,11 @@ class IndependentModels(ModelsBase[Array, NNModel]):
             cps.update({f"{n}.{k}": v for k, v in m.params.items()})
         return ModelParameters[Array](cps)
 
+    @property
+    def composite_params(self) -> ModelParameters[Array]:
+        """Composite parameters."""
+        return self.params
+
     # ===============================================================
 
     @overload
