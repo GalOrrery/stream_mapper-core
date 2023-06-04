@@ -67,7 +67,7 @@ class IndependentModels(ModelsBase[Array, NNModel]):
     # ===============================================================
 
     @overload
-    def unpack_params_from_arr(
+    def _unpack_params_from_arr(
         self,
         arr: Array,
         /,
@@ -78,18 +78,18 @@ class IndependentModels(ModelsBase[Array, NNModel]):
         ...
 
     @overload
-    def unpack_params_from_arr(
+    def _unpack_params_from_arr(
         self,
         arr: Array,
         /,
         extras: dict[ParamNameAllOpts, Array] | None,
         *,
-        freeze: Literal[True] = ...,
+        freeze: Literal[True],
     ) -> Params[Array]:
         ...
 
     @overload
-    def unpack_params_from_arr(
+    def _unpack_params_from_arr(
         self,
         arr: Array,
         /,
@@ -99,13 +99,13 @@ class IndependentModels(ModelsBase[Array, NNModel]):
     ) -> Params[Array] | ParamsLikeDict[Array]:
         ...
 
-    def unpack_params_from_arr(
+    def _unpack_params_from_arr(
         self,
         arr: Array,
         /,
-        extras: dict[ParamNameAllOpts, Array] | None = None,
+        extras: dict[ParamNameAllOpts, Array] | None,
         *,
-        freeze: bool = True,
+        freeze: bool,
     ) -> Params[Array] | ParamsLikeDict[Array]:
         """Unpack parameters into a dictionary.
 
@@ -154,7 +154,7 @@ class IndependentModels(ModelsBase[Array, NNModel]):
             # Add the component's parameters, prefixed with the component name
             pars.update(
                 add_prefix(
-                    m.unpack_params_from_arr(marr, extras=mextras, freeze=False),
+                    m.unpack_params(marr, extras=mextras, freeze=False),
                     n + ".",
                 )
             )

@@ -140,7 +140,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
     # ========================================================================
 
     @overload
-    def unpack_params_from_arr(
+    def _unpack_params_from_arr(
         self,
         arr: Array,
         /,
@@ -151,18 +151,18 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         ...
 
     @overload
-    def unpack_params_from_arr(
+    def _unpack_params_from_arr(
         self,
         arr: Array,
         /,
         extras: dict[ParamNameAllOpts, Array] | None,
         *,
-        freeze: Literal[True] = ...,
+        freeze: Literal[True],
     ) -> Params[Array]:
         ...
 
     @overload
-    def unpack_params_from_arr(
+    def _unpack_params_from_arr(
         self,
         arr: Array,
         /,
@@ -172,13 +172,13 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
     ) -> Params[Array] | ParamsLikeDict[Array]:
         ...
 
-    def unpack_params_from_arr(
+    def _unpack_params_from_arr(
         self,
         arr: Array,
         /,
-        extras: dict[ParamNameAllOpts, Array] | None = None,
+        extras: dict[ParamNameAllOpts, Array] | None,
         *,
-        freeze: bool = True,
+        freeze: bool,
     ) -> Params[Array] | ParamsLikeDict[Array]:
         """Unpack parameters into a dictionary.
 

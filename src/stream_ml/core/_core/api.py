@@ -5,6 +5,7 @@ from __future__ import annotations
 __all__: list[str] = []
 
 from abc import abstractmethod
+from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Literal, Protocol, overload
 
 from stream_ml.core._api import (
@@ -23,8 +24,6 @@ from stream_ml.core.typing import Array, NNModel
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
-
     from stream_ml.core.data import Data
     from stream_ml.core.prior._base import PriorBase
     from stream_ml.core.typing import BoundsT, ParamNameAllOpts, ParamsLikeDict
@@ -62,7 +61,47 @@ class Model(
         """Number of dimensions."""
         return len(self.coord_names)
 
-    def unpack_params(self, packed_pars: Mapping[str, Array], /) -> Params[Array]:
+    @overload
+    def _unpack_params_from_map(
+        self,
+        packed: Mapping[str, Array],
+        /,
+        extras: dict[ParamNameAllOpts, Array] | None,
+        *,
+        freeze: Literal[False],
+    ) -> ParamsLikeDict[Array]:
+        ...
+
+    @overload
+    def _unpack_params_from_map(
+        self,
+        packed: Mapping[str, Array],
+        /,
+        extras: dict[ParamNameAllOpts, Array] | None,
+        *,
+        freeze: Literal[True],
+    ) -> Params[Array]:
+        ...
+
+    @overload
+    def _unpack_params_from_map(
+        self,
+        packed: Mapping[str, Array],
+        /,
+        extras: dict[ParamNameAllOpts, Array] | None,
+        *,
+        freeze: bool,
+    ) -> Params[Array] | ParamsLikeDict[Array]:
+        ...
+
+    def _unpack_params_from_map(
+        self,
+        packed: Mapping[str, Array],
+        /,
+        extras: dict[ParamNameAllOpts, Array] | None,
+        *,
+        freeze: bool,
+    ) -> Params[Array] | ParamsLikeDict[Array]:
         """Unpack parameters into a dictionary.
 
         This function takes a parameter array and unpacks it into a dictionary
@@ -70,8 +109,12 @@ class Model(
 
         Parameters
         ----------
-        packed_pars : Array, positional-only
+        packed : Mapping[str, Array], positional-only
             Flat dictionary of parameters.
+        extras : dict[str, Array] | None, optional
+            Additional parameters to add.
+        freeze : bool, optional keyword-only
+            Whether to freeze the parameters. Default is `True`.
 
         Returns
         -------
@@ -80,22 +123,25 @@ class Model(
             name.
         """
         pars: ParamsLikeDict[Array] = {}
-        for k in packed_pars:
+        for k in packed:
             # Find the non-coordinate-specific parameters.
             if k in self.params:
-                pars[k] = packed_pars[k]
+                pars[k] = packed[k]
                 continue
 
             # separate the coordinate and parameter names.
             coord_name, par_name = k.split(PACK_PARAM_JOIN, maxsplit=1)
             # Add the parameter to the coordinate-specific dict.
-            set_param(pars, (coord_name, par_name), packed_pars[k])
+            set_param(pars, (coord_name, par_name), packed[k])
 
-        return freeze_params(pars)
+        for ke, v in (extras or {}).items():  # update from extras
+            set_param(pars, ke, v)
+
+        return freeze_params(pars) if freeze else pars
 
     @overload
     @abstractmethod
-    def unpack_params_from_arr(
+    def _unpack_params_from_arr(
         self,
         arr: Array,
         /,
@@ -107,19 +153,19 @@ class Model(
 
     @overload
     @abstractmethod
-    def unpack_params_from_arr(
+    def _unpack_params_from_arr(
         self,
         arr: Array,
         /,
         extras: dict[ParamNameAllOpts, Array] | None,
         *,
-        freeze: Literal[True] = ...,
+        freeze: Literal[True],
     ) -> Params[Array]:
         ...
 
     @overload
     @abstractmethod
-    def unpack_params_from_arr(
+    def _unpack_params_from_arr(
         self,
         arr: Array,
         /,
@@ -130,13 +176,13 @@ class Model(
         ...
 
     @abstractmethod
-    def unpack_params_from_arr(
+    def _unpack_params_from_arr(
         self,
         arr: Array,
         /,
-        extras: dict[ParamNameAllOpts, Array] | None = None,
+        extras: dict[ParamNameAllOpts, Array] | None,
         *,
-        freeze: bool = True,
+        freeze: bool,
     ) -> Params[Array] | ParamsLikeDict[Array]:
         """Unpack parameters into a dictionary.
 
@@ -157,6 +203,69 @@ class Model(
         Params[Array]
         """
         raise NotImplementedError
+
+    @overload
+    def unpack_params(
+        self,
+        inp: Array | Mapping[str, Array],
+        /,
+        extras: dict[ParamNameAllOpts, Array] | None,
+        *,
+        freeze: Literal[False],
+    ) -> ParamsLikeDict[Array]:
+        ...
+
+    @overload
+    def unpack_params(
+        self,
+        inp: Array | Mapping[str, Array],
+        /,
+        extras: dict[ParamNameAllOpts, Array] | None,
+        *,
+        freeze: Literal[True],
+    ) -> Params[Array]:
+        ...
+
+    @overload
+    def unpack_params(
+        self,
+        arr: Array,
+        /,
+        extras: dict[ParamNameAllOpts, Array] | None,
+        *,
+        freeze: bool,
+    ) -> Params[Array] | ParamsLikeDict[Array]:
+        ...
+
+    def unpack_params(
+        self,
+        inp: Array | Mapping[str, Array],
+        /,
+        extras: dict[ParamNameAllOpts, Array] | None,
+        *,
+        freeze: bool = True,
+    ) -> Params[Array] | ParamsLikeDict[Array]:
+        """Unpack parameters into a dictionary.
+
+        This function takes a parameter dict or array and unpacks it into a
+        dictionary with the parameter names as keys.
+
+        Parameters
+        ----------
+        inp : Array or Mapping, positional-only
+            Parameter array or dictionary.
+        extras : dict[str, Array] | None, optional
+            Additional parameters to add.
+        freeze : bool, optional keyword-only
+            Whether to freeze the parameters. Default is `True`.
+
+        Returns
+        -------
+        Params[Array]
+        """
+        if isinstance(inp, Mapping):
+            return self._unpack_params_from_map(inp, extras=extras, freeze=freeze)
+        return self._unpack_params_from_arr(inp, extras=extras, freeze=freeze)
 
     def pack_params_to_arr(self, mpars: Params[Array], /) -> Array:
         """Pack model parameters into an array.
