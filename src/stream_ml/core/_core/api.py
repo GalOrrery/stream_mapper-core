@@ -209,7 +209,7 @@ class Model(
         self,
         inp: Array | Mapping[str, Array],
         /,
-        extras: dict[ParamNameAllOpts, Array] | None,
+        extras: dict[ParamNameAllOpts, Array] | None = None,
         *,
         freeze: Literal[False],
     ) -> ParamsLikeDict[Array]:
@@ -220,7 +220,7 @@ class Model(
         self,
         inp: Array | Mapping[str, Array],
         /,
-        extras: dict[ParamNameAllOpts, Array] | None,
+        extras: dict[ParamNameAllOpts, Array] | None = None,
         *,
         freeze: Literal[True],
     ) -> Params[Array]:
@@ -231,7 +231,7 @@ class Model(
         self,
         arr: Array,
         /,
-        extras: dict[ParamNameAllOpts, Array] | None,
+        extras: dict[ParamNameAllOpts, Array] | None = None,
         *,
         freeze: bool,
     ) -> Params[Array] | ParamsLikeDict[Array]:
@@ -241,7 +241,7 @@ class Model(
         self,
         inp: Array | Mapping[str, Array],
         /,
-        extras: dict[ParamNameAllOpts, Array] | None,
+        extras: dict[ParamNameAllOpts, Array] | None = None,
         *,
         freeze: bool = True,
     ) -> Params[Array] | ParamsLikeDict[Array]:
