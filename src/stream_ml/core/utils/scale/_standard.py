@@ -72,6 +72,10 @@ class StandardScaler(DataScaler):
         """Scale back the data to the original representation."""
         return cast(T, _transform_inv(data, self.mean, self.scale, names=names))
 
+    def __repr__(self) -> str:
+        """Return the representation."""
+        return f"{self.__class__.__name__}(mean={self.mean}, scale={self.scale})"
+
 
 # ============================================================================
 # Transform
