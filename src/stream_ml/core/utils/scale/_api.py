@@ -23,3 +23,7 @@ class DataScaler(Protocol):
     ) -> T:
         """Scale features of X according to feature_range."""
         ...
+
+    def __getitem__(self, names: tuple[str, ...]) -> DataScaler:
+        """Get a subset DataScaler with the given names."""
+        ...
