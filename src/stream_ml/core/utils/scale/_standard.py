@@ -2,31 +2,33 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass, replace
+
+__all__: list[str] = []
+
 from functools import singledispatch
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any, Generic, cast
 
 import numpy as np
 
 from stream_ml.core.data import Data
+from stream_ml.core.typing import Array
 from stream_ml.core.utils.compat import get_namespace
 from stream_ml.core.utils.scale._api import DataScaler, T
-
-__all__: list[str] = []
-
-if TYPE_CHECKING:
-    from stream_ml.core.typing import Array
-
 
 ###############################################################################
 
 
-class StandardScaler(DataScaler):
+@dataclass(frozen=True)
+class StandardScaler(DataScaler, Generic[Array]):
     """Standardize features by removing the mean and scaling to unit variance."""
 
-    mean: Any
-    scale: Any
+    mean: Array
+    scale: Array
+    names: tuple[str, ...]
 
-    def fit(self, data: Any, names: tuple[str, ...]) -> StandardScaler:
+    @classmethod
+    def fit(cls, data: Any, names: tuple[str, ...]) -> StandardScaler[Array]:
         """Compute the mean and standard deviation to be used for later scaling.
 
         Parameters
@@ -44,12 +46,11 @@ class StandardScaler(DataScaler):
             data = data[names].array
 
         xp = get_namespace(data)
-
-        self.mean = xp.mean(data, 0).flatten()
-        self.scale = xp.std(data, 0).flatten()
-        self.names = names
-
-        return self
+        return cls(
+            mean=xp.mean(data, 0).flatten(),
+            scale=xp.std(data, 0).flatten(),
+            names=names,
+        )
 
     def transform(self, data: T, /, names: tuple[str, ...]) -> T:
         """Standardize a dataset along the features axis."""
@@ -75,6 +76,15 @@ class StandardScaler(DataScaler):
     def __repr__(self) -> str:
         """Return the representation."""
         return f"{self.__class__.__name__}(mean={self.mean}, scale={self.scale})"
+
+    def __getitem__(self, names: tuple[str, ...]) -> StandardScaler[Array]:
+        """Get a subset DataScaler with the given names."""
+        return replace(
+            self,
+            mean=self.mean[[self.names.index(n) for n in names]],
+            scale=self.scale[[self.names.index(n) for n in names]],
+            names=names,
+        )
 
 
 # ============================================================================

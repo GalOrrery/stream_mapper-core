@@ -181,9 +181,6 @@ ignore = [
   "COM812",  # TrailingCommaMissing
   "COM818",  # TrailingCommaOnBareTupleProhibited
   "COM819",  # TrailingCommaProhibited
-
-  # RUF:
-  "RUF009",
 ]
 
 [tool.ruff.per-file-ignores]
