@@ -50,7 +50,7 @@ class LnProbabilities(Protocol[Array]):
     """Protocol for objects that support probabilities."""
 
     def ln_likelihood(
-        self, mpars: Params[Array], data: Data[Array], **kwargs: Any
+        self, mpars: Params[Array], /, data: Data[Array], **kwargs: Any
     ) -> Array:
         """Elementwise log-likelihood of the model.
 
@@ -71,7 +71,11 @@ class LnProbabilities(Protocol[Array]):
         ...
 
     def ln_prior(
-        self, mpars: Params[Array], data: Data[Array], current_lnp: Array | None = None
+        self,
+        mpars: Params[Array],
+        /,
+        data: Data[Array],
+        current_lnp: Array | None = None,
     ) -> Array:
         """Elementwise log prior.
 
@@ -92,7 +96,7 @@ class LnProbabilities(Protocol[Array]):
         ...
 
     def ln_posterior(
-        self, mpars: Params[Array], data: Data[Array], **kw: Array
+        self, mpars: Params[Array], /, data: Data[Array], **kw: Array
     ) -> Array:
         """Elementwise log posterior.
 
@@ -117,7 +121,7 @@ class TotalLnProbabilities(Protocol[Array]):
     """Protocol for objects that support total probabilities."""
 
     def ln_likelihood_tot(
-        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
+        self, mpars: Params[Array], /, data: Data[Array], **kwargs: Array
     ) -> Array:
         """Total log-likelihood of the model.
 
@@ -139,7 +143,7 @@ class TotalLnProbabilities(Protocol[Array]):
         """
         ...
 
-    def ln_prior_tot(self, mpars: Params[Array], data: Data[Array]) -> Array:
+    def ln_prior_tot(self, mpars: Params[Array], /, data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
@@ -157,7 +161,7 @@ class TotalLnProbabilities(Protocol[Array]):
         ...
 
     def ln_posterior_tot(
-        self, mpars: Params[Array], data: Data[Array], **kw: Array
+        self, mpars: Params[Array], /, data: Data[Array], **kw: Array
     ) -> Array:
         """Log posterior.
 
@@ -182,7 +186,7 @@ class Probabilities(Protocol[Array]):
     """Protocol for objects that support probabilities."""
 
     def likelihood(
-        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
+        self, mpars: Params[Array], /, data: Data[Array], **kwargs: Array
     ) -> Array:
         """Elementwise likelihood of the model.
 
@@ -203,7 +207,11 @@ class Probabilities(Protocol[Array]):
         ...
 
     def prior(
-        self, mpars: Params[Array], data: Data[Array], current_lnp: Array | None = None
+        self,
+        mpars: Params[Array],
+        /,
+        data: Data[Array],
+        current_lnp: Array | None = None,
     ) -> Array:
         """Elementwise prior.
 
@@ -223,7 +231,9 @@ class Probabilities(Protocol[Array]):
         """
         ...
 
-    def posterior(self, mpars: Params[Array], data: Data[Array], **kw: Array) -> Array:
+    def posterior(
+        self, mpars: Params[Array], /, data: Data[Array], **kw: Array
+    ) -> Array:
         """Elementwise posterior.
 
         Parameters
@@ -247,7 +257,7 @@ class TotalProbabilities(Protocol[Array]):
     """Protocol for objects that support total probabilities."""
 
     def likelihood_tot(
-        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
+        self, mpars: Params[Array], /, data: Data[Array], **kwargs: Array
     ) -> Array:
         """Total likelihood of the model.
 
@@ -269,7 +279,7 @@ class TotalProbabilities(Protocol[Array]):
         """
         ...
 
-    def prior_tot(self, mpars: Params[Array], data: Data[Array]) -> Array:
+    def prior_tot(self, mpars: Params[Array], /, data: Data[Array]) -> Array:
         """Total prior.
 
         Parameters
@@ -287,7 +297,7 @@ class TotalProbabilities(Protocol[Array]):
         ...
 
     def posterior_tot(
-        self, mpars: Params[Array], data: Data[Array], **kw: Array
+        self, mpars: Params[Array], /, data: Data[Array], **kw: Array
     ) -> Array:
         """Total posterior.
 

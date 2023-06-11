@@ -288,15 +288,15 @@ class Model(
     # Statistics
 
     def ln_likelihood_tot(
-        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
+        self, mpars: Params[Array], /, data: Data[Array], **kwargs: Array
     ) -> Array:
         return self.xp.sum(self.ln_likelihood(mpars, data, **kwargs))
 
-    def ln_prior_tot(self, mpars: Params[Array], data: Data[Array]) -> Array:
+    def ln_prior_tot(self, mpars: Params[Array], /, data: Data[Array]) -> Array:
         return self.xp.sum(self.ln_prior(mpars, data))
 
     def ln_posterior_tot(
-        self, mpars: Params[Array], data: Data[Array], **kw: Array
+        self, mpars: Params[Array], /, data: Data[Array], **kw: Array
     ) -> Array:
         return self.xp.sum(self.ln_posterior(mpars, data, **kw))
 
@@ -304,31 +304,37 @@ class Model(
     # Non-logarithmic elementwise versions
 
     def likelihood(
-        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
+        self, mpars: Params[Array], /, data: Data[Array], **kwargs: Array
     ) -> Array:
         return self.xp.exp(self.ln_likelihood(mpars, data, **kwargs))
 
     def prior(
-        self, mpars: Params[Array], data: Data[Array], current_lnp: Array | None = None
+        self,
+        mpars: Params[Array],
+        /,
+        data: Data[Array],
+        current_lnp: Array | None = None,
     ) -> Array:
         return self.xp.exp(self.ln_prior(mpars, data, current_lnp))
 
-    def posterior(self, mpars: Params[Array], data: Data[Array], **kw: Array) -> Array:
+    def posterior(
+        self, mpars: Params[Array], /, data: Data[Array], **kw: Array
+    ) -> Array:
         return self.xp.exp(self.ln_posterior(mpars, data, **kw))
 
     # ------------------------------------------------------------------------
     # Non-logarithmic scalar versions
 
     def likelihood_tot(
-        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
+        self, mpars: Params[Array], /, data: Data[Array], **kwargs: Array
     ) -> Array:
         return self.xp.exp(self.ln_likelihood_tot(mpars, data, **kwargs))
 
-    def prior_tot(self, mpars: Params[Array], data: Data[Array]) -> Array:
+    def prior_tot(self, mpars: Params[Array], /, data: Data[Array]) -> Array:
         return self.xp.exp(self.ln_prior_tot(mpars, data))
 
     def posterior_tot(
-        self, mpars: Params[Array], data: Data[Array], **kw: Array
+        self, mpars: Params[Array], /, data: Data[Array], **kw: Array
     ) -> Array:
         return self.xp.exp(self.ln_posterior_tot(mpars, data, **kw))
 
