@@ -1,4 +1,4 @@
-"""Core feature."""
+"""Establishing the probabilities API, largely free of any implementation."""
 
 from __future__ import annotations
 
@@ -123,7 +123,7 @@ class TotalLnProbabilities(Protocol[Array]):
     def ln_likelihood_tot(
         self, mpars: Params[Array], /, data: Data[Array], **kwargs: Array
     ) -> Array:
-        """Total log-likelihood of the model.
+        """Sum of the log-likelihood.
 
         This is evaluated over the entire data set.
 
@@ -144,7 +144,7 @@ class TotalLnProbabilities(Protocol[Array]):
         ...
 
     def ln_prior_tot(self, mpars: Params[Array], /, data: Data[Array]) -> Array:
-        """Log prior.
+        """Sum of the log-prior.
 
         Parameters
         ----------
@@ -163,7 +163,7 @@ class TotalLnProbabilities(Protocol[Array]):
     def ln_posterior_tot(
         self, mpars: Params[Array], /, data: Data[Array], **kw: Array
     ) -> Array:
-        """Log posterior.
+        """Sum of the log-posterior.
 
         Parameters
         ----------
@@ -259,7 +259,7 @@ class TotalProbabilities(Protocol[Array]):
     def likelihood_tot(
         self, mpars: Params[Array], /, data: Data[Array], **kwargs: Array
     ) -> Array:
-        """Total likelihood of the model.
+        """Sum of the likelihood.
 
         This is evaluated over the entire data set.
 
@@ -280,7 +280,7 @@ class TotalProbabilities(Protocol[Array]):
         ...
 
     def prior_tot(self, mpars: Params[Array], /, data: Data[Array]) -> Array:
-        """Total prior.
+        """Sum of the prior.
 
         Parameters
         ----------
@@ -299,7 +299,7 @@ class TotalProbabilities(Protocol[Array]):
     def posterior_tot(
         self, mpars: Params[Array], /, data: Data[Array], **kw: Array
     ) -> Array:
-        """Total posterior.
+        """Sum of the posterior.
 
         Parameters
         ----------
@@ -316,3 +316,15 @@ class TotalProbabilities(Protocol[Array]):
         Array
         """
         ...
+
+
+class AllProbabilities(
+    TotalProbabilities[Array],
+    Probabilities[Array],
+    TotalLnProbabilities[Array],
+    LnProbabilities[Array],
+    Protocol,
+):
+    """Protocol for objects that support probabilities."""
+
+    ...
