@@ -50,10 +50,16 @@ class UnpackParamsCallable(Protocol[Array]):
         ...
 
 
+class SupportsComponentGetItem(Protocol[Array, NNModel]):
+    def __getitem__(self, key: str) -> Model[Array, NNModel]:
+        ...
+
+
 @dataclass
 class ModelsBase(
     Model[Array, NNModel],
     Mapping[str, Model[Array, NNModel]],
+    SupportsComponentGetItem[Array, NNModel],
     CompiledShim,
     metaclass=ABCMeta,
 ):
