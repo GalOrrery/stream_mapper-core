@@ -45,6 +45,7 @@ class Uniform(ModelBase[Array, NNModel]):
     def ln_likelihood(
         self,
         mpars: Params[Array],
+        /,
         data: Data[Array],
         *,
         mask: Data[Array] | None = None,

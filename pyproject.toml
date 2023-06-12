@@ -191,6 +191,7 @@ ban-relative-imports = "all"
 
 [tool.ruff.isort]
 force-sort-within-sections = true
+combine-as-imports = true
 known-first-party = ["stream_ml"]
 known-third-party = ["numpy", "pytest"]
 

@@ -8,7 +8,8 @@ from dataclasses import KW_ONLY, dataclass
 from typing import TYPE_CHECKING, Literal, cast, overload
 
 from stream_ml.core import NNField
-from stream_ml.core._multi.bases import ModelsBase
+from stream_ml.core._api import SupportsXP
+from stream_ml.core._multi.bases import ModelsBase, SupportsComponentGetItem
 from stream_ml.core.params import (
     ModelParameter,
     ModelParameters,
@@ -30,8 +31,259 @@ if TYPE_CHECKING:
     from stream_ml.core.utils.frozen_dict import FrozenDict
 
 
+class ComponentAllProbabilities(
+    SupportsXP[Array], SupportsComponentGetItem[Array, NNModel]
+):
+    def component_ln_likelihood(
+        self,
+        component: str,
+        mpars: Params[Array],
+        /,
+        data: Data[Array],
+        **kwargs: Array,
+    ) -> Array:
+        """Log-likelihood of a component, including the weight.
+
+        Parameters
+        ----------
+        component : str, positional-only
+            Component name.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
+        data : Data[Array], positional-only
+            Data.
+
+        **kwargs : Array
+            Additional arguments, passed to the component's
+            :meth:`~stream_ml.core.ModelAPI.ln_likelihood``.
+
+        Returns
+        -------
+        Array
+        """
+        return self[component].ln_likelihood(
+            mpars.get_prefixed(component),
+            data,
+            **get_prefixed_kwargs(component, kwargs),
+        ) + self.xp.log(mpars[(f"{component}.weight",)])
+
+    def component_ln_posterior(
+        self,
+        component: str,
+        mpars: Params[Array],
+        /,
+        data: Data[Array],
+        **kwargs: Array,
+    ) -> Array:
+        """Log-posterior of a component, including the weight.
+
+        Parameters
+        ----------
+        component : str, positional-only
+            Component name.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
+        data : Data[Array], positional-only
+            Data.
+
+        **kwargs : Array
+            Additional arguments, passed to the component's
+            :meth:`~stream_ml.core.ModelAPI.ln_likelihood``.
+
+        Returns
+        -------
+        Array
+        """
+        return self[component].ln_posterior(
+            mpars.get_prefixed(component),
+            data,
+            **get_prefixed_kwargs(component, kwargs),
+        ) + self.xp.log(mpars[(f"{component}.weight",)])
+
+    # ----------------------------------------------------------------
+
+    def component_ln_likelihood_tot(
+        self,
+        component: str,
+        mpars: Params[Array],
+        /,
+        data: Data[Array],
+        **kwargs: Array,
+    ) -> Array:
+        """Sum of the component log-likelihood, including the weight.
+
+        Parameters
+        ----------
+        component : str, positional-only
+            Component name.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
+        data : Data[Array], positional-only
+            Data.
+
+        **kwargs : Array
+            Additional arguments, passed to the component's
+            :meth:`~stream_ml.core.ModelAPI.ln_likelihood``.
+
+        Returns
+        -------
+        Array
+        """
+        return self.xp.sum(
+            self.component_ln_likelihood(component, mpars, data, **kwargs)
+        )
+
+    def component_ln_posterior_tot(
+        self,
+        component: str,
+        mpars: Params[Array],
+        /,
+        data: Data[Array],
+        **kwargs: Array,
+    ) -> Array:
+        """Sum of the component log-posterior, including the weight.
+
+        Parameters
+        ----------
+        component : str, positional-only
+            Component name.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
+        data : Data[Array], positional-only
+            Data.
+
+        **kwargs : Array
+            Additional arguments, passed to the component's
+            :meth:`~stream_ml.core.ModelAPI.ln_likelihood``.
+
+        Returns
+        -------
+        Array
+        """
+        return self.xp.sum(
+            self.component_ln_posterior(component, mpars, data, **kwargs)
+        )
+
+    # ----------------------------------------------------------------
+
+    def component_likelihood(
+        self, component: str, mpars: Params[Array], data: Data[Array], **kwargs: Array
+    ) -> Array:
+        """Likelihood of a component, including the weight.
+
+        Parameters
+        ----------
+        component : str, positional-only
+            Component name.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
+        data : Data[Array], positional-only
+            Data.
+
+        **kwargs : Array
+            Additional arguments, passed to the component's
+            :meth:`~stream_ml.core.ModelAPI.ln_likelihood``.
+
+        Returns
+        -------
+        Array
+        """
+        return self.xp.exp(
+            self.component_ln_likelihood(component, mpars, data, **kwargs)
+        )
+
+    def component_posterior(
+        self, component: str, mpars: Params[Array], data: Data[Array], **kwargs: Array
+    ) -> Array:
+        """Posterior of a component, including the weight.
+
+        Parameters
+        ----------
+        component : str, positional-only
+            Component name.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
+        data : Data[Array], positional-only
+            Data.
+
+        **kwargs : Array
+            Additional arguments, passed to the component's
+            :meth:`~stream_ml.core.ModelAPI.ln_likelihood``.
+
+        Returns
+        -------
+        Array
+        """
+        return self.xp.exp(
+            self.component_ln_posterior(component, mpars, data, **kwargs)
+        )
+
+    # ----------------------------------------------------------------
+
+    def component_likelihood_tot(
+        self, component: str, mpars: Params[Array], data: Data[Array], **kwargs: Array
+    ) -> Array:
+        """Sum of the component likelihood, including the weight.
+
+        Parameters
+        ----------
+        component : str, positional-only
+            Component name.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
+        data : Data[Array], positional-only
+            Data.
+
+        **kwargs : Array
+            Additional arguments, passed to the component's
+            :meth:`~stream_ml.core.ModelAPI.ln_likelihood``.
+
+        Returns
+        -------
+        Array
+        """
+        return self.xp.sum(self.component_likelihood(component, mpars, data, **kwargs))
+
+    def component_posterior_tot(
+        self, component: str, mpars: Params[Array], data: Data[Array], **kwargs: Array
+    ) -> Array:
+        """Sum of the component posterior, including the weight.
+
+        Parameters
+        ----------
+        component : str, positional-only
+            Component name.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
+        data : Data[Array], positional-only
+            Data.
+
+        **kwargs : Array
+            Additional arguments, passed to the component's
+            :meth:`~stream_ml.core.ModelAPI.ln_likelihood``.
+
+        Returns
+        -------
+        Array
+        """
+        return self.xp.sum(self.component_posterior(component, mpars, data, **kwargs))
+
+
+# ============================================================================
+
+
 @dataclass
-class MixtureModel(ModelsBase[Array, NNModel]):
+class MixtureModel(
+    ModelsBase[Array, NNModel], ComponentAllProbabilities[Array, NNModel]
+):
     """Full Model.
 
     Parameters
@@ -211,11 +463,12 @@ class MixtureModel(ModelsBase[Array, NNModel]):
     # ===============================================================
 
     def ln_likelihood(
-        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
+        self, mpars: Params[Array], /, data: Data[Array], **kwargs: Array
     ) -> Array:
         """Log likelihood.
 
-        Just the log-sum-exp of the individual log-likelihoods.
+        Just the log-sum-exp of the individual log-likelihoods, including the
+        weights.
 
         Parameters
         ----------
@@ -233,14 +486,9 @@ class MixtureModel(ModelsBase[Array, NNModel]):
         """
         # Get the parameters for each model, stripping the model name,
         # and use that to evaluate the log likelihood for the model.
-        lnliks = tuple(
-            self.xp.log(mpars[(f"{name}.weight",)])
-            + model.ln_likelihood(
-                mpars.get_prefixed(name),
-                data,
-                **get_prefixed_kwargs(name, kwargs),
-            )
-            for name, model in self.components.items()
+        lnliks = (
+            self.component_ln_likelihood(name, mpars, data, **kwargs)
+            for name in self.components
         )
         # Sum over the models, keeping the data dimension
-        return self.xp.logsumexp(self.xp.hstack(lnliks), 1)[:, None]
+        return self.xp.logsumexp(self.xp.hstack(tuple(lnliks)), 1)[:, None]

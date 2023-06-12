@@ -9,13 +9,10 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Literal, Protocol, overload
 
 from stream_ml.core._api import (
+    AllProbabilities as AllProbabilitiesAPI,
     HasName,
-    LnProbabilities,
-    Probabilities,
     SupportsXP,
     SupportsXPNN,
-    TotalLnProbabilities,
-    TotalProbabilities,
 )
 from stream_ml.core.params._field import ModelParametersField
 from stream_ml.core.params._values import Params, freeze_params, set_param
@@ -29,11 +26,64 @@ if TYPE_CHECKING:
     from stream_ml.core.typing import BoundsT, ParamNameAllOpts, ParamsLikeDict
 
 
+class AllProbabilities(AllProbabilitiesAPI[Array], SupportsXP[Array], Protocol):
+    # -------------------------------------------
+
+    def ln_likelihood_tot(
+        self, mpars: Params[Array], /, data: Data[Array], **kwargs: Array
+    ) -> Array:
+        return self.xp.sum(self.ln_likelihood(mpars, data, **kwargs))
+
+    def ln_prior_tot(self, mpars: Params[Array], /, data: Data[Array]) -> Array:
+        return self.xp.sum(self.ln_prior(mpars, data))
+
+    def ln_posterior_tot(
+        self, mpars: Params[Array], /, data: Data[Array], **kw: Array
+    ) -> Array:
+        return self.xp.sum(self.ln_posterior(mpars, data, **kw))
+
+    # -------------------------------------------
+
+    def likelihood(
+        self, mpars: Params[Array], /, data: Data[Array], **kwargs: Array
+    ) -> Array:
+        return self.xp.exp(self.ln_likelihood(mpars, data, **kwargs))
+
+    def prior(
+        self,
+        mpars: Params[Array],
+        /,
+        data: Data[Array],
+        current_lnp: Array | None = None,
+    ) -> Array:
+        return self.xp.exp(self.ln_prior(mpars, data, current_lnp))
+
+    def posterior(
+        self, mpars: Params[Array], /, data: Data[Array], **kw: Array
+    ) -> Array:
+        return self.xp.exp(self.ln_posterior(mpars, data, **kw))
+
+    # -------------------------------------------
+
+    def likelihood_tot(
+        self, mpars: Params[Array], /, data: Data[Array], **kwargs: Array
+    ) -> Array:
+        return self.xp.exp(self.ln_likelihood_tot(mpars, data, **kwargs))
+
+    def prior_tot(self, mpars: Params[Array], /, data: Data[Array]) -> Array:
+        return self.xp.exp(self.ln_prior_tot(mpars, data))
+
+    def posterior_tot(
+        self, mpars: Params[Array], /, data: Data[Array], **kw: Array
+    ) -> Array:
+        return self.xp.exp(self.ln_posterior_tot(mpars, data, **kw))
+
+
+# ============================================================================
+
+
 class Model(
-    TotalProbabilities[Array],
-    Probabilities[Array],
-    TotalLnProbabilities[Array],
-    LnProbabilities[Array],
+    AllProbabilities[Array],
     SupportsXPNN[Array, NNModel],
     SupportsXP[Array],
     HasName,
@@ -283,54 +333,6 @@ class Model(
         return self.xp.concatenate(
             tuple(self.xp.atleast_1d(mpars[elt]) for elt in self.params.flatskeys())
         )
-
-    # ========================================================================
-    # Statistics
-
-    def ln_likelihood_tot(
-        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
-    ) -> Array:
-        return self.xp.sum(self.ln_likelihood(mpars, data, **kwargs))
-
-    def ln_prior_tot(self, mpars: Params[Array], data: Data[Array]) -> Array:
-        return self.xp.sum(self.ln_prior(mpars, data))
-
-    def ln_posterior_tot(
-        self, mpars: Params[Array], data: Data[Array], **kw: Array
-    ) -> Array:
-        return self.xp.sum(self.ln_posterior(mpars, data, **kw))
-
-    # ------------------------------------------------------------------------
-    # Non-logarithmic elementwise versions
-
-    def likelihood(
-        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
-    ) -> Array:
-        return self.xp.exp(self.ln_likelihood(mpars, data, **kwargs))
-
-    def prior(
-        self, mpars: Params[Array], data: Data[Array], current_lnp: Array | None = None
-    ) -> Array:
-        return self.xp.exp(self.ln_prior(mpars, data, current_lnp))
-
-    def posterior(self, mpars: Params[Array], data: Data[Array], **kw: Array) -> Array:
-        return self.xp.exp(self.ln_posterior(mpars, data, **kw))
-
-    # ------------------------------------------------------------------------
-    # Non-logarithmic scalar versions
-
-    def likelihood_tot(
-        self, mpars: Params[Array], data: Data[Array], **kwargs: Array
-    ) -> Array:
-        return self.xp.exp(self.ln_likelihood_tot(mpars, data, **kwargs))
-
-    def prior_tot(self, mpars: Params[Array], data: Data[Array]) -> Array:
-        return self.xp.exp(self.ln_prior_tot(mpars, data))
-
-    def posterior_tot(
-        self, mpars: Params[Array], data: Data[Array], **kw: Array
-    ) -> Array:
-        return self.xp.exp(self.ln_posterior_tot(mpars, data, **kw))
 
     # ========================================================================
     # ML
