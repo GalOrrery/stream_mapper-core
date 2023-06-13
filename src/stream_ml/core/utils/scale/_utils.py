@@ -8,7 +8,10 @@ from typing import Protocol
 class HasNames(Protocol):
     """Has names."""
 
-    names: tuple[str, ...]
+    @property
+    def names(self) -> tuple[str, ...]:
+        """Names."""
+        ...
 
 
 def names_intersect(
