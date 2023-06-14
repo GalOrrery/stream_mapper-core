@@ -310,3 +310,8 @@ class ArrayNamespace(Protocol[Array]):
     def squeeze(array: Array, axis: None | int | tuple[int, ...] = ...) -> Array:
         """Squeeze."""
         ...
+
+    @staticmethod
+    def vstack(arrays: tuple[Array, ...]) -> Array:
+        """Vertical stack."""
+        ...

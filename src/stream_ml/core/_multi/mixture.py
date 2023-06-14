@@ -407,7 +407,7 @@ class MixtureModel(
         for n, m in self.components.items():  # iter thru models
             # Weight
             if n != BACKGROUND_KEY:
-                weight = arr[:, j : j + 1]
+                weight = arr[:, j]
             else:
                 # The background is special, because it has a weight parameter
                 # that is defined as 1 - the sum of the other weights.
@@ -423,7 +423,7 @@ class MixtureModel(
                         for k in tuple(self.components.keys())[:-1]
                         # skipping the background, which is the last component
                     ),
-                    start=self.xp.zeros((len(arr), 1), dtype=arr.dtype),
+                    start=self.xp.zeros(len(arr), dtype=arr.dtype),
                 )
 
             j += 1  # Increment the index (weight)
@@ -472,23 +472,23 @@ class MixtureModel(
 
         Parameters
         ----------
-        mpars : Params[Array], positional-only
+        mpars : (N,) Params[Array], positional-only
             Model parameters. Note that these are different from the ML
             parameters.
-        data : Data[Array]
+        data : (N, F) Data[Array]
             Data.
         **kwargs : Array
             Additional arguments.
 
         Returns
         -------
-        Array
+        (N,) Array
         """
         # Get the parameters for each model, stripping the model name,
         # and use that to evaluate the log likelihood for the model.
         lnliks = (
-            self.component_ln_likelihood(name, mpars, data, **kwargs)
+            self.component_ln_likelihood(name, mpars, data, **kwargs)  # (N,)
             for name in self.components
         )
         # Sum over the models, keeping the data dimension
-        return self.xp.logsumexp(self.xp.hstack(tuple(lnliks)), 1)[:, None]
+        return self.xp.logsumexp(self.xp.vstack(tuple(lnliks)), 0)

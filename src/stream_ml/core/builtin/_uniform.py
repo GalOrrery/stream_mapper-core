@@ -80,4 +80,4 @@ class Uniform(ModelBase[Array, NNModel]):
             indicator = self.xp.ones_like(self._ln_liks, dtype=int)
             # shape (1, F) so that it can broadcast with (N, F)
 
-        return (indicator * self._ln_liks).sum(1)[:, None]
+        return (indicator * self._ln_liks).sum(1)
