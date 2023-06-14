@@ -201,10 +201,8 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         pars: ParamsLikeDict[Array] = {}
         k: ParamNameAllOpts
         for i, (k, p) in enumerate(self.params.flatsitems()):
-            # First unscale
-            v = p.scaler.inverse_transform(arr[:, i : i + 1])
-            # Then set in the nested dict structure
-            set_param(pars, k, v)
+            # Unscale and set in the nested dict structure
+            set_param(pars, k, p.scaler.inverse_transform(arr[:, i]))
 
         for k, v in (extras or {}).items():
             set_param(pars, k, v)
