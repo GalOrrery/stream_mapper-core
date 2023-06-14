@@ -249,7 +249,7 @@ class ArrayNamespace(Protocol[Array]):
         ...
 
     @staticmethod
-    def ones_like(array: Array, dtype: Any) -> Array:
+    def ones_like(array: Array, *, dtype: Any = None) -> Array:
         """Ones like."""
         ...
 
