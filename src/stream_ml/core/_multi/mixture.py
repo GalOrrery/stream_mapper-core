@@ -407,7 +407,7 @@ class MixtureModel(
         for n, m in self.components.items():  # iter thru models
             # Weight
             if n != BACKGROUND_KEY:
-                weight = arr[:, j : j + 1]
+                weight = arr[:, j]
             else:
                 # The background is special, because it has a weight parameter
                 # that is defined as 1 - the sum of the other weights.
@@ -423,7 +423,7 @@ class MixtureModel(
                         for k in tuple(self.components.keys())[:-1]
                         # skipping the background, which is the last component
                     ),
-                    start=self.xp.zeros((len(arr), 1), dtype=arr.dtype),
+                    start=self.xp.zeros(len(arr), dtype=arr.dtype),
                 )
 
             j += 1  # Increment the index (weight)
