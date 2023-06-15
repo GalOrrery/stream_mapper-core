@@ -292,7 +292,12 @@ class ArrayNamespace(Protocol[Array]):
         ...
 
     @staticmethod
-    def std(array: Array, /, axis: int | None = None) -> Array:
+    def stack(arrays: tuple[Array, ...], axis: int = ...) -> Array:
+        """Vertical stack."""
+        ...
+
+    @staticmethod
+    def std(array: Array, /, axis: int | None = ...) -> Array:
         """Standard deviation."""
         ...
 
