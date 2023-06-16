@@ -68,6 +68,27 @@ class ComponentAllProbabilities(
             **get_prefixed_kwargs(component, kwargs),
         ) + self.xp.log(mpars[(f"{component}.weight",)])
 
+    def component_ln_prior(
+        self, component: str, mpars: Params[Array], /, data: Data[Array]
+    ) -> Array:
+        """Log-prior of a component.
+
+        Parameters
+        ----------
+        component : str, positional-only
+            Component name.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
+        data : Data[Array], positional-only
+            Data.
+
+        Returns
+        -------
+        Array
+        """
+        return self[component].ln_prior(mpars.get_prefixed(component), data)
+
     def component_ln_posterior(
         self,
         component: str,
@@ -136,6 +157,27 @@ class ComponentAllProbabilities(
             self.component_ln_likelihood(component, mpars, data, **kwargs)
         )
 
+    def component_ln_prior_tot(
+        self, component: str, mpars: Params[Array], /, data: Data[Array]
+    ) -> Array:
+        """Sum of the component log-prior.
+
+        Parameters
+        ----------
+        component : str, positional-only
+            Component name.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
+        data : Data[Array], positional-only
+            Data.
+
+        Returns
+        -------
+        Array
+        """
+        return self.xp.sum(self.component_ln_prior(component, mpars, data))
+
     def component_ln_posterior_tot(
         self,
         component: str,
@@ -197,6 +239,31 @@ class ComponentAllProbabilities(
             self.component_ln_likelihood(component, mpars, data, **kwargs)
         )
 
+    def component_prior(
+        self, component: str, mpars: Params[Array], data: Data[Array]
+    ) -> Array:
+        """Prior of a component.
+
+        Parameters
+        ----------
+        component : str, positional-only
+            Component name.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
+        data : Data[Array], positional-only
+            Data.
+
+        **kwargs : Array
+            Additional arguments, passed to the component's
+            :meth:`~stream_ml.core.ModelAPI.ln_likelihood``.
+
+        Returns
+        -------
+        Array
+        """
+        return self.xp.exp(self.component_ln_prior(component, mpars, data))
+
     def component_posterior(
         self, component: str, mpars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
@@ -250,6 +317,27 @@ class ComponentAllProbabilities(
         Array
         """
         return self.xp.sum(self.component_likelihood(component, mpars, data, **kwargs))
+
+    def component_prior_tot(
+        self, component: str, mpars: Params[Array], data: Data[Array]
+    ) -> Array:
+        """Sum of the component prior.
+
+        Parameters
+        ----------
+        component : str, positional-only
+            Component name.
+        mpars : Params[Array], positional-only
+            Model parameters. Note that these are different from the ML
+            parameters.
+        data : Data[Array], positional-only
+            Data.
+
+        Returns
+        -------
+        Array
+        """
+        return self.xp.sum(self.component_prior(component, mpars, data))
 
     def component_posterior_tot(
         self, component: str, mpars: Params[Array], data: Data[Array], **kwargs: Array
