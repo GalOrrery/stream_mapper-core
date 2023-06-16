@@ -88,6 +88,10 @@ class Data(Generic[Array]):
             )
             raise ValueError(msg)
 
+        if isinstance(self.array, Data):
+            msg = "Data should not be a Data object."
+            raise TypeError(msg)
+
         # Map names to column indices. This could be a ``@cached_property``, but
         # it's not worth the overhead.
         object.__setattr__(self, "_n2k", {name: i for i, name in enumerate(self.names)})
