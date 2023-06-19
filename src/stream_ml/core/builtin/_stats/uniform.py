@@ -5,6 +5,7 @@ __all__: list[str] = []
 from math import inf, log
 from typing import TYPE_CHECKING
 
+from stream_ml.core.builtin._stats.norm import cdf as norm_cdf
 from stream_ml.core.utils.compat import array_at
 
 if TYPE_CHECKING:
@@ -46,3 +47,22 @@ def logpdf(
     mask = (a <= x) & (x <= b)
     # the log-pdf is -log(b - a) for x in [a, b], and -inf otherwise
     return array_at(out, mask).set(-xp.log(xp.zeros_like(out) + b - a)[mask])
+
+
+# ============================================================================
+
+
+def logpdf_gaussian_errors(
+    x: Array,
+    /,
+    a: Array,
+    b: Array,
+    sigma_o: Array,
+    *,
+    xp: ArrayNamespace[Array],
+) -> Array:
+    """Log-pdf of a uniform distribution convolved with a Gaussian."""
+    # TODO: ensure broadcasting works
+    return xp.log(  # yes, a - b
+        norm_cdf(x, a, sigma_o, xp=xp) - norm_cdf(x, b, sigma_o, xp=xp)
+    ) + logpdf(x, a=a, b=b, xp=xp)

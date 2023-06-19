@@ -8,7 +8,7 @@ from dataclasses import KW_ONLY, dataclass
 from typing import TYPE_CHECKING, Any
 
 from stream_ml.core._core.base import ModelBase
-from stream_ml.core.builtin._stats.uniform import logpdf
+from stream_ml.core.builtin._stats.uniform import logpdf, logpdf_gaussian_errors
 from stream_ml.core.typing import Array, NNModel
 
 if TYPE_CHECKING:
@@ -87,4 +87,17 @@ class Uniform(ModelBase[Array, NNModel]):
                 * logpdf(data[self.coord_names].array, a=self._a, b=self._b, xp=self.xp)
             ).sum(1)
 
-        raise NotImplementedError
+        # Data errors
+        # TODO: non-diagonal covariance, but requires different formula
+        # TODO: check that no errors are 0?
+        data_err = data[self.coord_err_names].array
+        return (
+            indicator
+            * logpdf_gaussian_errors(
+                data[self.coord_names].array,
+                a=self._a,
+                b=self._b,
+                sigma_o=data_err,
+                xp=self.xp,
+            )
+        ).sum(1)
