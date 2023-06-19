@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Literal, overload
 from stream_ml.core._multi.bases import ModelsBase
 from stream_ml.core.params._collection import ModelParameters
 from stream_ml.core.params._values import Params, add_prefix, freeze_params, set_param
+from stream_ml.core.setup_package import WEIGHT_NAME
 from stream_ml.core.typing import Array, NNModel
 from stream_ml.core.utils.cached_property import cached_property
 from stream_ml.core.utils.funcs import get_prefixed_kwargs
@@ -129,8 +130,8 @@ class IndependentModels(ModelsBase[Array, NNModel]):
         pars: ParamsLikeDict[Array] = {}
 
         mextras: dict[ParamNameAllOpts, Array] | None = (
-            {"weight": extras["weight"]}
-            if extras is not None and "weight" in extras
+            {WEIGHT_NAME: extras[WEIGHT_NAME]}
+            if extras is not None and WEIGHT_NAME in extras
             else None
         )
 
