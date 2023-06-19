@@ -212,28 +212,17 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
     # ========================================================================
     # Statistics
 
-    def _ln_prior_coord_bnds(self, mpars: Params[Array], data: Data[Array]) -> Array:
+    def _ln_prior_coord_bnds(self, data: Data[Array], /) -> Array:
         """Elementwise log prior for coordinate bounds.
 
-        Parameters
-        ----------
-        mpars : Params[Array], positional-only
-            Model parameters. Note that these are different from the ML
-            parameters.
-        data : Data[Array]
-            Data.
-
-        Returns
-        -------
-        Array
-            Zero everywhere except where the data are outside the
-            coordinate bounds, where it is -inf.
+        Zero everywhere except where the data are outside the
+        coordinate bounds, where it is -inf.
         """
-        lnp = self.xp.zeros(data.array[:, 0].shape)
+        lnp = self.xp.zeros(data.array.shape[:1] + data.array.shape[2:])
         where = reduce(
             self.xp.logical_or,
             (~within_bounds(data[k], *v) for k, v in self.coord_bounds.items()),
-            self.xp.zeros(data.array[:, 0].shape, dtype=bool),
+            self.xp.zeros(lnp.shape, dtype=bool),
         )
         return array_at(lnp, where).set(-self.xp.inf)
 
@@ -259,7 +248,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         lnp: Array = self.xp.zeros(()) if current_lnp is None else current_lnp
 
         # Coordinate Bounds
-        lnp = lnp + self._ln_prior_coord_bnds(mpars, data)
+        lnp = lnp + self._ln_prior_coord_bnds(data)
         # Parameter Bounds
         for p in self.params.flatvalues():
             lnp = lnp + p.bounds.logpdf(mpars, data, self, lnp, xp=self.xp)
