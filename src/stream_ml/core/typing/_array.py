@@ -259,6 +259,11 @@ class ArrayNamespace(Protocol[Array]):
         ...
 
     @staticmethod
+    def swapaxes(array: Array, axis1: int, axis2: int) -> Array:
+        """Swap axes."""
+        ...
+
+    @staticmethod
     def zeros(*args: Any, dtype: Any = ..., **kwargs: Any) -> Array:
         """Zeros.
 
