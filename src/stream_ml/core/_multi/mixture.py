@@ -18,7 +18,7 @@ from stream_ml.core.params import (
     freeze_params,
 )
 from stream_ml.core.params._field import ModelParametersField
-from stream_ml.core.setup_package import BACKGROUND_KEY
+from stream_ml.core.setup_package import BACKGROUND_KEY, WEIGHT_NAME
 from stream_ml.core.typing import Array, NNModel
 from stream_ml.core.utils.cached_property import cached_property
 from stream_ml.core.utils.funcs import get_prefixed_kwargs
@@ -534,7 +534,7 @@ class MixtureModel(
                 add_prefix(
                     m.unpack_params(
                         marr,
-                        extras=extras_ | {"weight": weight},  # pass the weight
+                        extras=extras_ | {WEIGHT_NAME: weight},  # pass the weight
                         freeze=False,
                     ),
                     n + ".",
