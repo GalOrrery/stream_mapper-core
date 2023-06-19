@@ -135,7 +135,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         if crnt_cbs:  # Error if there are extra keys
             msg = f"coord_bounds contains invalid keys {crnt_cbs.keys()}."
             raise ValueError(msg)
-        self.coord_bounds = FrozenDict(cbs)
+        object.__setattr__(self, "coord_bounds", FrozenDict(cbs))
 
     # ========================================================================
 
