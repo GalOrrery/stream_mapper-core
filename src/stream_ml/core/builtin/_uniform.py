@@ -6,6 +6,7 @@ from dataclasses import KW_ONLY, dataclass
 from typing import TYPE_CHECKING, Any
 
 from stream_ml.core._core.base import ModelBase
+from stream_ml.core.builtin._stats.uniform import logpdf
 from stream_ml.core.typing import Array, NNModel
 
 __all__: list[str] = []
@@ -30,14 +31,14 @@ class Uniform(ModelBase[Array, NNModel]):
 
         # Pre-compute the log-difference, shape (1, F)
         # First need to check that the bound are finite.
-        _bma = []
-        for k, (a, b) in self.coord_bounds.items():
-            a_, b_ = self.xp.asarray(a), self.xp.asarray(b)
-            if not self.xp.isfinite(a_) or not self.xp.isfinite(b_):
-                msg = f"a bound of coordinate {k} is not finite"
-                raise ValueError(msg)
-            _bma.append(b_ - a_)
-        self._ln_liks = -self.xp.log(self.xp.asarray(_bma)[None, :])
+        ab_ = self.xp.asarray(tuple(self.coord_bounds.values()))
+        if not self.xp.isfinite(ab_).all():
+            msg = "a bound of a coordinate is not finite"
+            raise ValueError(msg)
+        self._a: Array
+        self._b: Array
+        object.__setattr__(self, "_a", ab_[None, :, 0])
+        object.__setattr__(self, "_b", ab_[None, :, 1])
 
     # ========================================================================
     # Statistics
@@ -71,13 +72,20 @@ class Uniform(ModelBase[Array, NNModel]):
         -------
         Array
         """
+        # indicator: (N, F)
         if mask is not None:
             indicator = self.xp.squeeze(mask[:, tuple(self.coord_bounds.keys())])
         elif self.require_mask:
             msg = "mask is required"
             raise ValueError(msg)
         else:
-            indicator = self.xp.ones_like(self._ln_liks, dtype=int)
+            indicator = self.xp.ones((1, len(self.coord_names)), dtype=int)
             # shape (1, F) so that it can broadcast with (N, F)
 
-        return (indicator * self._ln_liks).sum(1)
+        if self.coord_err_names is None:
+            return (
+                indicator
+                * logpdf(data[self.coord_names].array, a=self._a, b=self._b, xp=self.xp)
+            ).sum(1)
+
+        raise NotImplementedError

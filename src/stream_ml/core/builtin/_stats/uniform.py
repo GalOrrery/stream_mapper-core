@@ -44,4 +44,5 @@ def logpdf(
     """
     out = xp.full_like(x, nil)
     mask = (a <= x) & (x <= b)
-    return array_at(out, mask).set(-xp.log(xp.zeros_like(mask) + b - a)[mask])
+    # the log-pdf is -log(b - a) for x in [a, b], and -inf otherwise
+    return array_at(out, mask).set(-xp.log(xp.zeros_like(out) + b - a)[mask])
