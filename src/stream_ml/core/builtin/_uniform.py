@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
+__all__: list[str] = []
+
 from dataclasses import KW_ONLY, dataclass
 from typing import TYPE_CHECKING, Any
 
 from stream_ml.core._core.base import ModelBase
 from stream_ml.core.builtin._stats.uniform import logpdf
 from stream_ml.core.typing import Array, NNModel
-
-__all__: list[str] = []
-
 
 if TYPE_CHECKING:
     from stream_ml.core.data import Data
