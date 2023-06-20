@@ -38,6 +38,11 @@ class ArrayLike(Protocol):
         """Number of dimensions."""
         ...
 
+    @property
+    def T(self: Self) -> Self:  # noqa: N802
+        """Transpose."""
+        ...
+
     # ========================================================================
     # Methods
 
