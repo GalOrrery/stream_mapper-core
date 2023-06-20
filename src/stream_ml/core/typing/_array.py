@@ -207,6 +207,11 @@ class ArrayNamespace(Protocol[Array]):
         ...
 
     @staticmethod
+    def full_like(array: Array, fill_value: Any) -> Array:
+        """Full like."""
+        ...
+
+    @staticmethod
     def hstack(arrays: tuple[Array, ...]) -> Array:
         """Horizontal stack."""
         ...
