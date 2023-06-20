@@ -38,6 +38,11 @@ class ArrayLike(Protocol):
         """Number of dimensions."""
         ...
 
+    @property
+    def T(self: Self) -> Self:  # noqa: N802
+        """Transpose."""
+        ...
+
     # ========================================================================
     # Methods
 
@@ -123,6 +128,10 @@ class ArrayLike(Protocol):
         """Right true division."""
         ...
 
+    def __pow__(self: Self, other: ArrayLike | int | float) -> Self:
+        """Power."""
+        ...
+
     # ========================================================================
     # Math Methods
 
@@ -154,6 +163,13 @@ class FInfo(Protocol):
 
 class ArrayNamespace(Protocol[Array]):
     """Protocol for array API namespace."""
+
+    @property
+    def special(self) -> ArraySpecialNamespace[Array]:
+        """Special namespace."""
+        ...
+
+    # ========================================================================
 
     @staticmethod
     def abs(array: Array) -> Array:  # noqa: A003
@@ -195,6 +211,11 @@ class ArrayNamespace(Protocol[Array]):
     @staticmethod
     def finfo(dtype: Any) -> FInfo:
         """Floating point info."""
+        ...
+
+    @staticmethod
+    def full_like(array: Array, fill_value: Any) -> Array:
+        """Full like."""
         ...
 
     @staticmethod
@@ -324,4 +345,13 @@ class ArrayNamespace(Protocol[Array]):
     @staticmethod
     def vstack(arrays: tuple[Array, ...]) -> Array:
         """Vertical stack."""
+        ...
+
+
+class ArraySpecialNamespace(Protocol[Array]):
+    """Protocol for array API namespace."""
+
+    @staticmethod
+    def erfc(array: Array) -> Array:
+        """Complementary error function."""
         ...
