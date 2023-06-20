@@ -128,6 +128,10 @@ class ArrayLike(Protocol):
         """Right true division."""
         ...
 
+    def __pow__(self: Self, other: ArrayLike | int | float) -> Self:
+        """Power."""
+        ...
+
     # ========================================================================
     # Math Methods
 
