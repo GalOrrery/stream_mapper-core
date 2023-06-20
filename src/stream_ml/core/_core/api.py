@@ -94,6 +94,7 @@ class Model(
     # Coordinates of the model.
     coord_names: tuple[str, ...]
     coord_bounds: FrozenDictField[str, BoundsT] = FrozenDictField(FrozenDict())
+    coord_err_names: tuple[str, ...] | None
 
     # Parameters of the model.
     params: ModelParametersField[Array] = ModelParametersField[Array]()

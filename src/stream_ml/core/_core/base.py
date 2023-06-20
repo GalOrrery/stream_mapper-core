@@ -92,6 +92,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
     indep_coord_names: tuple[str, ...] = ("phi1",)
     coord_names: tuple[str, ...]
     coord_bounds: FrozenDictField[str, BoundsT] = FrozenDictField(FrozenDict())
+    coord_err_names: tuple[str, ...] | None = None
 
     # Model Parameters, generally produced by the neural network.
     params: ModelParametersField[Array] = ModelParametersField[Array]()
