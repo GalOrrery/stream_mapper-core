@@ -164,6 +164,13 @@ class FInfo(Protocol):
 class ArrayNamespace(Protocol[Array]):
     """Protocol for array API namespace."""
 
+    @property
+    def special(self) -> ArraySpecialNamespace[Array]:
+        """Special namespace."""
+        ...
+
+    # ========================================================================
+
     @staticmethod
     def abs(array: Array) -> Array:  # noqa: A003
         """Absolute value."""
@@ -338,4 +345,13 @@ class ArrayNamespace(Protocol[Array]):
     @staticmethod
     def vstack(arrays: tuple[Array, ...]) -> Array:
         """Vertical stack."""
+        ...
+
+
+class ArraySpecialNamespace(Protocol[Array]):
+    """Protocol for array API namespace."""
+
+    @staticmethod
+    def erfc(array: Array) -> Array:
+        """Complementary error function."""
         ...
