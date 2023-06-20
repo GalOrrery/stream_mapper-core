@@ -94,6 +94,14 @@ class ModelsBase(
             cns.extend(c for c in m.coord_names if c not in cns)
         return tuple(cns)
 
+    @cached_property
+    def coord_err_names(self) -> tuple[str, ...] | None:  # type: ignore[override]
+        """Coordinate Error names."""
+        cns: list[str] = []
+        for m in self.components.values():
+            cns.extend(c for c in (m.coord_err_names or ()) if c not in cns)
+        return tuple(cns)
+
     @cached_property  # type: ignore[override]
     def coord_bounds(self) -> FrozenDict[str, BoundsT]:
         """Coordinate names."""
