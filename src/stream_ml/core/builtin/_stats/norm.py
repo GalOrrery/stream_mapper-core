@@ -39,6 +39,7 @@ def logcdf(
 
 def logpdf_gaussian_errors(
     x: Array,
+    /,
     loc: Array,
     sigma: Array,
     sigma_o: Array,
