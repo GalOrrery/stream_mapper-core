@@ -32,3 +32,18 @@ def logcdf(
     x: Array | float, loc: Array, sigma: Array, *, xp: ArrayNamespace[Array]
 ) -> Array:
     return xp.log(xp.special.erfc((loc - x) / sigma / sqrt2)) - log2
+
+
+# ============================================================================
+
+
+def logpdf_gaussian_errors(
+    x: Array,
+    loc: Array,
+    sigma: Array,
+    sigma_o: Array,
+    *,
+    xp: ArrayNamespace[Array],
+) -> Array:
+    """Univariate log-pdf of a convolution of a uniform and a Gaussian."""
+    return logpdf(x, loc, xp.sqrt(sigma**2 + sigma_o**2), xp=xp)

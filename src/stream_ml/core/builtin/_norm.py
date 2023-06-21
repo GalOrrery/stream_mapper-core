@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from stream_ml.core._core.base import ModelBase
-from stream_ml.core.builtin._stats.norm import logpdf
+from stream_ml.core.builtin._stats.norm import logpdf, logpdf_gaussian_errors
 from stream_ml.core.typing import Array, NNModel
 
 if TYPE_CHECKING:
@@ -60,4 +60,10 @@ class Normal(ModelBase[Array, NNModel]):
                 xp=self.xp,
             )
 
-        raise NotImplementedError
+        return logpdf_gaussian_errors(
+            data[c],
+            loc=mpars[c, "mu"],
+            sigma=self.xp.clip(mpars[c, "sigma"], 1e-10),
+            sigma_o=self.xp.clip(data[self.coord_err_names[0]], 1e-10),
+            xp=self.xp,
+        )
