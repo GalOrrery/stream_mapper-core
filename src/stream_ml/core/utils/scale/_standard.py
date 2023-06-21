@@ -46,11 +46,7 @@ class StandardScaler(DataScaler, Generic[Array]):
             data = data[names].array
 
         xp = get_namespace(data)
-        return cls(
-            mean=xp.mean(data, 0).flatten(),
-            scale=xp.std(data, 0).flatten(),
-            names=names,
-        )
+        return cls(mean=xp.mean(data, 0), scale=xp.std(data, 0), names=names)
 
     def transform(self, data: T, /, names: tuple[str, ...]) -> T:
         """Standardize a dataset along the features axis."""

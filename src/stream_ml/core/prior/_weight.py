@@ -138,7 +138,7 @@ class HardThreshold(PriorBase[Array]):
         Array
         """
         i = model.composite_params.flatskeys().index((self.param_name,))
-        where = within_bounds(data[self.coord_name].flatten(), *self.scaled_bounds) & (
+        where = within_bounds(data[self.coord_name], *self.scaled_bounds) & (
             pred[:, i] < self.threshold
         )
         return array_at(pred, (where, i), inplace=False).set(self.set_to)
