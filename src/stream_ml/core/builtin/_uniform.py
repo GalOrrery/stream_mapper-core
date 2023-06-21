@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
+__all__: list[str] = []
+
 from dataclasses import KW_ONLY, dataclass
 from typing import TYPE_CHECKING, Any
 
 from stream_ml.core._core.base import ModelBase
 from stream_ml.core.builtin._stats.uniform import logpdf
 from stream_ml.core.typing import Array, NNModel
-
-__all__: list[str] = []
-
 
 if TYPE_CHECKING:
     from stream_ml.core.data import Data
@@ -74,7 +73,7 @@ class Uniform(ModelBase[Array, NNModel]):
         """
         # indicator: (N, F)
         if mask is not None:
-            indicator = self.xp.squeeze(mask[:, tuple(self.coord_bounds.keys())])
+            indicator = self.xp.squeeze(mask[tuple(self.coord_bounds.keys())].array)
         elif self.require_mask:
             msg = "mask is required"
             raise ValueError(msg)
