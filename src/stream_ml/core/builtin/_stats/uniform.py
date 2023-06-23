@@ -62,7 +62,6 @@ def logpdf_gaussian_errors(
     xp: ArrayNamespace[Array],
 ) -> Array:
     """Log-pdf of a uniform distribution convolved with a Gaussian."""
-    # TODO: ensure broadcasting works
-    return xp.log(  # yes, a - b
+    return logpdf(x, a=a, b=b, xp=xp) + xp.log(  # yes, a - b
         norm_cdf(x, a, sigma_o, xp=xp) - norm_cdf(x, b, sigma_o, xp=xp)
-    ) + logpdf(x, a=a, b=b, xp=xp)
+    )
