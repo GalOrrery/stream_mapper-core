@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+__all__: list[str] = []
+
 from abc import ABCMeta, abstractmethod
 from collections.abc import ItemsView, Iterator, KeysView, Mapping, ValuesView
 from dataclasses import KW_ONLY, dataclass, fields
@@ -24,8 +26,6 @@ if TYPE_CHECKING:
     from stream_ml.core.data import Data
     from stream_ml.core.params import ModelParameters, Params
     from stream_ml.core.prior import PriorBase
-
-__all__: list[str] = []
 
 
 _SET_MSG = "cannot set {} on this model."

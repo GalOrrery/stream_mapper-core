@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
+__all__: list[str] = []
+
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
 
 from stream_ml.core.typing import Array, NNModel
 from stream_ml.core.typing._nn import NNModelProtocol
 from stream_ml.core.utils.sentinel import MISSING, MissingT
-
-__all__: list[str] = []
-
 
 if TYPE_CHECKING:
     from stream_ml.core._core.api import Model

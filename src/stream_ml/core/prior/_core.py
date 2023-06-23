@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+__all__: list[str] = []
+
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Protocol
 
@@ -13,9 +15,6 @@ if TYPE_CHECKING:
     from stream_ml.core.data import Data
     from stream_ml.core.params._values import Params
     from stream_ml.core.typing import NNModel
-
-
-__all__: list[str] = []
 
 
 class LogPDFHook(Protocol):

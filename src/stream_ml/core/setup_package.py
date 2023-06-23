@@ -1,13 +1,13 @@
 """Package Setup."""
 
+__all__: list[str] = []
+
 from itertools import chain
 from typing import Final
 
 from mypy_extensions import trait
 
 from stream_ml.core.data import Data
-
-__all__: list[str] = []
 
 WEIGHT_NAME: Final = "weight"
 BACKGROUND_KEY: Final = "background"

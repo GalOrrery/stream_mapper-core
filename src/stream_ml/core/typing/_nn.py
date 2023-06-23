@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
+__all__: list[str] = []
+
 from typing import Any, Protocol, TypeVar, runtime_checkable
 
 from stream_ml.core.typing._array import Array, Array_co
-
-__all__: list[str] = []
-
 
 NNModel = TypeVar("NNModel", bound="NNModelProtocol[Array]")  # type: ignore[valid-type]
 NNModel_co = TypeVar("NNModel_co", covariant=True)

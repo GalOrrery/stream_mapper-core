@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+__all__: list[str] = []
+
 from functools import singledispatch
 from typing import TYPE_CHECKING, TypeVar
-
-__all__: list[str] = []
 
 if TYPE_CHECKING:
     from stream_ml.core.typing import Array, ArrayNamespace
