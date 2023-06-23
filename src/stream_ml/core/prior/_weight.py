@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+__all__: list[str] = []
+
 from dataclasses import KW_ONLY, InitVar, dataclass
 from math import inf
 from typing import TYPE_CHECKING
@@ -18,8 +20,6 @@ if TYPE_CHECKING:
     from stream_ml.core.data import Data
     from stream_ml.core.params._values import Params
     from stream_ml.core.typing import NNModel
-
-__all__: list[str] = []
 
 
 @dataclass(frozen=True)

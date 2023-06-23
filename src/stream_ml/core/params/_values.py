@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
+__all__: list[str] = []
+
 from collections.abc import Iterable, Mapping
 import itertools
 from typing import TYPE_CHECKING, TypeVar, cast, overload
 
 from stream_ml.core.setup_package import PACK_PARAM_JOIN
 from stream_ml.core.utils.frozen_dict import FrozenDict
-
-__all__: list[str] = []
 
 if TYPE_CHECKING:
     from stream_ml.core.typing import ParamNameAllOpts, ParamNameTupleOpts

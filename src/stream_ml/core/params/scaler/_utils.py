@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
+__all__: list[str] = []
+
 from typing import TYPE_CHECKING
 
 from stream_ml.core.params._values import freeze_params, set_param
-
-__all__: list[str] = []
 
 if TYPE_CHECKING:
     from stream_ml.core._core.base import ModelBase

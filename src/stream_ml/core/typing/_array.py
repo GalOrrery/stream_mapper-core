@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Protocol, TypeVar
-
 __all__: list[str] = []
+
+from typing import TYPE_CHECKING, Any, Protocol, TypeVar
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -318,7 +318,7 @@ class ArrayNamespace(Protocol[Array]):
         ...
 
     @staticmethod
-    def stack(arrays: tuple[Array, ...], axis: int = ...) -> Array:
+    def stack(arrays: tuple[Array, ...] | list[Array], axis: int = ...) -> Array:
         """Vertical stack."""
         ...
 

@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
-
 __all__: list[str] = []
 
+from dataclasses import dataclass, replace
 from functools import singledispatch
 from typing import Any, Generic, cast
 

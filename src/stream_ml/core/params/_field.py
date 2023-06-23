@@ -1,13 +1,13 @@
 """Parameter."""
 
+__all__: list[str] = []
+
 from collections.abc import Mapping
 from typing import Generic, Protocol, final
 
 from stream_ml.core.params._collection import ModelParameters
 from stream_ml.core.params._core import ModelParameter
 from stream_ml.core.typing import Array
-
-__all__: list[str] = []
 
 
 class SupportsCoordNames(Protocol):
