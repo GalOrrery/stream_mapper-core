@@ -63,3 +63,21 @@ def get_namespace(array: Array, /) -> ArrayNamespace[Array]:
     """
     msg = f"unknown array type {type(array)}."
     raise NotImplementedError(msg)
+
+
+@singledispatch
+def copy(array: Array, /) -> Array:
+    """Copy the array.
+
+    Parameters
+    ----------
+    array : Array
+        Array to copy.
+
+    Returns
+    -------
+    Array
+        Copied array.
+    """
+    msg = f"unknown array type {type(array)}."
+    raise NotImplementedError(msg)
