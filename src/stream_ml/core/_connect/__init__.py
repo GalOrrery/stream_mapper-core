@@ -2,4 +2,4 @@
 
 __all__: list[str] = []
 
-from stream_ml.core._connect import data  # noqa: F401
+from stream_ml.core._connect import compat, data  # noqa: F401
