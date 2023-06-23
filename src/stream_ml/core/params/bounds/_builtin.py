@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 from stream_ml.core.params.bounds._base import ParameterBounds
 from stream_ml.core.typing import Array
+from stream_ml.core.utils.compat import array_at, copy
 
 if TYPE_CHECKING:
     from stream_ml.core._core.api import Model
@@ -76,4 +77,8 @@ class ClippedBounds(ParameterBounds[Array]):
         self, pred: Array, data: Data[Array], model: Model[Array, NNModel], /
     ) -> Array:
         """Evaluate the forward step in the prior."""
-        return model.xp.clip(pred, *self.scaled_bounds)
+        pred = copy(pred)
+        col = model.params.flatskeys().index(self.param_name)
+        return array_at(pred, (..., col)).set(
+            model.xp.clip(pred[:, col], *self.scaled_bounds)
+        )
