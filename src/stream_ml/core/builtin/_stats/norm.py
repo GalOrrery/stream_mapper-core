@@ -47,4 +47,4 @@ def logpdf_gaussian_errors(
     xp: ArrayNamespace[Array],
 ) -> Array:
     """Univariate log-pdf of a convolution of a uniform and a Gaussian."""
-    return logpdf(x, loc, xp.sqrt(sigma**2 + sigma_o**2), xp=xp)
+    return logpdf(x, loc=loc, sigma=xp.sqrt(sigma**2 + sigma_o**2), xp=xp)

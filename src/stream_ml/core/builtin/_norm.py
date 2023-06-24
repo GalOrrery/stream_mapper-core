@@ -1,4 +1,4 @@
-"""Gaussian stream model."""
+"""Gaussian model."""
 
 from __future__ import annotations
 
@@ -20,7 +20,13 @@ if TYPE_CHECKING:
 class Normal(ModelBase[Array, NNModel]):
     r"""1D Gaussian with mixture weight.
 
-    :math:`\mathcal{N}(weight, \mu, \sigma)(\phi1)`
+    :math:`\mathcal{N}(weight, \mu, \ln\sigma)(\phi1)`
+
+    Notes
+    -----
+    The model parameters are:
+    - "mu" : mean
+    - "ln-sigma" : log-standard deviation
     """
 
     def __post_init__(self) -> None:
@@ -29,6 +35,9 @@ class Normal(ModelBase[Array, NNModel]):
         # Validate the coord_names
         if len(self.coord_names) != 1:
             msg = "Only one coordinate is supported, e.g ('phi2',)"
+            raise ValueError(msg)
+        if self.coord_err_names is not None and len(self.coord_err_names) != 1:
+            msg = "Only one coordinate error is supported, e.g ('phi2_err',)"
             raise ValueError(msg)
 
     def ln_likelihood(
@@ -55,15 +64,15 @@ class Normal(ModelBase[Array, NNModel]):
         if self.coord_err_names is None:
             return logpdf(
                 data[c],
-                mpars[c, "mu"],
-                self.xp.clip(mpars[c, "sigma"], 1e-10),
+                loc=mpars[c, "mu"],
+                sigma=self.xp.exp(mpars[c, "ln-sigma"]),
                 xp=self.xp,
             )
 
         return logpdf_gaussian_errors(
             data[c],
             loc=mpars[c, "mu"],
-            sigma=self.xp.clip(mpars[c, "sigma"], 1e-10),
-            sigma_o=self.xp.clip(data[self.coord_err_names[0]], 1e-10),
+            sigma=self.xp.exp(mpars[c, "ln-sigma"]),
+            sigma_o=self.xp.log(data[self.coord_err_names[0]]),
             xp=self.xp,
         )
