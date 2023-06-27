@@ -63,6 +63,7 @@ class ModelParameter(Generic[Array]):
     param_name: ParamNameTupleOpts | None = None
 
     def __post_init__(self) -> None:
+        # Need to ensure that the bounds have the correct scaler and param_name
         object.__setattr__(
             self,
             "bounds",
