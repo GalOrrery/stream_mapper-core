@@ -54,10 +54,6 @@ class StandardScaler(DataScaler, Generic[Array]):
 
         return cast(T, _transform(data, mean, scale, names=names))
 
-    def fit_transform(self, data: T, /, names: tuple[str, ...]) -> T:
-        """Fit to data, then transform it."""
-        return self.fit(data, names=names).transform(data, names=names)
-
     def inverse_transform(
         self,
         data: T,
@@ -67,10 +63,6 @@ class StandardScaler(DataScaler, Generic[Array]):
     ) -> T:
         """Scale back the data to the original representation."""
         return cast(T, _transform_inv(data, self.mean, self.scale, names=names))
-
-    def __repr__(self) -> str:
-        """Return the representation."""
-        return f"{self.__class__.__name__}(mean={self.mean}, scale={self.scale})"
 
     def __getitem__(self, names: tuple[str, ...]) -> StandardScaler[Array]:
         """Get a subset DataScaler with the given names."""
