@@ -5,7 +5,7 @@ from __future__ import annotations
 __all__: list[str] = []
 
 from abc import ABCMeta, abstractmethod
-from dataclasses import KW_ONLY, dataclass
+from dataclasses import KW_ONLY, InitVar, dataclass
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 from stream_ml.core.params.scaler import ParamScaler  # noqa: TCH001
@@ -33,19 +33,19 @@ class ParameterBounds(Generic[Array], metaclass=ABCMeta):
 
     _: KW_ONLY
     param_name: ParamNameTupleOpts | None = None
-    scaler: ParamScaler[Array] | None = None
+    scaler: InitVar[ParamScaler[Array] | None] = None
     name: str | None = None  # the name of the prior
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, scaler: ParamScaler[Array] | None) -> None:
         """Post-init."""
         self._scaled_bounds: tuple[Array, Array]
-        if self.scaler is not None:
+        if scaler is not None:
             object.__setattr__(
                 self,
                 "_scaled_bounds",
                 (
-                    self.scaler.transform(self.lower),
-                    self.scaler.transform(self.upper),
+                    scaler.transform(self.lower),
+                    scaler.transform(self.upper),
                 ),
             )
 

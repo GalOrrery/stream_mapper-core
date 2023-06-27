@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from stream_ml.core._core.api import Model
     from stream_ml.core.data import Data
     from stream_ml.core.params._values import Params
+    from stream_ml.core.params.scaler import ParamScaler
     from stream_ml.core.typing import ArrayNamespace, NNModel
 
     Self = TypeVar("Self", bound="ParameterBounds")  # type: ignore[type-arg]
@@ -28,13 +29,13 @@ class NoBounds(ParameterBounds[Any]):
     lower: float = -inf
     upper: float = inf
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, scaler: ParamScaler[Array] | None) -> None:
         """Post-init."""
         if self.lower != -inf or self.upper != inf:
             msg = "lower and upper must be -inf and inf"
             raise ValueError(msg)
 
-        super().__post_init__()
+        super().__post_init__(scaler)
 
     def logpdf(
         self,
@@ -66,12 +67,12 @@ class ClippedBounds(ParameterBounds[Array]):
     lower: Array | float
     upper: Array | float
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, scaler: ParamScaler[Array] | None) -> None:
         """Post-init."""
         if self.lower >= self.upper:
             msg = "lower must be less than upper"
             raise ValueError(msg)
-        super().__post_init__()
+        super().__post_init__(scaler)
 
     def __call__(
         self, pred: Array, data: Data[Array], model: Model[Array, NNModel], /
