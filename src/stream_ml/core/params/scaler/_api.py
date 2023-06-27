@@ -15,6 +15,7 @@ from typing import (
 from stream_ml.core.typing import Array
 
 if TYPE_CHECKING:
+    from stream_ml.core.typing import ArrayNamespace
     from stream_ml.core.utils.scale import DataScaler
 
 T = TypeVar("T", bound=str | EllipsisType)
@@ -25,17 +26,22 @@ ParamScalerT = TypeVar("ParamScalerT", bound="ParamScaler[Array]")  # type: igno
 class ParamScaler(Protocol[Array]):
     """Protocol for parameter scalers."""
 
-    def transform(self, data: Array | float) -> Array:
+    def transform(self, data: Array | float, /) -> Array:
         """Transform the data."""
         ...
 
-    def inverse_transform(self, data: Array) -> Array:
+    def inverse_transform(self, data: Array, /) -> Array:
         """Inverse transform the data."""
         ...
 
     @classmethod
     def from_data_scaler(
-        cls: type[ParamScalerT], scaler: DataScaler, name: str
+        cls: type[ParamScalerT],
+        scaler: DataScaler,
+        /,
+        name: str,
+        *,
+        xp: ArrayNamespace[Array] | None = None,
     ) -> ParamScalerT:
         """Construct from ``DataScaler`` object.
 
@@ -45,6 +51,9 @@ class ParamScaler(Protocol[Array]):
             The scaler object.
         name : str
             The name of the scaling to extract.
+
+        xp : array namespace, optional keyword-only
+            The array namespace to use, by default None.
 
         Returns
         -------

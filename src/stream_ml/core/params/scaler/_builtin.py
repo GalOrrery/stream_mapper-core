@@ -16,27 +16,33 @@ from stream_ml.core.typing import Array
 from stream_ml.core.utils.scale import StandardScaler
 
 if TYPE_CHECKING:
+    from stream_ml.core.typing import ArrayNamespace
     from stream_ml.core.utils.scale import DataScaler
 
 T = TypeVar("T", bound=str | EllipsisType)
 ParamScalerT = TypeVar("ParamScalerT", bound="ParamScaler[Array]")  # type: ignore[valid-type]  # noqa: E501
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Identity(ParamScaler[Array]):
     """Identity scaler."""
 
-    def transform(self, data: Array | float) -> Array | float:  # type: ignore[override]
+    def transform(self, data: Array | float, /) -> Array | float:  # type: ignore[override]  # noqa: E501
         """Transform the data."""
         return data
 
-    def inverse_transform(self, data: Array) -> Array:
+    def inverse_transform(self, data: Array, /) -> Array:
         """Inverse transform the data."""
         return data
 
     @classmethod
     def from_data_scaler(
-        cls: type[ParamScalerT], scaler: DataScaler, name: str  # noqa: ARG003
+        cls: type[ParamScalerT],
+        scaler: DataScaler,  # noqa: ARG003
+        /,
+        name: str,  # noqa: ARG003
+        *,
+        xp: ArrayNamespace[Array] | None = None,  # noqa: ARG003
     ) -> ParamScalerT:
         """Construct from ``DataScaler`` object.
 
@@ -47,6 +53,9 @@ class Identity(ParamScaler[Array]):
         name : str
             The name of the scaling to extract. Not used.
 
+        xp : array namespace, optional keyword-only
+            The array namespace to use, by default None.
+
         Returns
         -------
         ``Identity``
@@ -54,24 +63,29 @@ class Identity(ParamScaler[Array]):
         return cls()
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class StandardLocation(ParamScaler[Array]):
     """Standard scaler for a location, which need mean and scale."""
 
     mean: Array | float
     scale: Array | float
 
-    def transform(self, data: Array | float) -> Array:
+    def transform(self, data: Array | float, /) -> Array:
         """Transform the data."""
         return (data - self.mean) / self.scale  # type: ignore[return-value]
 
-    def inverse_transform(self, data: Array) -> Array:
+    def inverse_transform(self, data: Array, /) -> Array:
         """Inverse transform the data."""
         return data * self.scale + self.mean
 
     @classmethod
     def from_data_scaler(
-        cls: type[StandardLocation[Array]], scaler: DataScaler, name: str
+        cls: type[StandardLocation[Array]],
+        scaler: DataScaler,
+        /,
+        name: str,
+        *,
+        xp: ArrayNamespace[Array] | None = None,  # noqa: ARG003
     ) -> StandardLocation[Array]:
         """Construct from ``StandardScaler`` object.
 
@@ -81,6 +95,9 @@ class StandardLocation(ParamScaler[Array]):
             The scaler object. Must be a `stream_ml.core.utils.scale.StandardScaler`
         name : str
             The name of the scaling to extract.
+
+        xp : array namespace, optional keyword-only
+            The array namespace to use, by default None.
 
         Returns
         -------
@@ -94,23 +111,28 @@ class StandardLocation(ParamScaler[Array]):
         return cls(mean=scaler.mean[i], scale=scaler.scale[i])
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class StandardWidth(ParamScaler[Array]):
     """Standard scaler for a width, which needs only the scale."""
 
     scale: Array | float
 
-    def transform(self, data: Array | float) -> Array:
+    def transform(self, width: Array | float, /) -> Array:
         """Transform the data."""
-        return data / self.scale  # type: ignore[return-value]
+        return width / self.scale  # type: ignore[return-value]
 
-    def inverse_transform(self, data: Array) -> Array:
+    def inverse_transform(self, data: Array, /) -> Array:
         """Inverse transform the data."""
         return data * self.scale
 
     @classmethod
     def from_data_scaler(
-        cls: type[StandardWidth[Array]], scaler: DataScaler, name: str
+        cls: type[StandardWidth[Array]],
+        scaler: DataScaler,
+        /,
+        name: str,
+        *,
+        xp: ArrayNamespace[Array] | None = None,  # noqa: ARG003
     ) -> StandardWidth[Array]:
         """Construct from ``StandardScaler`` object.
 
@@ -121,6 +143,9 @@ class StandardWidth(ParamScaler[Array]):
         name : str
             The name of the scaling to extract.
 
+        xp : array namespace, optional keyword-only
+            The array namespace to use, by default None.
+
         Returns
         -------
         ``StandardWidth``
@@ -130,3 +155,52 @@ class StandardWidth(ParamScaler[Array]):
             raise TypeError(msg)
 
         return cls(scale=scaler.scale[scaler.names.index(name)])
+
+
+@dataclass(frozen=True, slots=True)
+class StandardLnWidth(ParamScaler[Array]):
+    """Standard scaler for a log-width, which needs only the scale."""
+
+    ln_scale: Array | float
+
+    def transform(self, ln_width: Array | float, /) -> Array | float:  # type: ignore[override]  # noqa: E501
+        """Transform the ln_width."""
+        return ln_width - self.ln_scale
+
+    def inverse_transform(self, ln_width: Array, /) -> Array:
+        """Inverse transform the ln_width."""
+        return ln_width + self.ln_scale
+
+    @classmethod
+    def from_data_scaler(
+        cls: type[StandardLnWidth[Array]],
+        scaler: DataScaler,
+        /,
+        name: str,
+        *,
+        xp: ArrayNamespace[Array] | None = None,
+    ) -> StandardLnWidth[Array]:
+        """Construct from ``StandardScaler`` object.
+
+        Parameters
+        ----------
+        scaler : `stream_ml.core.utils.scale.StandardScaler`
+            The scaler object.
+        name : str
+            The name of the scaling to extract.
+
+        xp : array namespace, optional keyword-only
+            The array namespace to use, by default None.
+
+        Returns
+        -------
+        ``StandardLnWidth``
+        """
+        if not isinstance(scaler, StandardScaler):
+            msg = f"scaler must be a <StandardScaler>, not {type(scaler)}"
+            raise TypeError(msg)
+        if xp is None:
+            msg = "xp must be provided"
+            raise ValueError(msg)
+
+        return cls(ln_scale=xp.log(scaler.scale[scaler.names.index(name)]))

@@ -6,6 +6,7 @@ __all__ = [
     "Identity",
     "StandardLocation",
     "StandardWidth",
+    "StandardLnWidth",
     # funcs
     "scale_params",
 ]
@@ -13,6 +14,7 @@ __all__ = [
 from stream_ml.core.params.scaler._api import ParamScaler
 from stream_ml.core.params.scaler._builtin import (
     Identity,
+    StandardLnWidth,
     StandardLocation,
     StandardWidth,
 )
