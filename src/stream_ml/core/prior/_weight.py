@@ -9,7 +9,7 @@ from math import inf
 from typing import TYPE_CHECKING
 
 from stream_ml.core.prior._base import PriorBase
-from stream_ml.core.typing import Array, ArrayNamespace
+from stream_ml.core.typing import Array
 from stream_ml.core.utils.compat import array_at
 from stream_ml.core.utils.funcs import within_bounds
 from stream_ml.core.utils.scale import DataScaler  # noqa: TCH001
@@ -66,8 +66,8 @@ class HardThreshold(PriorBase[Array]):
             self,
             "scaled_bounds",
             (
-                data_scaler.transform(self.lower, names=(self.coord_name,), xp=None),
-                data_scaler.transform(self.upper, names=(self.coord_name,), xp=None),
+                data_scaler.transform(self.lower, names=(self.coord_name,), xp=self.xp),
+                data_scaler.transform(self.upper, names=(self.coord_name,), xp=self.xp),
             ),
         )
 
@@ -83,8 +83,6 @@ class HardThreshold(PriorBase[Array]):
         model: Model[Array, NNModel],
         current_lnpdf: Array | None = None,
         /,
-        *,
-        xp: ArrayNamespace[Array],
     ) -> Array:
         """Evaluate the logpdf.
 
@@ -105,19 +103,16 @@ class HardThreshold(PriorBase[Array]):
             The current logpdf, by default `None`. This is useful for setting
             the additive log-pdf to a specific value.
 
-        xp : ArrayNamespace[Array], keyword-only
-            The array namespace.
-
         Returns
         -------
         Array
             The logpdf.
         """
-        lnp = xp.zeros_like(mpars[(self.param_name,)])
+        lnp = self.xp.zeros_like(mpars[(self.param_name,)])
         where = within_bounds(data[self.coord_name], self.lower, self.upper) & (
             mpars[(self.param_name,)] > self.threshold
         )
-        return array_at(lnp, where).set(-xp.inf)
+        return array_at(lnp, where).set(-self.xp.inf)
 
     def __call__(
         self, pred: Array, data: Data[Array], model: ModelsBase[Array, NNModel]  # type: ignore[override]  # noqa: E501

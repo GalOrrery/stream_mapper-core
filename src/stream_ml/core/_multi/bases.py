@@ -187,5 +187,5 @@ class ModelsBase(
             lnp = lnp + param.bounds.logpdf(mpars, data, self, lnp, xp=self.xp)
         # Plugin for priors
         for prior in self.priors:
-            lnp = lnp + prior.logpdf(mpars, data, self, lnp, xp=self.xp)
+            lnp = lnp + prior.logpdf(mpars, data, self, lnp)
         return lnp
