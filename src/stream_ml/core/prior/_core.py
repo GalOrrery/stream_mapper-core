@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Protocol
 
 from stream_ml.core.prior._base import PriorBase
-from stream_ml.core.typing import Array, ArrayNamespace
+from stream_ml.core.typing import Array
 
 if TYPE_CHECKING:
     from stream_ml.core._core.api import Model
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from stream_ml.core.typing import NNModel
 
 
-class LogPDFHook(Protocol):
+class LogPDFHook(Protocol[Array]):
     """LogPDF hook."""
 
     def __call__(
@@ -27,14 +27,12 @@ class LogPDFHook(Protocol):
         model: Model[Array, NNModel],
         current_lnpdf: Array | None,
         /,
-        *,
-        xp: ArrayNamespace[Array],
     ) -> Array:
         """Evaluate the logpdf."""
         ...
 
 
-class ForwardHook(Protocol):
+class ForwardHook(Protocol[Array]):
     """Forward hook."""
 
     def __call__(
@@ -48,8 +46,8 @@ class ForwardHook(Protocol):
 class Prior(PriorBase[Array]):
     """Prior."""
 
-    logpdf_hook: LogPDFHook
-    forward_hook: ForwardHook
+    logpdf_hook: LogPDFHook[Array]
+    forward_hook: ForwardHook[Array]
 
     def logpdf(
         self,
@@ -58,8 +56,6 @@ class Prior(PriorBase[Array]):
         model: Model[Array, NNModel],
         current_lnpdf: Array | None = None,
         /,
-        *,
-        xp: ArrayNamespace[Array],
     ) -> Array:
         """Evaluate the logpdf.
 
@@ -88,7 +84,7 @@ class Prior(PriorBase[Array]):
         Array
             The logpdf.
         """
-        return self.logpdf_hook(mpars, data, model, current_lnpdf, xp=xp)
+        return self.logpdf_hook(mpars, data, model, current_lnpdf)
 
     def __call__(
         self, pred: Array, data: Data[Array], model: Model[Array, NNModel], /

@@ -255,7 +255,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
             lnp = lnp + p.bounds.logpdf(mpars, data, self, lnp, xp=self.xp)
         # Priors
         for prior in self.priors:
-            lnp = lnp + prior.logpdf(mpars, data, self, lnp, xp=self.xp)
+            lnp = lnp + prior.logpdf(mpars, data, self, lnp)
 
         return lnp
 
