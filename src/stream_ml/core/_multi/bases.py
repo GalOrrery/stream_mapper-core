@@ -184,7 +184,7 @@ class ModelsBase(
             lnp = lnp + m.ln_prior(mpars.get_prefixed(name + "."), data)
         # Parameter Bounds
         for param in self.params.flatvalues():
-            lnp = lnp + param.bounds.logpdf(mpars, data, self, lnp, xp=self.xp)
+            lnp = lnp + param.bounds.logpdf(mpars, data, self, lnp)
         # Plugin for priors
         for prior in self.priors:
             lnp = lnp + prior.logpdf(mpars, data, self, lnp)

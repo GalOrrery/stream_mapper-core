@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-__all__ = ["NoBounds", "ClippedBounds"]
+__all__: list[str] = []
 
 from dataclasses import dataclass
 from math import inf
-from typing import TYPE_CHECKING, Any, Literal, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from stream_ml.core.params.bounds._base import ParameterBounds
 from stream_ml.core.typing import Array
@@ -17,13 +17,13 @@ if TYPE_CHECKING:
     from stream_ml.core.data import Data
     from stream_ml.core.params._values import Params
     from stream_ml.core.params.scaler import ParamScaler
-    from stream_ml.core.typing import ArrayNamespace, NNModel
+    from stream_ml.core.typing import NNModel
 
     Self = TypeVar("Self", bound="ParameterBounds")  # type: ignore[type-arg]
 
 
 @dataclass(frozen=True)
-class NoBounds(ParameterBounds[Any]):
+class NoBounds(ParameterBounds[Array]):
     """No bounds."""
 
     lower: float = -inf
@@ -44,14 +44,12 @@ class NoBounds(ParameterBounds[Any]):
         model: Model[Array, NNModel],
         current_lnpdf: Array | None = None,
         /,
-        *,
-        xp: ArrayNamespace[Array],
-    ) -> Array | Literal[0]:
+    ) -> Array:
         """Evaluate the logpdf."""
         if self.param_name is None:
             msg = "need to set param_name"
             raise ValueError(msg)
-        return 0
+        return self.xp.asarray(0)
 
     def __call__(
         self, pred: Array, data: Data[Array], model: Model[Array, NNModel], /
