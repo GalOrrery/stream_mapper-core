@@ -396,7 +396,7 @@ class MixtureModel(
     _: KW_ONLY
 
     # Standardizer
-    data_scaler: DataScaler
+    data_scaler: DataScaler[Array]
 
     # Coordinates, indpendent and dependent.
     indep_coord_names: tuple[str, ...] = ("phi1",)

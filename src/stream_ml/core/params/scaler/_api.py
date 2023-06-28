@@ -37,7 +37,7 @@ class ParamScaler(Protocol[Array]):
     @classmethod
     def from_data_scaler(
         cls: type[ParamScalerT],
-        scaler: DataScaler,
+        scaler: DataScaler[Array],
         /,
         name: str,
         *,
