@@ -38,7 +38,7 @@ class Identity(ParamScaler[Array]):
     @classmethod
     def from_data_scaler(
         cls: type[ParamScalerT],
-        scaler: DataScaler,  # noqa: ARG003
+        scaler: DataScaler[Array],  # noqa: ARG003
         /,
         name: str,  # noqa: ARG003
         *,
@@ -81,7 +81,7 @@ class StandardLocation(ParamScaler[Array]):
     @classmethod
     def from_data_scaler(
         cls: type[StandardLocation[Array]],
-        scaler: DataScaler,
+        scaler: DataScaler[Array],
         /,
         name: str,
         *,
@@ -128,7 +128,7 @@ class StandardWidth(ParamScaler[Array]):
     @classmethod
     def from_data_scaler(
         cls: type[StandardWidth[Array]],
-        scaler: DataScaler,
+        scaler: DataScaler[Array],
         /,
         name: str,
         *,
@@ -174,7 +174,7 @@ class StandardLnWidth(ParamScaler[Array]):
     @classmethod
     def from_data_scaler(
         cls: type[StandardLnWidth[Array]],
-        scaler: DataScaler,
+        scaler: DataScaler[Array],
         /,
         name: str,
         *,

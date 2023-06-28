@@ -52,9 +52,9 @@ class HardThreshold(PriorBase[Array]):
     lower: float = -inf
     upper: float = inf
 
-    data_scaler: InitVar[DataScaler]
+    data_scaler: InitVar[DataScaler[Array]]
 
-    def __post_init__(self, data_scaler: DataScaler) -> None:
+    def __post_init__(self, data_scaler: DataScaler[Array]) -> None:
         """Post-init."""
         super().__post_init__()
         if self.lower > self.upper:
@@ -66,8 +66,8 @@ class HardThreshold(PriorBase[Array]):
             self,
             "scaled_bounds",
             (
-                data_scaler.transform(self.lower, names=(self.coord_name,)),
-                data_scaler.transform(self.upper, names=(self.coord_name,)),
+                data_scaler.transform(self.lower, names=(self.coord_name,), xp=None),
+                data_scaler.transform(self.upper, names=(self.coord_name,), xp=None),
             ),
         )
 

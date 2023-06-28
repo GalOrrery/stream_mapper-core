@@ -6,20 +6,20 @@ __all__: list[str] = []
 
 from dataclasses import dataclass, replace
 from functools import singledispatch
-from typing import Any, Generic, cast
+from typing import Any, cast, overload
 
 import numpy as np
 
 from stream_ml.core.data import Data
-from stream_ml.core.typing import Array
+from stream_ml.core.typing import Array, ArrayNamespace
 from stream_ml.core.utils.compat import get_namespace
-from stream_ml.core.utils.scale._api import DataScaler, T
+from stream_ml.core.utils.scale._api import DataScaler
 
 ###############################################################################
 
 
 @dataclass(frozen=True)
-class StandardScaler(DataScaler, Generic[Array]):
+class StandardScaler(DataScaler[Array]):
     """Standardize features by removing the mean and scaling to unit variance."""
 
     mean: Array
@@ -47,30 +47,84 @@ class StandardScaler(DataScaler, Generic[Array]):
         xp = get_namespace(data)
         return cls(mean=xp.mean(data, 0), scale=xp.std(data, 0), names=names)
 
-    def transform(self, data: T, /, names: tuple[str, ...]) -> T:
+    # ---------------------------------------------------------------
+
+    @overload
+    def transform(
+        self,
+        data: Data[Array] | float,
+        /,
+        names: tuple[str, ...],
+        *,
+        xp: ArrayNamespace[Array] | None,
+    ) -> Data[Array]:
+        ...
+
+    @overload
+    def transform(
+        self,
+        data: Array | float,
+        /,
+        names: tuple[str, ...],
+        *,
+        xp: ArrayNamespace[Array] | None,
+    ) -> Array:
+        ...
+
+    def transform(
+        self,
+        data: Data[Array] | Array | float,
+        /,
+        names: tuple[str, ...],
+        *,
+        xp: ArrayNamespace[Array] | None,
+    ) -> Data[Array] | Array:
         """Standardize a dataset along the features axis."""
         mean = self.mean[[self.names.index(n) for n in names]]
         scale = self.scale[[self.names.index(n) for n in names]]
+        return cast(
+            Data[Array] | Array, _transform(data, mean, scale, names=names, xp=xp)
+        )
 
-        return cast(T, _transform(data, mean, scale, names=names))
+    # ---------------------------------------------------------------
 
-    def fit_transform(self, data: T, /, names: tuple[str, ...]) -> T:
-        """Fit to data, then transform it."""
-        return self.fit(data, names=names).transform(data, names=names)
+    @overload
+    def inverse_transform(
+        self,
+        data: Data[Array],
+        /,
+        names: tuple[str, ...],
+        *,
+        xp: ArrayNamespace[Array] | None,
+    ) -> Data[Array]:
+        ...
+
+    @overload
+    def inverse_transform(
+        self,
+        data: Array | float,
+        /,
+        names: tuple[str, ...],
+        *,
+        xp: ArrayNamespace[Array] | None,
+    ) -> Array:
+        ...
 
     def inverse_transform(
         self,
-        data: T,
+        data: Data[Array] | Array | float,
         /,
         names: tuple[str, ...],
-        **kwargs: Any,
-    ) -> T:
+        *,
+        xp: ArrayNamespace[Array] | None,
+    ) -> Data[Array] | Array:
         """Scale back the data to the original representation."""
-        return cast(T, _transform_inv(data, self.mean, self.scale, names=names))
+        return cast(
+            Data[Array] | Array,
+            _transform_inv(data, self.mean, self.scale, names=names, xp=xp),
+        )
 
-    def __repr__(self) -> str:
-        """Return the representation."""
-        return f"{self.__class__.__name__}(mean={self.mean}, scale={self.scale})"
+    # ---------------------------------------------------------------
 
     def __getitem__(self, names: tuple[str, ...]) -> StandardScaler[Array]:
         """Get a subset DataScaler with the given names."""
@@ -87,20 +141,34 @@ class StandardScaler(DataScaler, Generic[Array]):
 
 
 @singledispatch
-def _transform(data: Any, mean: Any, scale: Any, /, names: tuple[str, ...]) -> Any:
+def _transform(
+    data: Any,
+    mean: Any,
+    scale: Any,
+    /,
+    names: tuple[str, ...],
+    *,
+    xp: ArrayNamespace[Array] | None,
+) -> Any:
     """Standardize a dataset along each features axis."""
     return (data - mean) / scale
 
 
 @_transform.register(Data)
 def _transform_data(
-    data: Data[Array], mean: Array, scale: Array, /, names: tuple[str, ...]
+    data: Data[Array],
+    mean: Array,
+    scale: Array,
+    /,
+    names: tuple[str, ...],
+    *,
+    xp: ArrayNamespace[Array] | None,
 ) -> Data[Array]:
     array = data[names].array
     # Need to adjust the mean to be the same shape
     mean = mean[(None, slice(None)) + (None,) * (len(array.shape) - 2)]
     scale = scale[(None, slice(None)) + (None,) * (len(array.shape) - 2)]
-    return Data(_transform(array, mean, scale, names=names), names=names)
+    return Data(_transform(array, mean, scale, names=names, xp=xp), names=names)
 
 
 # ============================================================================
@@ -108,19 +176,33 @@ def _transform_data(
 
 
 @singledispatch
-def _transform_inv(data: Any, mean: Any, scale: Any, /, names: tuple[str, ...]) -> Any:
+def _transform_inv(
+    data: Any,
+    mean: Any,
+    scale: Any,
+    /,
+    names: tuple[str, ...],
+    *,
+    xp: ArrayNamespace[Array] | None,
+) -> Any:
     """Scale back the data to the original representation."""
     return data * scale + mean
 
 
 @_transform_inv.register(Data)
 def _transform_inv_data(
-    data: Data[Array], mean: Array, scale: Array, /, names: tuple[str, ...]
+    data: Data[Array],
+    mean: Array,
+    scale: Array,
+    /,
+    names: tuple[str, ...],
+    *,
+    xp: ArrayNamespace[Array] | None,
 ) -> Data[Array]:
     shape = (-1,) + (1,) * (len(data.array.shape) - 2)
     mean_ = np.array([mean[data.names.index(name)] for name in names]).reshape(shape)
     scale_ = np.array([scale[data.names.index(name)] for name in names]).reshape(shape)
     return Data(
-        _transform_inv(data[names].array, mean_, scale_, names=names),
+        _transform_inv(data[names].array, mean_, scale_, names=names, xp=xp),
         names=names,
     )

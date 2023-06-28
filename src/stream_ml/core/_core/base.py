@@ -86,7 +86,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
     name: str | None = None  # the name of the model
 
     # Standardizer
-    data_scaler: DataScaler
+    data_scaler: DataScaler[Array]
 
     # Coordinates, indpendent and dependent.
     indep_coord_names: tuple[str, ...] = ("phi1",)
