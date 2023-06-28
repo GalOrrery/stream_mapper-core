@@ -6,8 +6,9 @@ __all__: list[str] = []
 
 from abc import ABCMeta, abstractmethod
 from dataclasses import KW_ONLY, InitVar, dataclass
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
+from stream_ml.core._api import SupportsXP
 from stream_ml.core.params.scaler import ParamScaler  # noqa: TCH001
 from stream_ml.core.typing import Array, ArrayNamespace, ParamNameTupleOpts
 from stream_ml.core.utils.compat import array_at
@@ -25,7 +26,7 @@ if TYPE_CHECKING:
 
 
 @dataclass(frozen=True)
-class ParameterBounds(Generic[Array], metaclass=ABCMeta):
+class ParameterBounds(SupportsXP[Array], metaclass=ABCMeta):
     """Base class for prior bounds."""
 
     lower: Array | float
@@ -35,6 +36,27 @@ class ParameterBounds(Generic[Array], metaclass=ABCMeta):
     param_name: ParamNameTupleOpts | None = None
     scaler: InitVar[ParamScaler[Array] | None] = None
     name: str | None = None  # the name of the prior
+
+    array_namespace: ArrayNamespace[Array]
+
+    def __new__(
+        cls: type[Self],
+        *args: Any,  # noqa: ARG003
+        array_namespace: ArrayNamespace[Array] | None = None,
+        **kwargs: Any,  # noqa: ARG003
+    ) -> Self:
+        # Create the instance
+        self = super().__new__(cls)
+
+        # Set the array namespace
+        xp: ArrayNamespace[Array] | None = (
+            getattr(cls, "array_namespace", None)
+            if array_namespace is None
+            else array_namespace
+        )
+        object.__setattr__(self, "array_namespace", xp)
+
+        return self
 
     def __post_init__(self, scaler: ParamScaler[Array] | None) -> None:
         """Post-init."""
@@ -58,8 +80,6 @@ class ParameterBounds(Generic[Array], metaclass=ABCMeta):
         model: Model[Array, NNModel],
         current_lnpdf: Array | None = None,
         /,
-        *,
-        xp: ArrayNamespace[Array],
     ) -> Array:
         """Evaluate the logpdf.
 
@@ -80,9 +100,6 @@ class ParameterBounds(Generic[Array], metaclass=ABCMeta):
             The current logpdf, by default `None`. This is useful for setting
             the additive log-pdf to a specific value.
 
-        xp : ArrayNamespace[Array], keyword-only
-            The array namespace.
-
         Returns
         -------
         Array
@@ -91,10 +108,10 @@ class ParameterBounds(Generic[Array], metaclass=ABCMeta):
             msg = "need to set param_name"
             raise ValueError(msg)
 
-        bp = xp.zeros_like(mpars[self.param_name])
+        bp = self.xp.zeros_like(mpars[self.param_name])
         return array_at(
             bp, ~within_bounds(mpars[self.param_name], self.lower, self.upper)
-        ).set(-xp.inf)
+        ).set(-self.xp.inf)
 
     @abstractmethod
     def __call__(

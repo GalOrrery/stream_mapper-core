@@ -252,7 +252,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         lnp = lnp + self._ln_prior_coord_bnds(data)
         # Parameter Bounds
         for p in self.params.flatvalues():
-            lnp = lnp + p.bounds.logpdf(mpars, data, self, lnp, xp=self.xp)
+            lnp = lnp + p.bounds.logpdf(mpars, data, self, lnp)
         # Priors
         for prior in self.priors:
             lnp = lnp + prior.logpdf(mpars, data, self, lnp)
