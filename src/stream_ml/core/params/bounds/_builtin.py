@@ -6,7 +6,7 @@ __all__: list[str] = []
 
 from dataclasses import dataclass
 from math import inf
-from typing import TYPE_CHECKING, TypeVar, cast
+from typing import TYPE_CHECKING, TypeVar
 
 from stream_ml.core.params.bounds._base import ParameterBounds
 from stream_ml.core.typing import Array
