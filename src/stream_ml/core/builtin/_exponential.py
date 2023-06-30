@@ -2,24 +2,26 @@
 
 from __future__ import annotations
 
+from stream_ml.core.utils.compat import array_at
+
 __all__: list[str] = []
 
 from dataclasses import KW_ONLY, dataclass
 from typing import TYPE_CHECKING
 
 from stream_ml.core._core.base import ModelBase
-from stream_ml.core.builtin._stats.exponential import logpdf
+from stream_ml.core.builtin._stats.exponential import logpdf as exponential_logpdf
+from stream_ml.core.builtin._utils import WhereRequiredError
 from stream_ml.core.typing import Array, NNModel
-from stream_ml.core.utils.compat import array_at
 
 if TYPE_CHECKING:
     from stream_ml.core.data import Data
     from stream_ml.core.params import Params
 
 
-@dataclass(unsafe_hash=True)
+@dataclass
 class Exponential(ModelBase[Array, NNModel]):
-    r"""Tilted separately in each dimension.
+    r"""1D Exponential.
 
     In each dimension the background is an exponential distribution between
     points ``a`` and ``b``. The rate parameter is ``m``.
@@ -42,7 +44,7 @@ class Exponential(ModelBase[Array, NNModel]):
     """
 
     _: KW_ONLY
-    require_mask: bool = False
+    require_where: bool = False
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -51,9 +53,8 @@ class Exponential(ModelBase[Array, NNModel]):
         _a = [a for k, (a, _) in self.coord_bounds.items() if k in self.params]
         _b = [b for k, (_, b) in self.coord_bounds.items() if k in self.params]
 
-        self._a = self.xp.asarray(_a)[None, :]
-        self._b = self.xp.asarray(_b)[None, :]
-        self._bma = self._b - self._a
+        self._a = self.xp.asarray(_a)[None, :]  # ([N], F)
+        self._b = self.xp.asarray(_b)[None, :]  # ([N], F)
 
     # ========================================================================
     # Statistics
@@ -64,7 +65,7 @@ class Exponential(ModelBase[Array, NNModel]):
         /,
         data: Data[Array],
         *,
-        mask: Data[Array] | None = None,
+        where: Data[Array] | None = None,
         **kwargs: Array,
     ) -> Array:
         """Log-likelihood of the background.
@@ -77,9 +78,9 @@ class Exponential(ModelBase[Array, NNModel]):
         data : (N, F) Data[Array]
             Labelled data.
 
-        mask : (N, F) Data[Array[bool]], keyword-only
-            Data availability. True if data is available, False if not.
-            Should have the same keys as `data`.
+        where : Data[Array], optional keyword-only
+            Where to evaluate the log-likelihood. If not provided, then the
+            log-likelihood is evaluated at all data points.
         **kwargs : Array
             Additional arguments.
 
@@ -87,53 +88,32 @@ class Exponential(ModelBase[Array, NNModel]):
         -------
         (N,) Array
         """
-        # The mask is used to indicate which data points are available. If the
-        # mask is not provided, then all data points are assumed to be
+        # 'where' is used to indicate which data points are available. If
+        # 'where' is not provided, then all data points are assumed to be
         # available.
-        if mask is not None:
-            indicator = mask[tuple(self.coord_bounds.keys())].array
-        elif self.require_mask:
-            msg = "mask is required"
-            raise ValueError(msg)
+        if where is not None:
+            idx = where[tuple(self.coord_bounds.keys())].array
+        elif self.require_where:
+            raise WhereRequiredError
         else:
-            indicator = self.xp.ones((len(data), 1), dtype=int)
-            # This has shape (N, 1) so will broadcast correctly.
+            idx = self.xp.ones((len(data)), dtype=bool)
+            # This has shape (N,) so will broadcast correctly.
 
-        # Data is x
-        x = data[self.coord_names].array
+        x = data[self.coord_names].array  # (N, F)
         # Get the slope from `mpars` we check param names to see if the
         # slope is a parameter. If it is not, then we assume it is 0.
         # When the slope is 0, the log-likelihood reduces to a Uniform.
-        ms = self.xp.stack(
-            tuple(
-                mpars[(k, "slope")]
-                if (k, "slope") in self.params.flatskeys()
-                else self.xp.zeros(len(x))
-                for k in self.coord_names
-            ),
-            1,
+        ms = self.xp.stack(tuple(mpars[(k, "slope")] for k in self.coord_names), 1)[idx]
+
+        _0 = self.xp.zeros_like(x)
+        # the distribution is not affected by the errors!
+        # if self.coord_err_names is not None: pass
+
+        value = exponential_logpdf(
+            x[idx], ms, (_0 + self._a)[idx], (_0 + self._b)[idx], xp=self.xp
         )
-        n0 = ms != self.xp.asarray(0)
-        zero = self.xp.zeros_like(x)
 
-        # log-likelihood
-        lnliks = self.xp.zeros_like(x)
+        lnliks = self.xp.full_like(x, 0)  # missing data is ignored
+        lnliks = array_at(lnliks, idx).set(value)
 
-        if self.coord_err_names is None:
-            lnliks = array_at(lnliks, ~n0).set(  # Uniform
-                -self.xp.log((zero + self._bma)[~n0])
-            )
-            lnliks = array_at(lnliks, n0).set(
-                logpdf(
-                    x[n0],
-                    ms[n0],
-                    (zero + self._a)[n0],
-                    (zero + self._b)[n0],
-                    xp=self.xp,
-                    nil=-self.xp.inf,
-                )
-            )
-
-            return (indicator * lnliks).sum(1)
-
-        raise NotImplementedError
+        return lnliks.sum(-1)

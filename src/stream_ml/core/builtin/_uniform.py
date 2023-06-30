@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+from stream_ml.core.utils.compat import array_at
+
 __all__: list[str] = []
 
 from dataclasses import KW_ONLY, dataclass
 from typing import TYPE_CHECKING, Any
 
 from stream_ml.core._core.base import ModelBase
-from stream_ml.core.builtin._stats.uniform import logpdf, logpdf_gaussian_errors
+from stream_ml.core.builtin._stats.uniform import logpdf as uniform_logpdf
+from stream_ml.core.builtin._utils import WhereRequiredError
 from stream_ml.core.typing import Array, NNModel
 
 if TYPE_CHECKING:
@@ -16,14 +19,14 @@ if TYPE_CHECKING:
     from stream_ml.core.params import Params
 
 
-@dataclass(unsafe_hash=True)
+@dataclass
 class Uniform(ModelBase[Array, NNModel]):
     """Uniform background model."""
 
     net: None = None  # type: ignore[assignment]
 
     _: KW_ONLY
-    require_mask: bool = False
+    require_where: bool = False
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -36,8 +39,8 @@ class Uniform(ModelBase[Array, NNModel]):
             raise ValueError(msg)
         self._a: Array
         self._b: Array
-        object.__setattr__(self, "_a", ab_[None, :, 0])
-        object.__setattr__(self, "_b", ab_[None, :, 1])
+        object.__setattr__(self, "_a", ab_[None, :, 0])  # ([N], F)
+        object.__setattr__(self, "_b", ab_[None, :, 1])  # ([N], F)
 
     # ========================================================================
     # Statistics
@@ -48,7 +51,7 @@ class Uniform(ModelBase[Array, NNModel]):
         /,
         data: Data[Array],
         *,
-        mask: Data[Array] | None = None,
+        where: Data[Array] | None = None,
         **kwargs: Any,
     ) -> Array:
         """Log-likelihood of the background.
@@ -61,9 +64,9 @@ class Uniform(ModelBase[Array, NNModel]):
         data : Data[Array]
             Labelled data.
 
-        mask : (N, 1) Data[Array[bool]], keyword-only
-            Data availability. `True` if data is available, `False` if not.
-            Should have the same keys as `data`.
+        where : Data[Array], optional keyword-only
+            Where to evaluate the log-likelihood. If not provided, then the
+            log-likelihood is evaluated at all data points.
         **kwargs : Array
             Additional arguments.
 
@@ -71,33 +74,31 @@ class Uniform(ModelBase[Array, NNModel]):
         -------
         Array
         """
-        # indicator: (N, F)
-        if mask is not None:
-            indicator = self.xp.squeeze(mask[tuple(self.coord_bounds.keys())].array)
-        elif self.require_mask:
-            msg = "mask is required"
-            raise ValueError(msg)
+        # 'where' is used to indicate which data points are available. If
+        # 'where' is not provided, then all data points are assumed to be
+        # available.
+        if where is not None:
+            idx = where[tuple(self.coord_bounds.keys())].array
+        elif self.require_where:
+            raise WhereRequiredError
         else:
-            indicator = self.xp.ones((1, len(self.coord_names)), dtype=int)
-            # shape (1, F) so that it can broadcast with (N, F)
+            idx = self.xp.ones((len(data)), dtype=bool)
+            # This has shape (N,) so will broadcast correctly.
 
-        if self.coord_err_names is None:
-            return (
-                indicator
-                * logpdf(data[self.coord_names].array, a=self._a, b=self._b, xp=self.xp)
-            ).sum(1)
+        x = data[self.coord_names].array  # (N, F)
+        # Get the slope from `mpars` we check param names to see if the
+        # slope is a parameter. If it is not, then we assume it is 0.
+        # When the slope is 0, the log-likelihood reduces to a Uniform.
 
-        # Data errors
-        # TODO: non-diagonal covariance, but requires different formula
-        # TODO: check that no errors are 0?
-        data_err = data[self.coord_err_names].array
-        return (
-            indicator
-            * logpdf_gaussian_errors(
-                data[self.coord_names].array,
-                a=self._a,
-                b=self._b,
-                sigma_o=data_err,
-                xp=self.xp,
-            )
-        ).sum(1)
+        _0 = self.xp.zeros_like(x)
+        # the distribution is not affected by the errors!
+        # if self.coord_err_names is not None: pass
+
+        value = uniform_logpdf(
+            x[idx], a=(_0 + self._a)[idx], b=(_0 + self._b)[idx], xp=self.xp
+        )
+
+        lnliks = self.xp.full_like(x, 0)  # missing data will be ignored
+        lnliks = array_at(lnliks, idx).set(value)
+
+        return lnliks.sum(1)

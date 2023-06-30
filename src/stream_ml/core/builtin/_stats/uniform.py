@@ -1,18 +1,14 @@
 from __future__ import annotations
 
-__all__: list[str] = []
+__all__ = ["logpdf"]
 
-from math import inf, log
+from math import inf
 from typing import TYPE_CHECKING
 
-from stream_ml.core.builtin._stats.norm import cdf as norm_cdf
 from stream_ml.core.utils.compat import array_at
 
 if TYPE_CHECKING:
     from stream_ml.core.typing import Array, ArrayNamespace
-
-
-log2 = log(2)
 
 
 def logpdf(
@@ -24,13 +20,13 @@ def logpdf(
     nil: Array | float = -inf,
     xp: ArrayNamespace[Array],
 ) -> Array:
-    """Log-pdf of a uniform distribution.
+    """Log-pdf of a truncated uniform distribution.
 
     Parameters
     ----------
-    x : (N, ...) Array, positional-only
+    x : (N,) | (N,F) Array, positional-only
         The data.
-    a, b : Array
+    a, b : (N,) | (N,F) Array
         The lower and upper bounds of the uniform distribution.
 
     nil : Array | float, keyword-only
@@ -44,24 +40,6 @@ def logpdf(
     Array
     """
     out = xp.full_like(x, nil)
-    mask = (a <= x) & (x <= b)
+    sel = (a <= x) & (x <= b)
     # the log-pdf is -log(b - a) for x in [a, b], and -inf otherwise
-    return array_at(out, mask).set(-xp.log(xp.zeros_like(out) + b - a)[mask])
-
-
-# ============================================================================
-
-
-def logpdf_gaussian_errors(
-    x: Array,
-    /,
-    a: Array,
-    b: Array,
-    sigma_o: Array,
-    *,
-    xp: ArrayNamespace[Array],
-) -> Array:
-    """Log-pdf of a uniform distribution convolved with a Gaussian."""
-    return logpdf(x, a=a, b=b, xp=xp) + xp.log(  # yes, a - b
-        norm_cdf(x, a, sigma_o, xp=xp) - norm_cdf(x, b, sigma_o, xp=xp)
-    )
+    return array_at(out, sel).set(-xp.log(xp.zeros_like(out) + b - a)[sel])

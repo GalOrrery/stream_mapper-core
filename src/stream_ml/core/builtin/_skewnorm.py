@@ -1,8 +1,6 @@
-"""Gaussian model."""
+"""Gaussian stream model."""
 
 from __future__ import annotations
-
-from stream_ml.core.utils.compat import array_at
 
 __all__: list[str] = []
 
@@ -10,9 +8,10 @@ from dataclasses import KW_ONLY, dataclass
 from typing import TYPE_CHECKING
 
 from stream_ml.core._core.base import ModelBase
-from stream_ml.core.builtin._stats.norm import logpdf as norm_logpdf
+from stream_ml.core.builtin._stats.skewnorm import logpdf
 from stream_ml.core.builtin._utils import WhereRequiredError
 from stream_ml.core.typing import Array, NNModel
+from stream_ml.core.utils.compat import array_at
 
 if TYPE_CHECKING:
     from stream_ml.core.data import Data
@@ -20,36 +19,14 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class Normal(ModelBase[Array, NNModel]):
-    r"""1D Gaussian.
+class SkewNormal(ModelBase[Array, NNModel]):
+    r"""1D Gaussian with mixture weight.
 
-    :math:`\mathcal{N}(weight, \mu, \ln\sigma)(\phi1)`
-
-    Notes
-    -----
-    The model parameters are:
-    - "mu" : mean
-    - "ln-sigma" : log-standard deviation
+    :math:`(weight, \mu, \ln\sigma)(\phi1)`
     """
 
     _: KW_ONLY
     require_where: bool = False
-
-    def __post_init__(self) -> None:
-        super().__post_init__()
-
-        # Check that for every `coord_name` there is a parameter.
-        for k in self.coord_names:
-            if k not in self.params:
-                msg = f"Missing parameter for coordinate {k}"
-                raise ValueError(msg)
-
-        # Check that `coord_err_name` <-> coord_name.
-        if self.coord_err_names is not None and len(self.coord_names) != len(
-            self.coord_err_names
-        ):
-            msg = "Number of coordinates and coordinate errors must match"
-            raise ValueError(msg)
 
     def ln_likelihood(
         self,
@@ -96,12 +73,16 @@ class Normal(ModelBase[Array, NNModel]):
 
         mu = self.xp.stack(tuple(mpars[(k, "mu")] for k in cns), 1)[idx]
         ln_s = self.xp.stack(tuple(mpars[(k, "ln-sigma")] for k in cns), 1)[idx]
+        skew = self.xp.stack(tuple(mpars[(k, "skew")] for k in cns), 1)[idx]
         if cens is not None:
             # it's fine if sigma_o is 0
             sigma_o = data[cens].array[idx]
             ln_s = self.xp.logaddexp(2 * ln_s, 2 * self.xp.log(sigma_o)) / 2
+            skew = self.xp.sqrt(
+                skew**2 / (1 + (sigma_o / self.xp.exp(ln_s)) ** 2 * (1 + skew**2))
+            )
 
-        value = norm_logpdf(x[idx], loc=mu, ln_sigma=ln_s, xp=self.xp)
+        value = logpdf(x[idx], loc=mu, ln_sigma=ln_s, skew=skew, xp=self.xp)
 
         lnliks = self.xp.full_like(x, 0)  # missing data is ignored
         lnliks = array_at(lnliks, idx).set(value)
