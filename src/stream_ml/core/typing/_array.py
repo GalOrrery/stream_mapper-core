@@ -219,7 +219,7 @@ class ArrayNamespace(Protocol[Array]):
         ...
 
     @staticmethod
-    def hstack(arrays: tuple[Array, ...]) -> Array:
+    def hstack(arrays: tuple[Array, ...] | list[Array]) -> Array:
         """Horizontal stack."""
         ...
 

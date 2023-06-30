@@ -77,17 +77,20 @@ class CompoundDataScaler(DataScaler[Array]):
             msg = "xp must be specified"
             raise ValueError(msg)
 
-        if not isinstance(data, Data):
-            data = Data(xp.asarray(data), names=names)
-
-        xd = xp.stack(
-            tuple(
-                scaler.transform(data, names=names, xp=xp).array
-                for scaler in self.scalers
-            ),
-            1,
+        is_data = isinstance(data, Data)
+        data_: Data[Array] = (
+            Data(xp.asarray(data), names=names) if not isinstance(data, Data) else data
         )
-        return Data(xd, names=self.names) if isinstance(data, Data) else xd
+
+        xds: list[Array] = []
+        v: Data[Array] | Array
+        for scaler in self.scalers:
+            ns = tuple(n for n in scaler.names if n in names)
+            v = scaler.transform(data_[ns], names=ns, xp=xp)
+            xds.append(v.array if isinstance(v, Data) else v)
+        xd = xp.hstack(xds)
+
+        return Data(xd, names=self.names) if is_data else xd
 
     # ---------------------------------------------------------------
 
@@ -126,18 +129,20 @@ class CompoundDataScaler(DataScaler[Array]):
             msg = "xp must be specified"
             raise ValueError(msg)
 
-        if not isinstance(data, Data):
-            data = Data(xp.asarray(data), names=names)
-
-        xd = xp.stack(
-            tuple(
-                scaler.inverse_transform(data, names=names, xp=xp).array
-                for scaler in self.scalers
-            ),
-            1,
+        is_data = isinstance(data, Data)
+        data_: Data[Array] = (
+            Data(xp.asarray(data), names=names) if not isinstance(data, Data) else data
         )
 
-        return Data(xd, names=self.names) if isinstance(data, Data) else xd
+        xds: list[Array] = []
+        v: Data[Array] | Array
+        for scaler in self.scalers:
+            ns = tuple(n for n in scaler.names if n in names)
+            v = scaler.inverse_transform(data_[ns], names=ns, xp=xp)
+            xds.append(v.array if isinstance(v, Data) else v)
+        xd = xp.hstack(xds)
+
+        return Data(xd, names=self.names) if is_data else xd
 
     # ---------------------------------------------------------------
 
