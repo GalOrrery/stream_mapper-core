@@ -579,4 +579,4 @@ class MixtureModel(
             for name in self.components
         )
         # Sum over the models, keeping the data dimension
-        return self.xp.logsumexp(self.xp.vstack(tuple(lnliks)), 0)
+        return self.xp.special.logsumexp(self.xp.vstack(tuple(lnliks)), 0)

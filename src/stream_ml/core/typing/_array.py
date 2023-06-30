@@ -249,14 +249,6 @@ class ArrayNamespace(Protocol[Array]):
         ...
 
     @staticmethod
-    def logsumexp(array: Array, *args: Any, **kwargs: Any) -> Array:
-        """Log-sum-exp.
-
-        First argument must be the axis ("dim" in pytorch, "axis" in jax).
-        """
-        ...
-
-    @staticmethod
     def mean(array: Array, /, axis: int | None = None) -> Array:
         """Mean."""
         ...
@@ -354,4 +346,12 @@ class ArraySpecialNamespace(Protocol[Array]):
     @staticmethod
     def erfc(array: Array) -> Array:
         """Complementary error function."""
+        ...
+
+    @staticmethod
+    def logsumexp(array: Array, *args: Any, **kwargs: Any) -> Array:
+        """Log-sum-exp.
+
+        First argument must be the axis ("dim" in pytorch, "axis" in jax).
+        """
         ...
