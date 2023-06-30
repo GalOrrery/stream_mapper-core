@@ -248,6 +248,11 @@ class ArrayNamespace(Protocol[Array]):
         ...
 
     @staticmethod
+    def logaddexp(array1: Array, array2: Array, /) -> Array:
+        """Logarithm of the sum of exponentials."""
+        ...
+
+    @staticmethod
     def logical_or(array1: Array, array2: Array) -> Array:
         """Logical or."""
         ...
