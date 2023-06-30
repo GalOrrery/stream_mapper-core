@@ -358,6 +358,11 @@ class ArraySpecialNamespace(Protocol[Array]):
     """Protocol for array API namespace."""
 
     @staticmethod
+    def erf(array: Array) -> Array:
+        """Error function."""
+        ...
+
+    @staticmethod
     def erfc(array: Array) -> Array:
         """Complementary error function."""
         ...
