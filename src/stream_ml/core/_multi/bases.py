@@ -181,7 +181,7 @@ class ModelsBase(
         # Loop over the components
         lnp: Array = self.xp.zeros(()) if current_lnp is None else current_lnp
         for name, m in self.components.items():
-            lnp = lnp + m.ln_prior(mpars.get_prefixed(name + "."), data)
+            lnp = lnp + m.ln_prior(mpars.get_prefixed(name), data)
         # Parameter Bounds
         for param in self.params.flatvalues():
             lnp = lnp + param.bounds.logpdf(mpars, data, self, lnp)
