@@ -91,7 +91,7 @@ class DataScaler(Protocol[Array]):
     # ---------------------------------------------------------------
 
     def __getitem__(
-        self: DataScaler[Array], names: tuple[str, ...]
+        self: DataScaler[Array], names: str | tuple[str, ...]
     ) -> DataScaler[Array]:
         """Get a subset DataScaler with the given names."""
         ...

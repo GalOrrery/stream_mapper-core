@@ -126,13 +126,14 @@ class StandardScaler(DataScaler[Array]):
 
     # ---------------------------------------------------------------
 
-    def __getitem__(self, names: tuple[str, ...]) -> StandardScaler[Array]:
+    def __getitem__(self, names: str | tuple[str, ...]) -> StandardScaler[Array]:
         """Get a subset DataScaler with the given names."""
+        names_tuple = (names,) if isinstance(names, str) else names
         return replace(
             self,
-            mean=self.mean[[self.names.index(n) for n in names]],
-            scale=self.scale[[self.names.index(n) for n in names]],
-            names=names,
+            mean=self.mean[[self.names.index(n) for n in names_tuple]],
+            scale=self.scale[[self.names.index(n) for n in names_tuple]],
+            names=names_tuple,
         )
 
 
