@@ -80,13 +80,12 @@ class CompoundDataScaler(DataScaler[Array]):
         if not isinstance(data, Data):
             data = Data(xp.asarray(data), names=names)
 
-        xd = xp.stack(
-            tuple(
-                scaler.transform(data, names=names, xp=xp).array
-                for scaler in self.scalers
-            ),
-            1,
-        )
+        xds: list[Array] = []
+        for scaler in self.scalers:
+            ns = tuple(n for n in scaler.names if n in names)
+            xds.append(scaler.transform(data[ns], names=ns, xp=xp).array)
+        xd = xp.stack(xds, 1)
+
         return Data(xd, names=self.names) if isinstance(data, Data) else xd
 
     # ---------------------------------------------------------------
@@ -129,13 +128,11 @@ class CompoundDataScaler(DataScaler[Array]):
         if not isinstance(data, Data):
             data = Data(xp.asarray(data), names=names)
 
-        xd = xp.stack(
-            tuple(
-                scaler.inverse_transform(data, names=names, xp=xp).array
-                for scaler in self.scalers
-            ),
-            1,
-        )
+        xds: list[Array] = []
+        for scaler in self.scalers:
+            ns = tuple(n for n in scaler.names if n in names)
+            xds.append(scaler.inverse_transform(data[ns], names=ns, xp=xp).array)
+        xd = xp.stack(xds, 1)
 
         return Data(xd, names=self.names) if isinstance(data, Data) else xd
 
