@@ -108,6 +108,10 @@ class ArrayLike(Protocol):
         """Multiplication."""
         ...
 
+    def __rmul__(self: Self, other: ArrayLike | int | float) -> Self:
+        """Multiplication."""
+        ...
+
     def __neg__(self: Self) -> Self:
         """Negation."""
         ...
