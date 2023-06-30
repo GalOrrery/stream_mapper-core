@@ -218,6 +218,11 @@ class ArrayNamespace(Protocol[Array]):
         ...
 
     @staticmethod
+    def full(shape: tuple[int, ...], fill_value: Any) -> Array:
+        """Full."""
+        ...
+
+    @staticmethod
     def full_like(array: Array, fill_value: Any) -> Array:
         """Full like."""
         ...
