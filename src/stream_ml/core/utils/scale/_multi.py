@@ -141,11 +141,12 @@ class CompoundDataScaler(DataScaler[Array]):
 
     # ---------------------------------------------------------------
 
-    def __getitem__(self, names: tuple[str, ...]) -> DataScaler[Array]:
+    def __getitem__(self, names: str | tuple[str, ...]) -> DataScaler[Array]:
         """Get a subset DataScaler with the given names."""
+        names_tuple = (names,) if isinstance(names, str) else names
         scalers = tuple(
             scaler[ns]
             for scaler in self.scalers
-            if (ns := tuple(n for n in scaler.names if n in names))
+            if (ns := tuple(n for n in scaler.names if n in names_tuple))
         )
         return CompoundDataScaler[Array](scalers) if len(scalers) > 1 else scalers[0]
