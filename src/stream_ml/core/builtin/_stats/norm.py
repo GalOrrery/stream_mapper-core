@@ -1,6 +1,8 @@
+"""Gaussian distribution functions."""
+
 from __future__ import annotations
 
-__all__: list[str] = []
+__all__ = ["logpdf", "cdf", "logcdf"]
 
 import math
 from typing import TYPE_CHECKING
@@ -12,39 +14,103 @@ if TYPE_CHECKING:
 sqrt2 = math.sqrt(2)
 log2 = math.log(2)
 log2pi = math.log(2 * math.pi)
+logsqrt2pi = log2pi / 2
 
 
-def logpdf(x: Array, loc: Array, sigma: Array, *, xp: ArrayNamespace[Array]) -> Array:
-    return -(((x - loc) / sigma) ** 2) / 2 - xp.log(sigma) - 0.5 * log2pi
+def pdf(x: Array, loc: Array, ln_sigma: Array, *, xp: ArrayNamespace[Array]) -> Array:
+    """PDF of a Gaussian distribution.
+
+    Parameters
+    ----------
+    x : (N,) | (N, F) array
+        The input array.
+    loc : (N,) | (N, F) array
+        The location parameter.
+    ln_sigma : (N,) | (N, F) array
+        The log-scale parameter.
+
+    xp : array namespace, keyword-only
+        The array namespace to use.
+
+    Returns
+    -------
+    array
+    """
+    sigma = xp.exp(ln_sigma)
+    return xp.exp(-(((x - loc) / sigma) ** 2) / 2) / (sqrt2 * sigma)
+
+
+def logpdf(
+    x: Array, loc: Array, ln_sigma: Array, *, xp: ArrayNamespace[Array]
+) -> Array:
+    """Log-PDF of a Gaussian distribution.
+
+    Parameters
+    ----------
+    x : (N,) | (N, F) array
+        The input array.
+    loc : (N,) | (N, F) array
+        The location parameter.
+    ln_sigma : (N,) | (N, F) array
+        The log-scale parameter.
+
+    xp : array namespace, keyword-only
+        The array namespace to use.
+
+    Returns
+    -------
+    array
+    """
+    return -0.5 * ((x - loc) / xp.exp(ln_sigma)) ** 2 - ln_sigma - logsqrt2pi
 
 
 def cdf(
     x: Array,
     loc: Array | float,
-    sigma: Array | float,
+    ln_sigma: Array,
     *,
     xp: ArrayNamespace[Array],
 ) -> Array:
-    return xp.special.erfc((loc - x) / sigma / sqrt2) / 2
+    """CDF of a Gaussian distribution.
+
+    Parameters
+    ----------
+    x : (N,) | (N, F) array
+        The input array.
+    loc : (N,) | (N, F) array
+        The location parameter.
+    ln_sigma : (N,) | (N, F) array
+        The log-scale parameter.
+
+    xp : array namespace, keyword-only
+        The array namespace to use.
+
+    Returns
+    -------
+    array
+    """
+    return xp.special.erfc((loc - x) / xp.exp(ln_sigma) / sqrt2) / 2
 
 
 def logcdf(
-    x: Array | float, loc: Array, sigma: Array, *, xp: ArrayNamespace[Array]
+    x: Array | float, loc: Array, ln_sigma: Array, *, xp: ArrayNamespace[Array]
 ) -> Array:
-    return xp.log(xp.special.erfc((loc - x) / sigma / sqrt2)) - log2
+    """Log-CDF of a Gaussian distribution.
 
+    Parameters
+    ----------
+    x : (N,) | (N, F) array
+        The input array.
+    loc : (N,) | (N, F) array
+        The location parameter.
+    ln_sigma : (N,) | (N, F) array
+        The log-scale parameter.
 
-# ============================================================================
+    xp : array namespace, keyword-only
+        The array namespace to use.
 
-
-def logpdf_gaussian_errors(
-    x: Array,
-    /,
-    loc: Array,
-    sigma: Array,
-    sigma_o: Array,
-    *,
-    xp: ArrayNamespace[Array],
-) -> Array:
-    """Univariate log-pdf of a convolution of a uniform and a Gaussian."""
-    return logpdf(x, loc=loc, sigma=xp.sqrt(sigma**2 + sigma_o**2), xp=xp)
+    Returns
+    -------
+    array
+    """
+    return xp.log(xp.special.erfc((loc - x) / xp.exp(ln_sigma) / sqrt2)) - log2
