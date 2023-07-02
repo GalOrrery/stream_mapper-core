@@ -32,7 +32,7 @@ class StandardScaler(DataScaler[Array]):
 
         Parameters
         ----------
-        data : Array, positional-only
+        data : (N, F) Array, positional-only
             The data used to compute the mean and standard deviation.
         names : tuple[str, ...], optional
             The names of columns in `data`.
@@ -45,7 +45,11 @@ class StandardScaler(DataScaler[Array]):
             data = data[names].array
 
         xp = get_namespace(data)
-        return cls(mean=xp.mean(data, 0), scale=xp.std(data, 0), names=names)
+        return cls(
+            mean=xp.asarray(np.nanmean(data, 0)),
+            scale=xp.asarray(np.nanstd(data, 0)),
+            names=names,
+        )
 
     # ---------------------------------------------------------------
 
