@@ -15,7 +15,7 @@ from stream_ml.core.builtin._utils import WhereRequiredError
 from stream_ml.core.typing import Array, NNModel
 
 if TYPE_CHECKING:
-    from stream_ml.core.data import Data
+    from stream_ml.core._data import Data
     from stream_ml.core.params import Params
 
 

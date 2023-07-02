@@ -5,10 +5,10 @@ from stream_ml.core import builtin, params, prior
 from stream_ml.core._core.api import Model as ModelAPI
 from stream_ml.core._core.base import ModelBase
 from stream_ml.core._core.field import NNField
+from stream_ml.core._data import Data
 from stream_ml.core._multi.bases import ModelsBase
 from stream_ml.core._multi.independent import IndependentModels
 from stream_ml.core._multi.mixture import MixtureModel
-from stream_ml.core.data import Data
 
 __all__ = [
     # classes

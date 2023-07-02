@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Protocol
 from stream_ml.core.typing import Array, ArrayNamespace, NNModel
 
 if TYPE_CHECKING:
-    from stream_ml.core.data import Data
+    from stream_ml.core._data import Data
     from stream_ml.core.params._values import Params
     from stream_ml.core.typing import NNNamespace
 

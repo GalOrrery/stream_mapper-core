@@ -9,7 +9,7 @@ import functools
 import operator
 from typing import TYPE_CHECKING, overload
 
-from stream_ml.core.data import Data
+from stream_ml.core._data import Data
 from stream_ml.core.typing import Array
 from stream_ml.core.utils.scale._api import DataScaler
 
