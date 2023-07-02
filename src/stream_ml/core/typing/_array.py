@@ -175,6 +175,13 @@ class ArrayNamespace(Protocol[Array]):
 
     # ========================================================================
 
+    @property
+    def pi(self) -> float:
+        """Pi."""
+        ...
+
+    # ========================================================================
+
     @staticmethod
     def abs(array: Array) -> Array:  # noqa: A003
         """Absolute value."""
