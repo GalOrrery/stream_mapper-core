@@ -250,6 +250,11 @@ class ArrayNamespace(Protocol[Array]):
         ...
 
     @staticmethod
+    def linspace(start: float, stop: float, num: int) -> Array:
+        """Linearly spaced array."""
+        ...
+
+    @staticmethod
     def log(array: Array) -> Array:
         """Logarithm, base e."""
         ...
