@@ -108,6 +108,10 @@ class ArrayLike(Protocol):
         """Multiplication."""
         ...
 
+    def __rmul__(self: Self, other: ArrayLike | int | float) -> Self:
+        """Multiplication."""
+        ...
+
     def __neg__(self: Self) -> Self:
         """Negation."""
         ...
@@ -171,6 +175,13 @@ class ArrayNamespace(Protocol[Array]):
 
     # ========================================================================
 
+    @property
+    def pi(self) -> float:
+        """Pi."""
+        ...
+
+    # ========================================================================
+
     @staticmethod
     def abs(array: Array) -> Array:  # noqa: A003
         """Absolute value."""
@@ -214,6 +225,11 @@ class ArrayNamespace(Protocol[Array]):
         ...
 
     @staticmethod
+    def full(shape: tuple[int, ...], fill_value: Any) -> Array:
+        """Full."""
+        ...
+
+    @staticmethod
     def full_like(array: Array, fill_value: Any) -> Array:
         """Full like."""
         ...
@@ -234,6 +250,11 @@ class ArrayNamespace(Protocol[Array]):
         ...
 
     @staticmethod
+    def linspace(start: float, stop: float, num: int) -> Array:
+        """Linearly spaced array."""
+        ...
+
+    @staticmethod
     def log(array: Array) -> Array:
         """Logarithm, base e."""
         ...
@@ -244,16 +265,13 @@ class ArrayNamespace(Protocol[Array]):
         ...
 
     @staticmethod
-    def logical_or(array1: Array, array2: Array) -> Array:
-        """Logical or."""
+    def logaddexp(array1: Array, array2: Array, /) -> Array:
+        """Logarithm of the sum of exponentials."""
         ...
 
     @staticmethod
-    def logsumexp(array: Array, *args: Any, **kwargs: Any) -> Array:
-        """Log-sum-exp.
-
-        First argument must be the axis ("dim" in pytorch, "axis" in jax).
-        """
+    def logical_or(array1: Array, array2: Array) -> Array:
+        """Logical or."""
         ...
 
     @staticmethod
@@ -352,6 +370,19 @@ class ArraySpecialNamespace(Protocol[Array]):
     """Protocol for array API namespace."""
 
     @staticmethod
+    def erf(array: Array) -> Array:
+        """Error function."""
+        ...
+
+    @staticmethod
     def erfc(array: Array) -> Array:
         """Complementary error function."""
+        ...
+
+    @staticmethod
+    def logsumexp(array: Array, *args: Any, **kwargs: Any) -> Array:
+        """Log-sum-exp.
+
+        First argument must be the axis ("dim" in pytorch, "axis" in jax).
+        """
         ...

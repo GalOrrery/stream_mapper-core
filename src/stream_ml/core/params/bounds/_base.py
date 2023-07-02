@@ -32,6 +32,8 @@ class ParameterBounds(SupportsXP[Array], metaclass=ABCMeta):
     lower: Array | float
     upper: Array | float
 
+    eps: Array | float | None = None
+
     _: KW_ONLY
     param_name: ParamNameTupleOpts | None = None
     scaler: InitVar[ParamScaler[Array] | None] = None
@@ -60,15 +62,22 @@ class ParameterBounds(SupportsXP[Array], metaclass=ABCMeta):
 
     def __post_init__(self, scaler: ParamScaler[Array] | None) -> None:
         """Post-init."""
+        if self.lower >= self.upper:
+            msg = "lower must be less than upper"
+            raise ValueError(msg)
+
+        # Scale the bounds. Note that we add and subtract eps to the bounds to
+        # ensure that the bounds are not violated when the parameters are
+        # scaled. Why 2.5? Because the eps gets doubled when the parameters are
+        # scaled in Sigmoid, so we need to account for that.
         self._scaled_bounds: tuple[Array, Array]
         if scaler is not None:
+            lower = scaler.transform(self.lower)
+            eps = 2.5 * self.xp.finfo(getattr(lower, "dtype", float)).eps
             object.__setattr__(
                 self,
                 "_scaled_bounds",
-                (
-                    scaler.transform(self.lower),
-                    scaler.transform(self.upper),
-                ),
+                (lower + eps, scaler.transform(self.upper) - eps),
             )
 
     # =========================================================================
