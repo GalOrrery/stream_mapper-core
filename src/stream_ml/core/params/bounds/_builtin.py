@@ -65,13 +65,6 @@ class ClippedBounds(ParameterBounds[Array]):
     lower: Array | float
     upper: Array | float
 
-    def __post_init__(self, scaler: ParamScaler[Array] | None) -> None:
-        """Post-init."""
-        if self.lower >= self.upper:
-            msg = "lower must be less than upper"
-            raise ValueError(msg)
-        super().__post_init__(scaler)
-
     def __call__(
         self, pred: Array, data: Data[Array], model: Model[Array, NNModel], /
     ) -> Array:
