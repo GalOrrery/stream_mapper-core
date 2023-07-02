@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from stream_ml.core.utils.compat import array_at
-
 __all__ = ["logpdf", "cdf", "logcdf"]
 
 import math
@@ -25,6 +23,7 @@ def _owens_t_integrand(x: Array, t: Array, *, xp: ArrayNamespace[Array]) -> Arra
 
 def owens_t_approx(x: Array, a: Array, *, xp: ArrayNamespace[Array]) -> Array:
     # https://en.wikipedia.org/wiki/Owen%27s_T_function
+    # TODO! faster approximation
     ts: Array = xp.linspace(0, 1, 1_000)[None, :] * a[:, None]  # (N, 1000)
     return (
         xp.sum(_owens_t_integrand(x[:, None], ts, xp=xp), axis=-1)
@@ -39,7 +38,7 @@ def owens_t_approx(x: Array, a: Array, *, xp: ArrayNamespace[Array]) -> Array:
 def _norm_cdf(
     x: Array,
     loc: Array | float,
-    sigma: Array,
+    ln_sigma: Array,
     skew: Array,
     *,
     xp: ArrayNamespace[Array],
@@ -52,8 +51,8 @@ def _norm_cdf(
         The input array.
     loc : (N,) | (N, F) array
         The location parameter.
-    sigma : (N,) | (N, F) array
-        The scale parameter.
+    ln_sigma : (N,) | (N, F) array
+        The log-scale parameter.
     skew : (N,) | (N, F) array
         The skew parameter.
 
@@ -64,7 +63,43 @@ def _norm_cdf(
     -------
     array
     """
-    return xp.special.erfc(skew * (loc - x) / sigma / sqrt2) / 2
+    return xp.special.erfc(skew * (loc - x) / xp.exp(ln_sigma) / sqrt2) / 2
+
+
+def pdf(
+    x: Array,
+    /,
+    loc: Array,
+    ln_sigma: Array,
+    skew: Array,
+    *,
+    xp: ArrayNamespace[Array],
+) -> Array:
+    """PDF of a skew-normal distribution.
+
+    Parameters
+    ----------
+    x : (N,) | (N, F) array, positional-only
+        The input array.
+    loc : (N,) | (N, F) array
+        The location parameter.
+    ln_sigma : (N,) | (N, F) array
+        The log-scale parameter.
+    skew : (N,) | (N, F) array
+        The skew parameter.
+
+    xp : array namespace, keyword-only
+        The array namespace to use.
+
+    Returns
+    -------
+    array
+    """
+    return (
+        2
+        * norm_pdf(x, loc=loc, ln_sigma=ln_sigma, xp=xp)
+        * _norm_cdf(x, loc=loc, ln_sigma=ln_sigma, skew=skew, xp=xp)
+    )
 
 
 def logpdf(
@@ -75,7 +110,6 @@ def logpdf(
     skew: Array,
     *,
     xp: ArrayNamespace[Array],
-    nil: Array | float = -300,
 ) -> Array:
     """Log-PDF of a skew-normal distribution.
 
@@ -109,14 +143,7 @@ def logpdf(
     # However, norm_logcdf is numerically unstable since it takes the logarithm
     # of `erfc`. Instead we take the logarithm of the product of the PDF and
     # CDF, which is equivalent to the above, but is more numerically stable.
-    out = xp.full_like(x, nil)  # start w/ 0-gradient field
-    sigma = xp.exp(ln_sigma)
-    lnpdf = xp.log(  # skew-normal PDF; -inf far from mode
-        2
-        * norm_pdf(x, loc=loc, ln_sigma=ln_sigma, xp=xp)
-        * _norm_cdf(x, loc=loc, sigma=sigma, skew=skew, xp=xp)
-    )
-    return array_at(out, lnpdf != -xp.inf).set(lnpdf[lnpdf != -xp.inf])
+    return xp.log(pdf(x, loc=loc, ln_sigma=ln_sigma, skew=skew, xp=xp))
 
 
 def cdf(
