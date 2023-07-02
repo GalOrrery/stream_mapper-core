@@ -7,7 +7,7 @@ from typing import Final
 
 from mypy_extensions import trait
 
-from stream_ml.core.data import Data
+from stream_ml.core._data import Data
 
 WEIGHT_NAME: Final = "weight"
 BACKGROUND_KEY: Final = "background"

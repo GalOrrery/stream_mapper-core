@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Protocol, overload
 from stream_ml.core.typing import Array
 
 if TYPE_CHECKING:
-    from stream_ml.core.data import Data
+    from stream_ml.core._data import Data
     from stream_ml.core.typing import ArrayNamespace
 
 

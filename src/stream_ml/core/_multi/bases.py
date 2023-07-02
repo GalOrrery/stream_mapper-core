@@ -23,7 +23,7 @@ from stream_ml.core.utils.cached_property import cached_property
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
-    from stream_ml.core.data import Data
+    from stream_ml.core._data import Data
     from stream_ml.core.params import ModelParameters, Params
     from stream_ml.core.prior import PriorBase
 

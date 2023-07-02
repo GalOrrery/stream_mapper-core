@@ -21,7 +21,7 @@ from stream_ml.core.typing import Array, NNModel
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
-    from stream_ml.core.data import Data
+    from stream_ml.core._data import Data
     from stream_ml.core.prior._base import PriorBase
     from stream_ml.core.typing import BoundsT, ParamNameAllOpts, ParamsLikeDict
 

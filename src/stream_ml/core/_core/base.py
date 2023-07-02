@@ -23,7 +23,7 @@ from stream_ml.core.utils.funcs import within_bounds
 from stream_ml.core.utils.scale._api import DataScaler  # noqa: TCH001
 
 if TYPE_CHECKING:
-    from stream_ml.core.data import Data
+    from stream_ml.core._data import Data
     from stream_ml.core.prior import PriorBase
     from stream_ml.core.typing import NNNamespace, ParamNameAllOpts, ParamsLikeDict
 

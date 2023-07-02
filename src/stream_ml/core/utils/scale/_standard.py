@@ -10,7 +10,7 @@ from typing import Any, cast, overload
 
 import numpy as np
 
-from stream_ml.core.data import Data
+from stream_ml.core._data import Data
 from stream_ml.core.typing import Array, ArrayNamespace
 from stream_ml.core.utils.compat import get_namespace
 from stream_ml.core.utils.scale._api import DataScaler

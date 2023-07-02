@@ -441,7 +441,7 @@ TO_FORMAT_REGISTRY: dict[tuple[type, type], Callable[[Data[Any]], ArrayLike]] = 
 class FromFormatCallable(Protocol):
     """Callable to convert data from a different format."""
 
-    def __call__(self, obj: Any, /, **kwargs: Any) -> Data[Any]:  # noqa: D102
+    def __call__(self, obj: Any, /, **kwargs: Any) -> Data[Any]:
         ...
 
 

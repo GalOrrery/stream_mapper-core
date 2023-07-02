@@ -14,7 +14,7 @@ from stream_ml.core.typing import Array, NNModel
 from stream_ml.core.utils.compat import array_at
 
 if TYPE_CHECKING:
-    from stream_ml.core.data import Data
+    from stream_ml.core._data import Data
     from stream_ml.core.params import Params
 
 

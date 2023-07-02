@@ -26,7 +26,7 @@ from stream_ml.core.utils.scale import DataScaler  # noqa: TCH001
 from stream_ml.core.utils.sentinel import MISSING
 
 if TYPE_CHECKING:
-    from stream_ml.core.data import Data
+    from stream_ml.core._data import Data
     from stream_ml.core.typing import ParamNameAllOpts, ParamsLikeDict
     from stream_ml.core.utils.frozen_dict import FrozenDict
 

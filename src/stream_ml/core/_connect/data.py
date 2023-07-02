@@ -11,7 +11,7 @@ from numpy.lib.recfunctions import (
     unstructured_to_structured,
 )
 
-from stream_ml.core.data import FROM_FORMAT_REGISTRY, TO_FORMAT_REGISTRY, Data
+from stream_ml.core._data import FROM_FORMAT_REGISTRY, TO_FORMAT_REGISTRY, Data
 
 if TYPE_CHECKING:
     from astropy.table import Table
