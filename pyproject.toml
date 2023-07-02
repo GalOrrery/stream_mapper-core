@@ -149,18 +149,19 @@ ignore = [
   "ARG001",  # unused-function-argument
   "ARG002",  # unused-method-argument
 
+  # flake8-commas (COM)
+  "COM812",  # TrailingCommaMissing
+  "COM818",  # TrailingCommaOnBareTupleProhibited
+  "COM819",  # TrailingCommaProhibited
+
   # pydocstyle (D)
   "D105",  # magic-method  # don't need docstrings for magic methods
   "D107",  # public-init   # docstring is on the class
-  "D203",  # one-blank-line-before-class  # contra numpydoc
   "D213",  # multi-line-summary-second-line
   "D401",  # non-imperative-mood
 
   # eradicate (ERA)
   "ERA001",  # commented-out-code
-
-  # flake8-boolean-trap (FBT)
-  "FBT003",
 
   # (FIX)
   "FIX002",  # Line contains TODO
@@ -179,11 +180,6 @@ ignore = [
 
   # flake8-todos (TD)
   "TD",
-
-  # flake8-commas (COM)
-  "COM812",  # TrailingCommaMissing
-  "COM818",  # TrailingCommaOnBareTupleProhibited
-  "COM819",  # TrailingCommaProhibited
 ]
 
 [tool.ruff.per-file-ignores]
@@ -197,6 +193,9 @@ force-sort-within-sections = true
 combine-as-imports = true
 known-first-party = ["stream_ml"]
 known-third-party = ["numpy", "pytest"]
+
+[tool.ruff.pydocstyle]
+convention = "numpy"
 
 [tool.ruff.pylint]
 max-args = 6
