@@ -82,8 +82,8 @@ class Uniform(ModelBase[Array, NNModel]):
         elif self.require_where:
             raise WhereRequiredError
         else:
-            idx = self.xp.ones((len(data)), dtype=bool)
-            # This has shape (N,) so will broadcast correctly.
+            idx = self.xp.ones((len(data), len(self.coord_names)), dtype=bool)
+            # This has shape (N,F) so will broadcast correctly.
 
         x = data[self.coord_names].array  # (N, F)
         # Get the slope from `mpars` we check param names to see if the
