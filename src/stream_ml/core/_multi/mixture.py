@@ -411,7 +411,7 @@ class MixtureModel(
         # If it does, then it must be the last component.
         includes_bkg = BACKGROUND_KEY in self.components
         if includes_bkg and tuple(self.components.keys())[-1] != BACKGROUND_KEY:
-            msg = "the background model must be the last component."
+            msg = f"the {BACKGROUND_KEY} model must be the last component."
             raise KeyError(msg)
         self._includes_bkg: bool = includes_bkg
         self._bkg_slc = slice(-1) if includes_bkg else slice(None)

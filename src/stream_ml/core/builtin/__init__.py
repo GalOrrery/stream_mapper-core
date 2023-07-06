@@ -1,4 +1,4 @@
-"""Built-in Models."""
+"""Built-in models."""
 
 
 from stream_ml.core.builtin._exponential import Exponential

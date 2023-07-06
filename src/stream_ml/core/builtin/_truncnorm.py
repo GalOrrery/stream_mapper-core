@@ -20,17 +20,51 @@ if TYPE_CHECKING:
 
 @dataclass
 class TruncatedNormal(Normal[Array, NNModel]):
-    r"""1D Gaussian with mixture weight.
+    r"""Truncated Univariate Gaussian.
 
-    :math:`(weight, \mu, \ln\sigma)(\phi1)`
+    In each dimension the background is a truncated normal distribution.
 
-    Notes
-    -----
+    Let :math:`\phi(x)` be the PDF of the normal distribution:
+
+    .. math::
+
+        \phi(x) = \frac{\exp{-((x - \mu)/\sigma)^2 / 2}}{\sqrt{2\pi} \sigma}
+
+    The CDF :math:`\Phi(x)` is:
+
+    .. math::
+
+        \Phi(x) = \frac{1}{2} \text{erfc}\left(\frac{\mu - x}{\sigma \sqrt{2}}\right)
+
+    The PDF of the truncated normal distribution is:
+
+    .. math::
+
+        f(x) = \frac{\phi(x)}{\Phi(b) - \Phi(a)}
+
     The model parameters are:
+
     - "mu" : mean
     - "ln-sigma" : log-standard deviation
 
-    The truncation terms are hard-coded at initialization.
+    a, b are the lower and upper bounds of the distribution and are determined
+    by the ``coord_bounds`` argument.
+
+    Examples
+    --------
+    .. code-block:: python
+
+        model = Normal(
+            ...,
+            coord_names=("x", "y"),  # independent coordinates
+            coord_bounds={"x": (0, 1), "y": (1, 2)},
+            params=ModelParameters(
+                {
+                    "x": {"slope": ModelParameter(...)},
+                    "y": {"slope": ModelParameter(...)},
+                }
+            ),
+        )
     """
 
     def ln_likelihood(

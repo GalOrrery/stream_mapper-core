@@ -7,7 +7,6 @@ __all__: list[str] = []
 from abc import ABCMeta
 from dataclasses import KW_ONLY, dataclass, fields
 from functools import reduce
-from math import inf
 import textwrap
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 
@@ -18,7 +17,6 @@ from stream_ml.core.params._field import ModelParametersField
 from stream_ml.core.params._values import Params, freeze_params, set_param
 from stream_ml.core.setup_package import CompiledShim
 from stream_ml.core.typing import Array, ArrayNamespace, BoundsT, NNModel
-from stream_ml.core.utils.compat import array_at
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 from stream_ml.core.utils.funcs import within_bounds
 from stream_ml.core.utils.scale._api import DataScaler  # noqa: TCH001
@@ -43,17 +41,35 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
     net : NNField[NNModel], keyword-only
         The neural network.
 
-    array_namespace : ArrayNamespace[Array], keyword-only
-        The array namespace.
-
+    indep_coord_names : tuple[str, ...], optional keyword-only
+        The names of the independent coordinates, e.g. "phi1". Default is
+        ("phi1",).
     coord_names : tuple[str, ...], keyword-only
         The names of the coordinates, not including the 'independent' variable.
         E.g. for independent variable 'phi1' this might be ('phi2', 'prlx',
         ...).
+    coord_err_names : tuple[str, ...] | None, optional
+        Coordinate error names, e.g. "phi2_err", "pm_phi1_err". Default is
+        `None`, which means that no coordinate errors are used. If specified,
+        must have one entry per coordinate in `coord_names`, in the same order.
     coord_bounds : Mapping[str, tuple[float, float]], keyword-only
-        The bounds on the coordinates. If not provided, the bounds are
-        (-inf, inf) for all coordinates.
+        The bounds on the coordinates. If not provided, the bounds are (-inf,
+        inf) for all coordinates.
 
+    params : ModelParameters[Array], optional keyword-only
+        Model parameters. Default is empty.
+
+    priors: tuple[PriorBase[Array], ...], optional keyword-only
+        Priors on the parameters. Default is empty.
+
+    data_scaler : DataScaler[Array], keyword-only
+        The data scaler.
+
+    require_where: bool, optional keyword-only
+        Whether the model requires the `where` keyword. Default is `False`.
+
+    array_namespace : ArrayNamespace[Array], keyword-only
+        The array namespace.
     name : str or None, optional keyword-only
         The (internal) name of the model, e.g. 'stream' or 'background'. Note
         that this can be different from the name of the model when it is used in
@@ -66,14 +82,14 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
     array_namespace: ArrayNamespace[Array]
     name: str | None = None  # the name of the model
 
-    # Standardizer
+    # Data scaling
     data_scaler: DataScaler[Array]
 
     # Coordinates, indpendent and dependent.
     indep_coord_names: tuple[str, ...] = ("phi1",)
     coord_names: tuple[str, ...]
-    coord_bounds: FrozenDictField[str, BoundsT] = FrozenDictField(FrozenDict())
     coord_err_names: tuple[str, ...] | None = None
+    coord_bounds: FrozenDictField[str, BoundsT] = FrozenDictField(FrozenDict())
 
     # Model Parameters, generally produced by the neural network.
     params: ModelParametersField[Array] = ModelParametersField[Array]()
@@ -90,6 +106,10 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         array_namespace: ArrayNamespace[Array] | None = None,
         **kwargs: Any,  # noqa: ARG003
     ) -> Self:
+        # Construct the dataclass. Need to use `__new__` to ensure that the
+        # array (xp) and nn (xpnn) namespaces are available to the dataclass
+        # in the stanard initialization.
+
         # Create the model instance.
         # TODO: Model.__new__ over objects.__new__ is a mypyc hack.
         self = Model.__new__(cls)
@@ -114,13 +134,33 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         super().__post_init__()
         self._mypyc_init_descriptor()  # TODO: Remove this when mypyc is fixed.
 
-        # Make coord bounds if not provided
-        crnt_cbs = dict(self.coord_bounds)
-        cbs = {n: crnt_cbs.pop(n, (-inf, inf)) for n in self.coord_names}
-        if crnt_cbs:  # Error if there are extra keys
-            msg = f"coord_bounds contains invalid keys {crnt_cbs.keys()}."
+        # Coordinate bounds are necessary (before they were auto-filled).
+        if self.coord_bounds.keys() != set(self.coord_names):
+            msg = (
+                f"`coord_bounds` ({self.coord_bounds.keys()}) do not match "
+                f"`coord_names` ({self.coord_names})."
+            )
             raise ValueError(msg)
-        object.__setattr__(self, "coord_bounds", FrozenDict(cbs))
+
+        # coord_err_names must be None or the same length as coord_names.
+        # we can't check that the names are the same, because they aren't.
+        # TODO: better way to ensure that
+        if self.coord_err_names is not None and len(self.coord_err_names) != len(
+            self.coord_names
+        ):
+            msg = (
+                f"`coord_err_names` ({self.coord_err_names}) must be None or "
+                f"the same length as `coord_names` ({self.coord_names})."
+            )
+            raise ValueError(msg)
+
+        # Parameters must be a subset of the `coord_names`.
+        if not set(self.params.keys()).issubset(self.coord_names):
+            msg = (
+                f"`params` ({self.params.keys()}) must be a subset of "
+                f"`coord_names` ({self.coord_names})."
+            )
+            raise ValueError(msg)
 
     # ========================================================================
 
@@ -203,13 +243,17 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         Zero everywhere except where the data are outside the
         coordinate bounds, where it is -inf.
         """
-        lnp = self.xp.zeros(data.array.shape[:1] + data.array.shape[2:])
+        shape = data.array.shape[:1] + data.array.shape[2:]
         where = reduce(
             self.xp.logical_or,
             (~within_bounds(data[k], *v) for k, v in self.coord_bounds.items()),
-            self.xp.zeros(lnp.shape, dtype=bool),
+            self.xp.zeros(shape, dtype=bool),
         )
-        return array_at(lnp, where).set(-self.xp.inf)
+        return self.xp.where(
+            where,
+            self.xp.full(shape, -self.xp.inf),
+            self.xp.zeros(shape),
+        )
 
     def ln_prior(
         self, mpars: Params[Array], data: Data[Array], current_lnp: Array | None = None
@@ -221,9 +265,9 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         mpars : Params[Array], positional-only
             Model parameters. Note that these are different from the ML
             parameters.
-        data : Data[Array]
+        data : Data[Array[(N,F)]]
             Data (phi1, phi2).
-        current_lnp : Array | None, optional
+        current_lnp : Array[(N,)] | None, optional
             Current value of the log prior, by default `None`.
 
         Returns
@@ -253,7 +297,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         ----------
         out : Array, positional-only
             Input.
-        scaled_data : Data[Array], positional-only
+        scaled_data : Data[Array[(N,F)]], positional-only
             Data, scaled by ``data_scaler``.
 
         Returns

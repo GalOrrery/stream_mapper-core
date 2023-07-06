@@ -1,4 +1,4 @@
-"""Core library for stream membership likelihood, with ML."""
+"""Labeled data."""
 
 from __future__ import annotations
 
@@ -7,7 +7,6 @@ from textwrap import indent
 from typing import (
     TYPE_CHECKING,
     Any,
-    Final,
     Generic,
     Protocol,
     TypeAlias,
@@ -32,13 +31,6 @@ if TYPE_CHECKING:
 
 
 #####################################################################
-# PARAMETERS
-
-
-_LEN_IDX_TUPLE: Final = 1
-
-
-#####################################################################
 
 
 def _all_strs(seq: tuple[Any, ...]) -> TypeGuard[tuple[str, ...]]:
@@ -51,6 +43,8 @@ def _is_arraylike(obj: Any) -> TypeGuard[ArrayLike]:
 
     This only exists b/c mypyc does not yet support runtime_checkable protocols,
     so `isinstance(obj, ArrayLike)` does not work.
+
+    Checks for the dtype and shape attributes.
     """
     return hasattr(obj, "dtype") and hasattr(obj, "shape")
 
@@ -92,8 +86,7 @@ class Data(Generic[Array]):
             msg = "Data should not be a Data object."
             raise TypeError(msg)
 
-        # Map names to column indices. This could be a ``@cached_property``, but
-        # it's not worth the overhead.
+        # Map names to column indices.
         object.__setattr__(self, "_n2k", {name: i for i, name in enumerate(self.names)})
 
     # =========================================================================
@@ -106,10 +99,6 @@ class Data(Generic[Array]):
 
     def __len__(self) -> int:
         return len(self.array)
-
-    def __repr__(self) -> str:
-        """Get the representation."""
-        return f"{type(self).__name__}({self.array!r}, names={self.names!r})"
 
     def __str__(self) -> str:
         """Get the string representation."""
@@ -292,18 +281,28 @@ class Data(Generic[Array]):
                 [[8],
                 [9]]]), names=('a', 'b'))
         """
-        if isinstance(key, tuple):
+        if isinstance(key, int):  # get a row
+            return type(self)(self.array[None, key, :], names=self.names)  # type: ignore[index]  # noqa: E501
+        elif isinstance(key, str):  # get a column
+            return cast("Array", self.array[:, self._n2k[key]])  # type: ignore[index]
+        elif isinstance(key, tuple):
             if _all_strs(key):  # multiple columns
                 return type(self)(
                     self.array[:, [self._n2k[k] for k in key]],  # type: ignore[index]
                     names=key,
                 )
-            elif len(key) > _LEN_IDX_TUPLE and isinstance(key[1], int):  # get column
+            elif len(key) > 1 and isinstance(key[1], int):  # get column
                 return cast("Array", self.array[key])  # type: ignore[index]
 
-            array: Array = self.array[(key[0], _parse_key_elt(key[1], self._n2k), *key[2:])]  # type: ignore[index]  # noqa: E501
+            array: Array = self.array[
+                (
+                    key[0],  # row key
+                    _parse_key_elt(key[1], self._n2k),  # column key(s)
+                    *key[2:],  # additional key(s)
+                )
+            ]  # type: ignore[index]
             if array.ndim == 1:
-                array = array[None, :]
+                array = array[None, :]  # always return a 2D array
 
             if isinstance(key[1], slice):
                 names = self.names[key[1]]
@@ -318,10 +317,6 @@ class Data(Generic[Array]):
 
             return type(self)(array, names=names)
 
-        elif isinstance(key, int):  # get a row
-            return type(self)(self.array[None, key, :], names=self.names)  # type: ignore[index]  # noqa: E501
-        elif isinstance(key, str):  # get a column
-            return cast("Array", self.array[:, self._n2k[key]])  # type: ignore[index]
         return type(self)(self.array[key], names=self.names)  # type: ignore[index]
 
     # =========================================================================

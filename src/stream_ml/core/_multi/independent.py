@@ -36,9 +36,10 @@ class IndependentModels(ModelsBase[Array, NNModel]):
 
     Parameters
     ----------
-    components : Mapping[str, Model], optional postional-only
-        Mapping of Models. This allows for strict ordering of the Models and
-        control over the type of the models attribute.
+    components : Mapping[str, Model], optional
+        A mapping of the components of the model. The keys are the names of the
+        component models, and the values are the models themselves. The names do
+        not have to match the names on the model.
 
     name : str or None, optional keyword-only
         The (internal) name of the model, e.g. 'stream' or 'background'. Note
@@ -49,15 +50,30 @@ class IndependentModels(ModelsBase[Array, NNModel]):
         Mapping of parameter names to priors. This is useful for setting priors
         on parameters across models, e.g. the background and stream models in a
         mixture model.
+
+    Notes
+    -----
+    The following fields on :class:`~stream_ml.core.ModelAPI` are properties here:
+
+    - :attr:`~stream_ml.core.ModelBase.indep_coord_names`
+    - :attr:`~stream_ml.core.ModelBase.coord_names`
+    - :attr:`~stream_ml.core.ModelBase.coord_err_names`
+    - :attr:`~stream_ml.core.ModelBase.coord_bounds`
     """
 
     @cached_property
+    def indep_coord_names(self) -> tuple[str, ...]:  # type: ignore[override]
+        """Independent coordinate names."""
+        return tuple({n for m in self.components.values() for n in m.indep_coord_names})
+
+    @cached_property
     def params(self) -> ModelParameters[Array]:  # type: ignore[override]
-        cps: dict[
-            str, ModelParameter[Array] | FrozenDict[str, ModelParameter[Array]]
-        ] = {}
-        for n, m in self.components.items():
-            cps.update({f"{n}.{k}": v for k, v in m.params.items()})
+        cps: dict[str, ModelParameter[Array] | FrozenDict[str, ModelParameter[Array]]]
+        cps = {
+            f"{n}.{k}": v
+            for n, m in self.components.items()
+            for k, v in m.params.items()
+        }
         return ModelParameters[Array](cps)
 
     @property

@@ -28,10 +28,7 @@ if TYPE_CHECKING:
     from stream_ml.core.prior import PriorBase
 
 
-_SET_MSG = "cannot set {} on this model."
-
-
-def _get_namespace(
+def _get_array_namespace(
     components: FrozenDict[str, Model[Array, NNModel]]
 ) -> ArrayNamespace[Array]:
     """Get the array namespace."""
@@ -55,6 +52,9 @@ class SupportsComponentGetItem(Protocol[Array, NNModel]):
         ...
 
 
+# ========================================================================
+
+
 @dataclass
 class ModelsBase(
     Model[Array, NNModel],
@@ -63,7 +63,45 @@ class ModelsBase(
     CompiledShim,
     metaclass=ABCMeta,
 ):
-    """Multi-model base class."""
+    """Multi-model base class.
+
+    Parameters
+    ----------
+    components : Mapping[str, Model], optional
+        A mapping of the components of the model. The keys are the names of the
+        component models, and the values are the models themselves. The names do
+        not have to match the names on the model.
+
+    indep_coord_names : tuple[str, ...], optional keyword-only
+        The names of the independent coordinates, e.g. "phi1". Default is
+        ("phi1",).
+
+    priors: tuple[PriorBase[Array], ...], optional keyword-only
+        Priors on the parameters. Default is empty.
+
+    data_scaler : DataScaler[Array], keyword-only
+        The data scaler.
+
+    unpack_params_hooks : tuple[UnpackParamsCallable[Array], ...], optional keyword-only
+        A tuple of callables that unpack the parameters. Default is empty.
+        This is useful for unpacking parameters that are not part of a model,
+        e.g. allowing one model to pass parameters to another model.
+
+    array_namespace : ArrayNamespace[Array], keyword-only
+        The array namespace.
+    name : str or None, optional keyword-only
+        The (internal) name of the model, e.g. 'stream' or 'background'. Note
+        that this can be different from the name of the model when it is used in
+        a mixture model (see :class:`~stream_ml.core.core.MixtureModel`).
+
+    Notes
+    -----
+    The following fields on :class:`~stream_ml.core.ModelAPI` are properties here:
+
+    - :attr:`~stream_ml.core.ModelBase.coord_names`
+    - :attr:`~stream_ml.core.ModelBase.coord_err_names`
+    - :attr:`~stream_ml.core.ModelBase.coord_bounds`
+    """
 
     components: FrozenDictField[str, Model[Array, NNModel]] = FrozenDictField()
 
@@ -76,7 +114,7 @@ class ModelsBase(
         """Post-init validation."""
         self._mypyc_init_descriptor()  # TODO: Remove this when mypyc is fixed.
 
-        self.array_namespace = _get_namespace(self.components)
+        self.array_namespace = _get_array_namespace(self.components)
         self._nn_namespace_ = NN_NAMESPACE[self.array_namespace]
 
         # Check that there is at least one component
@@ -88,28 +126,24 @@ class ModelsBase(
 
     @cached_property
     def coord_names(self) -> tuple[str, ...]:  # type: ignore[override]
-        """Coordinate names."""
-        cns: list[str] = []
-        for m in self.components.values():
-            cns.extend(c for c in m.coord_names if c not in cns)
-        return tuple(cns)
+        """Coordinate names, unsorted."""
+        return tuple({n for m in self.components.values() for n in m.coord_names})
 
     @cached_property
     def coord_err_names(self) -> tuple[str, ...] | None:  # type: ignore[override]
-        """Coordinate Error names."""
-        cns: list[str] = []
-        for m in self.components.values():
-            cns.extend(c for c in (m.coord_err_names or ()) if c not in cns)
-        return tuple(cns)
+        """Coordinate error names, unsorted."""
+        return tuple(
+            {n for m in self.components.values() for n in (m.coord_err_names or ())}
+        )
 
     @cached_property  # type: ignore[override]
     def coord_bounds(self) -> FrozenDict[str, BoundsT]:
         """Coordinate names."""
         # Add the coord_bounds
         # TODO: make sure duplicates have the same bounds
-        cbs: dict[str, BoundsT] = {}
-        for m in self.components.values():
-            cbs.update(m.coord_bounds)
+        cbs: dict[str, BoundsT] = {
+            k: v for m in self.components.values() for k, v in m.coord_bounds.items()
+        }
         return FrozenDict(cbs)
 
     @property
@@ -166,10 +200,10 @@ class ModelsBase(
 
         Parameters
         ----------
-        mpars : Params[Array], positional-only
+        mpars : Params[Array[(N,)]], positional-only
             Model parameters. Note that these are different from the ML
             parameters.
-        data : Data[Array]
+        data : Data[Array[(N, F)]]
             Data.
         current_lnp : Array | None, optional
             Current value of the log prior, by default `None`.

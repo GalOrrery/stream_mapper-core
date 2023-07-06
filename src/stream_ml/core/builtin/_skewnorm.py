@@ -7,7 +7,7 @@ __all__: list[str] = []
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from stream_ml.core._core.base import ModelBase
+from stream_ml.core.builtin._norm import Normal
 from stream_ml.core.builtin._stats.skewnorm import logpdf
 from stream_ml.core.builtin._utils import WhereRequiredError
 from stream_ml.core.typing import Array, NNModel
@@ -19,12 +19,40 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class SkewNormal(ModelBase[Array, NNModel]):
+class SkewNormal(Normal[Array, NNModel]):
     r"""1D Gaussian with mixture weight.
 
-    :math:`(weight, \mu, \ln\sigma)(\phi1)`
-    """
+    You probably want to use the
+    :class:`stream_ml.core.builtin.TruncatedSkewNormal` model instead.
 
+    In each dimension the background is a skew-normal distribution:
+
+    .. math::
+
+        f(x) = 2 \phi(x) \Phi(\alpha x)
+
+    The model parameters are:
+
+    - "mu" : mean
+    - "ln-sigma" : log-standard deviation
+    - "skew" : skew parameter
+
+    Examples
+    --------
+    .. code-block:: python
+
+        model = Normal(
+            ...,
+            coord_names=("x", "y"),  # independent coordinates
+            coord_bounds={"x": (0, 1), "y": (1, 2)},
+            params=ModelParameters(
+                {
+                    "x": {"slope": ModelParameter(...)},
+                    "y": {"slope": ModelParameter(...)},
+                }
+            ),
+        )
+    """
 
     def ln_likelihood(
         self,
