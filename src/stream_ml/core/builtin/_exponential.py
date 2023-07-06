@@ -127,7 +127,7 @@ class Exponential(ModelBase[Array, NNModel]):
         # Get the slope from `mpars` we check param names to see if the
         # slope is a parameter. If it is not, then we assume it is 0.
         # When the slope is 0, the log-likelihood reduces to a Uniform.
-        ms = self.xp.stack(tuple(mpars[(k, "slope")] for k in self.coord_names), 1)[idx]
+        ms = self._stack_param(mpars, "slope", self.coord_names)[idx]
 
         # the distribution is not affected by the errors!
         # if self.coord_err_names is not None: pass

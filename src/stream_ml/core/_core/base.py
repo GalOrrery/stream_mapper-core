@@ -164,6 +164,11 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
 
     # ========================================================================
 
+    def _stack_param(self, p: Params[Array], k: str, cns: tuple[str, ...], /) -> Array:
+        return self.xp.stack(tuple(p[(c, k)] for c in cns), 1)
+
+    # ========================================================================
+
     @overload
     def _unpack_params_from_arr(
         self,
