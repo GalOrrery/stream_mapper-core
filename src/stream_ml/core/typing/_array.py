@@ -303,6 +303,11 @@ class ArrayNamespace(Protocol[Array]):
         ...
 
     @staticmethod
+    def where(condition: Array, x: Array, y: Array) -> Array:
+        """Where."""
+        ...
+
+    @staticmethod
     def zeros(*args: Any, dtype: Any = ..., **kwargs: Any) -> Array:
         """Zeros.
 
