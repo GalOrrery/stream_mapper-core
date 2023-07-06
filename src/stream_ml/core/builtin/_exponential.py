@@ -64,6 +64,7 @@ class Exponential(ModelBase[Array, NNModel]):
     """
 
     _: KW_ONLY
+    m_eps: float = 1e-6
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -139,6 +140,7 @@ class Exponential(ModelBase[Array, NNModel]):
             b=(_0 + self._b)[idx],
             xp=self.xp,
             nil=-self.xp.inf,
+            m_eps=self.m_eps,
         )
         # missing data has a log-likelihood of 0
         lnliks = self.xp.full_like(x, 0)  # missing data is ignored
