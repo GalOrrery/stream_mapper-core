@@ -81,6 +81,9 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
     # Priors on the parameters.
     priors: tuple[PriorBase[Array], ...] = ()
 
+    # Masked data
+    require_where: bool = False
+
     def __new__(
         cls: type[Self],
         *args: Any,  # noqa: ARG003

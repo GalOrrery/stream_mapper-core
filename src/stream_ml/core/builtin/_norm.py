@@ -6,7 +6,7 @@ from stream_ml.core.utils.compat import array_at
 
 __all__: list[str] = []
 
-from dataclasses import KW_ONLY, dataclass
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from stream_ml.core._core.base import ModelBase
@@ -32,8 +32,6 @@ class Normal(ModelBase[Array, NNModel]):
     - "ln-sigma" : log-standard deviation
     """
 
-    _: KW_ONLY
-    require_where: bool = False
 
     def __post_init__(self) -> None:
         super().__post_init__()

@@ -44,7 +44,6 @@ class Exponential(ModelBase[Array, NNModel]):
     """
 
     _: KW_ONLY
-    require_where: bool = False
 
     def __post_init__(self) -> None:
         super().__post_init__()

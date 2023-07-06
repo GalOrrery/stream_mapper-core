@@ -4,7 +4,7 @@ from __future__ import annotations
 
 __all__: list[str] = []
 
-from dataclasses import KW_ONLY, dataclass
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from stream_ml.core.builtin._skewnorm import SkewNormal
@@ -21,9 +21,6 @@ if TYPE_CHECKING:
 @dataclass
 class TruncatedSkewNormal(SkewNormal[Array, NNModel]):
     r"""Truncated Skew-Normal."""
-
-    _: KW_ONLY
-    require_where: bool = False
 
     def ln_likelihood(
         self,
