@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 
 
 sqrt2 = math.sqrt(2)
+sqrt2pi = math.sqrt(2 * math.pi)
 log2 = math.log(2)
 log2pi = math.log(2 * math.pi)
 logsqrt2pi = log2pi / 2
@@ -37,7 +38,7 @@ def pdf(x: Array, loc: Array, ln_sigma: Array, *, xp: ArrayNamespace[Array]) -> 
     array
     """
     sigma = xp.exp(ln_sigma)
-    return xp.exp(-(((x - loc) / sigma) ** 2) / 2) / (sqrt2 * sigma)
+    return xp.exp(-(((x - loc) / sigma) ** 2) / 2) / (sqrt2pi * sigma)
 
 
 def logpdf(
