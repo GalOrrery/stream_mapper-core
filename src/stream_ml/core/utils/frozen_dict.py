@@ -325,6 +325,7 @@ class FrozenDictField(Generic[K, V]):
         | Sequence[tuple[K, V]]
         | MissingT = MISSING,
     ) -> None:
+        self._name: str
         self._default: FrozenDict[K, V] | MissingT
         self._default = FrozenDict(default) if default is not MISSING else MISSING
 
@@ -338,14 +339,14 @@ class FrozenDictField(Generic[K, V]):
             return val
 
         # Get default value, when setting.
-        default = self._default
-        if default is MISSING:
+        if self._default is MISSING:
             msg = f"no default value for {self._name}"
             raise AttributeError(msg)
-        return default
+        return self._default
 
     def __set__(self, obj: object, value: Mapping[K, V]) -> None:
-        # Default value as a dict.
-        dv = FrozenDict[K, V](self._default if self._default is not MISSING else {})
         # Set the value. This is only called once by the dataclass.
-        object.__setattr__(obj, self._name, dv | FrozenDict(value))
+        v = FrozenDict(value)
+        object.__setattr__(
+            obj, self._name, self._default | v if self._default is not MISSING else v
+        )
