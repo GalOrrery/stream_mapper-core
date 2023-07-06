@@ -89,6 +89,22 @@ class ComponentAllProbabilities(
         """
         return self[component].ln_prior(mpars.get_prefixed(component), data)
 
+    def component_ln_evidence(self, component: str, /, data: Data[Array]) -> Array:
+        """Log-evidence of a component.
+
+        Parameters
+        ----------
+        component : str, positional-only
+            Component name.
+        data : Data[Array], positional-only
+            Data.
+
+        Returns
+        -------
+        Array
+        """
+        return self[component].ln_evidence(data)
+
     def component_ln_posterior(
         self,
         component: str,
@@ -178,6 +194,22 @@ class ComponentAllProbabilities(
         """
         return self.xp.sum(self.component_ln_prior(component, mpars, data))
 
+    def component_ln_evidence_tot(self, component: str, /, data: Data[Array]) -> Array:
+        """Sum of the component log-evidence.
+
+        Parameters
+        ----------
+        component : str, positional-only
+            Component name.
+        data : Data[Array], positional-only
+            Data.
+
+        Returns
+        -------
+        Array
+        """
+        return self.xp.sum(self.component_ln_evidence(component, data))
+
     def component_ln_posterior_tot(
         self,
         component: str,
@@ -264,6 +296,22 @@ class ComponentAllProbabilities(
         """
         return self.xp.exp(self.component_ln_prior(component, mpars, data))
 
+    def component_evidence(self, component: str, data: Data[Array]) -> Array:
+        """Evidence of a component.
+
+        Parameters
+        ----------
+        component : str, positional-only
+            Component name.
+        data : Data[Array], positional-only
+            Data.
+
+        Returns
+        -------
+        Array
+        """
+        return self.xp.exp(self.component_ln_evidence(component, data))
+
     def component_posterior(
         self, component: str, mpars: Params[Array], data: Data[Array], **kwargs: Array
     ) -> Array:
@@ -338,6 +386,22 @@ class ComponentAllProbabilities(
         Array
         """
         return self.xp.sum(self.component_prior(component, mpars, data))
+
+    def component_evidence_tot(self, component: str, data: Data[Array]) -> Array:
+        """Sum of the component evidence.
+
+        Parameters
+        ----------
+        component : str, positional-only
+            Component name.
+        data : Data[Array], positional-only
+            Data.
+
+        Returns
+        -------
+        Array
+        """
+        return self.xp.sum(self.component_evidence(component, data))
 
     def component_posterior_tot(
         self, component: str, mpars: Params[Array], data: Data[Array], **kwargs: Array

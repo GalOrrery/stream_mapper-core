@@ -223,3 +223,21 @@ class ModelsBase(
         for prior in self.priors:
             lnp = lnp + prior.logpdf(mpars, data, self, lnp)
         return lnp
+
+    def ln_evidence(self, data: Data[Array]) -> Array:
+        """Log evidence.
+
+        Parameters
+        ----------
+        data : Data[Array[(N, F)]]
+            Data.
+
+        Returns
+        -------
+        Array
+        """
+        # Loop over the components
+        lne: Array = self.xp.zeros(())
+        for m in self.components.values():
+            lne = lne + m.ln_evidence(data)
+        return lne

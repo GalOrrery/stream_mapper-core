@@ -292,6 +292,20 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
 
         return lnp
 
+    def ln_evidence(self, data: Data[Array], /) -> Array:
+        """Log evidence.
+
+        Parameters
+        ----------
+        data : Data[Array[(N,F)]], positional-only
+            Data (phi1, phi2).
+
+        Returns
+        -------
+        Array
+        """
+        return self.xp.zeros(len(data))
+
     # ========================================================================
     # ML
 
