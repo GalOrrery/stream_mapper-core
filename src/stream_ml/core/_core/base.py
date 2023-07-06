@@ -9,9 +9,10 @@ from dataclasses import KW_ONLY, dataclass, fields
 from functools import reduce
 from math import inf
 import textwrap
-from typing import TYPE_CHECKING, Any, Literal, Protocol, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 
 from stream_ml.core._core.api import Model
+from stream_ml.core._connect.nn_namespace import NN_NAMESPACE
 from stream_ml.core._core.field import NNField
 from stream_ml.core.params._field import ModelParametersField
 from stream_ml.core.params._values import Params, freeze_params, set_param
@@ -25,29 +26,9 @@ from stream_ml.core.utils.scale._api import DataScaler  # noqa: TCH001
 if TYPE_CHECKING:
     from stream_ml.core._data import Data
     from stream_ml.core.prior import PriorBase
-    from stream_ml.core.typing import NNNamespace, ParamNameAllOpts, ParamsLikeDict
+    from stream_ml.core.typing import ParamNameAllOpts, ParamsLikeDict
 
     Self = TypeVar("Self", bound="ModelBase[Array, NNModel]")  # type: ignore[valid-type]  # noqa: E501
-
-
-#####################################################################
-
-
-class NNNamespaceMap(Protocol):
-    """Protocol for mapping array namespaces to NN namespaces."""
-
-    def __getitem__(self, key: ArrayNamespace[Array]) -> NNNamespace[NNModel, Array]:
-        """Get item."""
-        ...
-
-    def __setitem__(
-        self, key: ArrayNamespace[Array], value: NNNamespace[NNModel, Array]
-    ) -> None:
-        """Set item."""
-        ...
-
-
-NN_NAMESPACE = cast(NNNamespaceMap, {})
 
 
 #####################################################################
