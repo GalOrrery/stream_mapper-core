@@ -11,9 +11,9 @@ from math import inf
 import textwrap
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 
-from stream_ml.core._core.api import Model
 from stream_ml.core._connect.nn_namespace import NN_NAMESPACE
 from stream_ml.core._core.field import NNField
+from stream_ml.core._core.model_api import Model
 from stream_ml.core.params._field import ModelParametersField
 from stream_ml.core.params._values import Params, freeze_params, set_param
 from stream_ml.core.setup_package import CompiledShim

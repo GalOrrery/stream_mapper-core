@@ -15,7 +15,7 @@ from stream_ml.core.utils.funcs import within_bounds
 from stream_ml.core.utils.scale import DataScaler  # noqa: TCH001
 
 if TYPE_CHECKING:
-    from stream_ml.core._core.api import Model
+    from stream_ml.core._core.model_api import Model
     from stream_ml.core._data import Data
     from stream_ml.core._multi.bases import ModelsBase
     from stream_ml.core.params._values import Params

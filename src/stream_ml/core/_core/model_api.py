@@ -1,6 +1,8 @@
-"""Core feature."""
+"""API for models."""
 
 from __future__ import annotations
+
+from stream_ml.core._core.likelihood_api import AllProbabilities
 
 __all__: list[str] = []
 
@@ -8,12 +10,7 @@ from abc import abstractmethod
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Literal, Protocol, overload
 
-from stream_ml.core._api import (
-    AllProbabilities as AllProbabilitiesAPI,
-    HasName,
-    SupportsXP,
-    SupportsXPNN,
-)
+from stream_ml.core._api import HasName, SupportsXP, SupportsXPNN
 from stream_ml.core.params._field import ModelParametersField
 from stream_ml.core.params._values import Params, freeze_params, set_param
 from stream_ml.core.setup_package import PACK_PARAM_JOIN
@@ -21,65 +18,8 @@ from stream_ml.core.typing import Array, NNModel
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
-    from stream_ml.core._data import Data
     from stream_ml.core.prior._base import PriorBase
     from stream_ml.core.typing import BoundsT, ParamNameAllOpts, ParamsLikeDict
-
-
-class AllProbabilities(AllProbabilitiesAPI[Array], SupportsXP[Array], Protocol):
-    # -------------------------------------------
-
-    def ln_likelihood_tot(
-        self, mpars: Params[Array], /, data: Data[Array], **kwargs: Array
-    ) -> Array:
-        return self.xp.sum(self.ln_likelihood(mpars, data, **kwargs))
-
-    def ln_prior_tot(self, mpars: Params[Array], /, data: Data[Array]) -> Array:
-        return self.xp.sum(self.ln_prior(mpars, data))
-
-    def ln_posterior_tot(
-        self, mpars: Params[Array], /, data: Data[Array], **kw: Array
-    ) -> Array:
-        return self.xp.sum(self.ln_posterior(mpars, data, **kw))
-
-    # -------------------------------------------
-
-    def likelihood(
-        self, mpars: Params[Array], /, data: Data[Array], **kwargs: Array
-    ) -> Array:
-        return self.xp.exp(self.ln_likelihood(mpars, data, **kwargs))
-
-    def prior(
-        self,
-        mpars: Params[Array],
-        /,
-        data: Data[Array],
-        current_lnp: Array | None = None,
-    ) -> Array:
-        return self.xp.exp(self.ln_prior(mpars, data, current_lnp))
-
-    def posterior(
-        self, mpars: Params[Array], /, data: Data[Array], **kw: Array
-    ) -> Array:
-        return self.xp.exp(self.ln_posterior(mpars, data, **kw))
-
-    # -------------------------------------------
-
-    def likelihood_tot(
-        self, mpars: Params[Array], /, data: Data[Array], **kwargs: Array
-    ) -> Array:
-        return self.xp.exp(self.ln_likelihood_tot(mpars, data, **kwargs))
-
-    def prior_tot(self, mpars: Params[Array], /, data: Data[Array]) -> Array:
-        return self.xp.exp(self.ln_prior_tot(mpars, data))
-
-    def posterior_tot(
-        self, mpars: Params[Array], /, data: Data[Array], **kw: Array
-    ) -> Array:
-        return self.xp.exp(self.ln_posterior_tot(mpars, data, **kw))
-
-
-# ============================================================================
 
 
 class Model(
@@ -89,9 +29,34 @@ class Model(
     HasName,
     Protocol[Array, NNModel],
 ):
-    """Model base class."""
+    """Model Protocol.
+
+    Parameters
+    ----------
+    indep_coord_names : tuple[str, ...]
+        The names of the independent coordinates.
+    coord_names : tuple[str, ...]
+        Coordinate names, e.g. "phi2", "pm_phi1".
+    coord_err_names : tuple[str, ...] | None, optional
+        Coordinate error names, e.g. "phi2_err", "pm_phi1_err". Default is
+        `None`, which means that no coordinate errors are used.
+    coord_bounds : dict[str, BoundsT]
+        Coordinate bounds. Must have the same keys as `coord_names`.
+
+    params : ModelParameters[Array], optional
+        Model parameters. Default is empty.
+
+    priors: tuple[PriorBase[Array], ...], optional
+        Priors on the parameters. Default is empty.
+
+    array_namespace : ArrayNamespace
+        Array namespace.
+    name : ArrayNamespace
+        Model name.
+    """
 
     # Coordinates of the model.
+    indep_coord_names: tuple[str, ...]
     coord_names: tuple[str, ...]
     coord_bounds: FrozenDictField[str, BoundsT] = FrozenDictField(FrozenDict())
     coord_err_names: tuple[str, ...] | None
@@ -105,12 +70,12 @@ class Model(
     def __post_init__(self, *args: Any, **kwargs: Any) -> None:
         ...
 
-    # ========================================================================
-
     @property
     def ndim(self) -> int:
-        """Number of dimensions."""
+        """Number of coordinates."""
         return len(self.coord_names)
+
+    # ========================================================================
 
     @overload
     def _unpack_params_from_map(
@@ -160,16 +125,16 @@ class Model(
 
         Parameters
         ----------
-        packed : Mapping[str, Array], positional-only
+        packed : Mapping[str, Array[(N,)]], positional-only
             Flat dictionary of parameters.
-        extras : dict[str, Array] | None, optional
+        extras : dict[str, Array[(N,)]] | None, optional
             Additional parameters to add.
         freeze : bool, optional keyword-only
             Whether to freeze the parameters. Default is `True`.
 
         Returns
         -------
-        Params[Array]
+        Params[Array[(N,)]]
             Nested dictionary of parameters wth parameters grouped by coordinate
             name.
         """
@@ -242,16 +207,16 @@ class Model(
 
         Parameters
         ----------
-        arr : Array, positional-only
+        arr : Array[(N,F)], positional-only
             Parameter array.
-        extras : dict[str, Array] | None, optional
+        extras : dict[str, Array[(N,)]] | None, optional
             Additional parameters to add.
         freeze : bool, optional keyword-only
             Whether to freeze the parameters. Default is `True`.
 
         Returns
         -------
-        Params[Array]
+        Params[Array[(N,)]]
         """
         raise NotImplementedError
 
@@ -303,33 +268,35 @@ class Model(
 
         Parameters
         ----------
-        inp : Array or Mapping, positional-only
+        inp : Array[(N,F)] or Mapping, positional-only
             Parameter array or dictionary.
-        extras : dict[str, Array] | None, optional
+        extras : dict[str, Array[(N,)]] | None, optional
             Additional parameters to add.
         freeze : bool, optional keyword-only
             Whether to freeze the parameters. Default is `True`.
 
         Returns
         -------
-        Params[Array]
+        Params[Array[(N,)]]
         """
         if isinstance(inp, Mapping):
             return self._unpack_params_from_map(inp, extras=extras, freeze=freeze)
         return self._unpack_params_from_arr(inp, extras=extras, freeze=freeze)
+
+    # ========================================================================
 
     def pack_params_to_arr(self, mpars: Params[Array], /) -> Array:
         """Pack model parameters into an array.
 
         Parameters
         ----------
-        mpars : Params[Array], positional-only
+        mpars : Params[Array[(N,)]], positional-only
             Model parameters. Note that these are different from the ML
             parameters.
 
         Returns
         -------
-        Array
+        Array[(N,)]
         """
         return self.xp.concatenate(
             tuple(self.xp.atleast_1d(mpars[elt]) for elt in self.params.flatskeys())

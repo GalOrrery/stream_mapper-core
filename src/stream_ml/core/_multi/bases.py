@@ -9,8 +9,8 @@ from collections.abc import ItemsView, Iterator, KeysView, Mapping, ValuesView
 from dataclasses import KW_ONLY, dataclass, fields
 from typing import TYPE_CHECKING, Any, Protocol
 
-from stream_ml.core._core.api import Model
 from stream_ml.core._connect.nn_namespace import NN_NAMESPACE
+from stream_ml.core._core.model_api import Model
 from stream_ml.core.setup_package import CompiledShim
 from stream_ml.core.typing import (
     Array,

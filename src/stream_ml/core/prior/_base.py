@@ -12,7 +12,7 @@ from stream_ml.core._api import SupportsXP
 from stream_ml.core.typing import Array
 
 if TYPE_CHECKING:
-    from stream_ml.core._core.api import Model
+    from stream_ml.core._core.model_api import Model
     from stream_ml.core._data import Data
     from stream_ml.core.params._values import Params
     from stream_ml.core.typing import ArrayNamespace, NNModel
