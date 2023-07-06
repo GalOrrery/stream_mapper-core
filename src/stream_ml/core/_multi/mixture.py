@@ -449,7 +449,7 @@ class MixtureModel(
         that this can be different from the name of the model when it is used in
         a mixture model (see :class:`~stream_ml.core.core.MixtureModel`).
 
-    priors : tuple[PriorBase, ...], optional keyword-only
+    priors : tuple[Prior, ...], optional keyword-only
         Mapping of parameter names to priors. This is useful for setting priors
         on parameters across models, e.g. the background and stream models in a
         mixture model.

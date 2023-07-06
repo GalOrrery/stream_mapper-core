@@ -18,11 +18,11 @@ if TYPE_CHECKING:
     from stream_ml.core.typing import ArrayNamespace, NNModel
 
 
-Self = TypeVar("Self", bound="PriorBase[Array]")  # type: ignore[valid-type]
+Self = TypeVar("Self", bound="Prior[Array]")  # type: ignore[valid-type]
 
 
 @dataclass(frozen=True)
-class PriorBase(SupportsXP[Array], metaclass=ABCMeta):
+class Prior(SupportsXP[Array], metaclass=ABCMeta):
     """Prior."""
 
     _: KW_ONLY

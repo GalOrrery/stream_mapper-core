@@ -18,7 +18,7 @@ from stream_ml.core.typing import Array, NNModel
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
-    from stream_ml.core.prior._base import PriorBase
+    from stream_ml.core.prior._base import Prior
     from stream_ml.core.typing import BoundsT, ParamNameAllOpts, ParamsLikeDict
 
 
@@ -46,7 +46,7 @@ class Model(
     params : ModelParameters[Array], optional
         Model parameters. Default is empty.
 
-    priors: tuple[PriorBase[Array], ...], optional
+    priors: tuple[Prior[Array], ...], optional
         Priors on the parameters. Default is empty.
 
     array_namespace : ArrayNamespace
@@ -65,7 +65,7 @@ class Model(
     params: ModelParametersField[Array] = ModelParametersField[Array]()
 
     # Priors on the parameters.
-    priors: tuple[PriorBase[Array], ...] = ()
+    priors: tuple[Prior[Array], ...] = ()
 
     def __post_init__(self, *args: Any, **kwargs: Any) -> None:
         ...

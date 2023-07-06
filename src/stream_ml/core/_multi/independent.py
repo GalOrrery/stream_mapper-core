@@ -46,7 +46,7 @@ class IndependentModels(ModelsBase[Array, NNModel]):
         that this can be different from the name of the model when it is used in
         a composite model.
 
-    priors : tuple[PriorBase, ...], optional keyword-only
+    priors : tuple[Prior, ...], optional keyword-only
         Mapping of parameter names to priors. This is useful for setting priors
         on parameters across models, e.g. the background and stream models in a
         mixture model.

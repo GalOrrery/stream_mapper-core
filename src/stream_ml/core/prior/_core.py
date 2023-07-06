@@ -7,7 +7,7 @@ __all__: list[str] = []
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Protocol
 
-from stream_ml.core.prior._base import PriorBase
+from stream_ml.core.prior._base import Prior
 from stream_ml.core.typing import Array
 
 if TYPE_CHECKING:
@@ -43,8 +43,8 @@ class ForwardHook(Protocol[Array]):
 
 
 @dataclass(frozen=True)
-class Prior(PriorBase[Array]):
-    """Prior."""
+class FunctionPrior(Prior[Array]):
+    """Prior with custom function hooks."""
 
     logpdf_hook: LogPDFHook[Array]
     forward_hook: ForwardHook[Array]

@@ -25,7 +25,7 @@ from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 if TYPE_CHECKING:
     from stream_ml.core._data import Data
     from stream_ml.core.params import ModelParameters, Params
-    from stream_ml.core.prior import PriorBase
+    from stream_ml.core.prior import Prior
 
 
 def _get_array_namespace(
@@ -76,7 +76,7 @@ class ModelsBase(
         The names of the independent coordinates, e.g. "phi1". Default is
         ("phi1",).
 
-    priors: tuple[PriorBase[Array], ...], optional keyword-only
+    priors: tuple[Prior[Array], ...], optional keyword-only
         Priors on the parameters. Default is empty.
 
     data_scaler : DataScaler[Array], keyword-only
@@ -107,7 +107,7 @@ class ModelsBase(
 
     _: KW_ONLY
     name: str | None = None  # the name of the model
-    priors: tuple[PriorBase[Array], ...] = ()
+    priors: tuple[Prior[Array], ...] = ()
     unpack_params_hooks: tuple[UnpackParamsCallable[Array], ...] = ()
 
     def __post_init__(self) -> None:

@@ -23,7 +23,7 @@ from stream_ml.core.utils.scale._api import DataScaler  # noqa: TCH001
 
 if TYPE_CHECKING:
     from stream_ml.core._data import Data
-    from stream_ml.core.prior import PriorBase
+    from stream_ml.core.prior import Prior
     from stream_ml.core.typing import ParamNameAllOpts, ParamsLikeDict
 
     Self = TypeVar("Self", bound="ModelBase[Array, NNModel]")  # type: ignore[valid-type]  # noqa: E501
@@ -59,7 +59,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
     params : ModelParameters[Array], optional keyword-only
         Model parameters. Default is empty.
 
-    priors: tuple[PriorBase[Array], ...], optional keyword-only
+    priors: tuple[Prior[Array], ...], optional keyword-only
         Priors on the parameters. Default is empty.
 
     data_scaler : DataScaler[Array], keyword-only
@@ -95,7 +95,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
     params: ModelParametersField[Array] = ModelParametersField[Array]()
 
     # Priors on the parameters.
-    priors: tuple[PriorBase[Array], ...] = ()
+    priors: tuple[Prior[Array], ...] = ()
 
     # Masked data
     require_where: bool = False
