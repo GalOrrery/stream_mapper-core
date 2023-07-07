@@ -137,7 +137,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         # Coordinate bounds are necessary (before they were auto-filled).
         if self.coord_bounds.keys() != set(self.coord_names):
             msg = (
-                f"`coord_bounds` ({self.coord_bounds.keys()}) do not match "
+                f"`coord_bounds` ({tuple(self.coord_bounds.keys())}) do not match "
                 f"`coord_names` ({self.coord_names})."
             )
             raise ValueError(msg)
@@ -145,11 +145,10 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         # coord_err_names must be None or the same length as coord_names.
         # we can't check that the names are the same, because they aren't.
         # TODO: better way to ensure that
-        if self.coord_err_names is not None and len(self.coord_err_names) != len(
-            self.coord_names
-        ):
+        kcen = self.coord_err_names
+        if kcen is not None and len(kcen) != len(self.coord_names):
             msg = (
-                f"`coord_err_names` ({self.coord_err_names}) must be None or "
+                f"`coord_err_names` ({kcen}) must be None or "
                 f"the same length as `coord_names` ({self.coord_names})."
             )
             raise ValueError(msg)
