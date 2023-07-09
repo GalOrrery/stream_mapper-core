@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from stream_ml.core._core.base import ModelBase
+from stream_ml.core._core.field import NNField
 from stream_ml.core.builtin._stats.uniform import logpdf as uniform_logpdf
 from stream_ml.core.builtin._utils import WhereRequiredError
 from stream_ml.core.typing import Array, NNModel
@@ -23,10 +24,15 @@ if TYPE_CHECKING:
 class Uniform(ModelBase[Array, NNModel]):
     """Uniform background model."""
 
-    net: None = None  # type: ignore[assignment]
+    net: NNField[NNModel, None] = NNField(default=None)  # type: ignore[assignment]
 
     def __post_init__(self) -> None:
         super().__post_init__()
+
+        # net must be None:
+        if self.net is not None:
+            msg = "net must be None"
+            raise ValueError(msg)
 
         # Pre-compute the log-difference, shape (1, F)
         # First need to check that the bound are finite.

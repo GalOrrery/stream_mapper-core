@@ -14,11 +14,12 @@ from stream_ml.core.utils.sentinel import MISSING, MissingT
 if TYPE_CHECKING:
     from stream_ml.core._core.model_api import Model
 
-    Self = TypeVar("Self", bound="Model[Array, NNModel]")  # type: ignore[valid-type]  # noqa: E501
+
+OtherValue = TypeVar("OtherValue")
 
 
 @dataclass(frozen=True)
-class NNField(Generic[NNModel]):
+class NNField(Generic[NNModel, OtherValue]):
     """Dataclass descriptor for attached nn.
 
     Parameters
@@ -30,13 +31,17 @@ class NNField(Generic[NNModel]):
         - `None` : defer setting a value until model init.
     """
 
-    default: NNModel | MissingT = MISSING
+    default: NNModel | OtherValue | MissingT = MISSING
     _name: str = field(init=False, repr=False, compare=False)
 
     def __set_name__(self, owner: type, name: str) -> None:
         object.__setattr__(self, "_name", "_" + name)
 
-    def __get__(self, model: Model[Array, NNModel] | None, model_cls: Any) -> NNModel:
+    def __get__(
+        self: NNField[NNModel, OtherValue],
+        model: Model[Array, NNModel] | None,
+        model_cls: Any,
+    ) -> NNModel | OtherValue:
         if model is not None:
             return cast("NNModel", getattr(model, self._name))
         elif self.default is MISSING:
@@ -45,7 +50,11 @@ class NNField(Generic[NNModel]):
         return self.default
 
     def __set__(self, model: Model[Array, NNModel], value: NNModel | Any) -> None:
-        if not isinstance(value, NNModelProtocol):
+        if not isinstance(
+            value,
+            (NNModelProtocol,)
+            + ((type(self.default),) if self.default is not MISSING else ()),
+        ):
             msg = "must provide a wrapped neural network."
             raise TypeError(msg)
 
