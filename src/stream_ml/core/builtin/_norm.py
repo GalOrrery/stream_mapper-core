@@ -6,7 +6,7 @@ from stream_ml.core.utils.compat import array_at
 
 __all__: list[str] = []
 
-from dataclasses import KW_ONLY, dataclass
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from stream_ml.core._core.base import ModelBase
@@ -21,34 +21,45 @@ if TYPE_CHECKING:
 
 @dataclass
 class Normal(ModelBase[Array, NNModel]):
-    r"""1D Gaussian.
+    r"""Univariate Gaussian.
 
-    :math:`\mathcal{N}(weight, \mu, \ln\sigma)(\phi1)`
+    You probably want to use the :class:`stream_ml.core.builtin.TruncatedNormal`
+    model instead.
 
-    Notes
-    -----
+    In each dimension the background is a normal distribution:
+
+    .. math::
+
+        f(x) = \frac{\exp{-((x - \mu)/\sigma)^2 / 2}}{\sqrt{2\pi} \sigma}
+
     The model parameters are:
+
     - "mu" : mean
     - "ln-sigma" : log-standard deviation
-    """
 
-    _: KW_ONLY
-    require_where: bool = False
+    Examples
+    --------
+    .. code-block:: python
+
+        model = Normal(
+            ...,
+            coord_names=("x", "y"),  # independent coordinates
+            coord_bounds={"x": (0, 1), "y": (1, 2)},
+            params=ModelParameters(
+                {
+                    "x": {"slope": ModelParameter(...)},
+                    "y": {"slope": ModelParameter(...)},
+                }
+            ),
+        )
+    """
 
     def __post_init__(self) -> None:
         super().__post_init__()
 
         # Check that for every `coord_name` there is a parameter.
-        for k in self.coord_names:
-            if k not in self.params:
-                msg = f"Missing parameter for coordinate {k}"
-                raise ValueError(msg)
-
-        # Check that `coord_err_name` <-> coord_name.
-        if self.coord_err_names is not None and len(self.coord_names) != len(
-            self.coord_err_names
-        ):
-            msg = "Number of coordinates and coordinate errors must match"
+        if missing := set(self.coord_names) - set(self.params):
+            msg = f"Missing parameter for coordinate(s) {missing}"
             raise ValueError(msg)
 
     def ln_likelihood(
@@ -94,8 +105,8 @@ class Normal(ModelBase[Array, NNModel]):
         cns, cens = self.coord_names, self.coord_err_names
         x = data[cns].array
 
-        mu = self.xp.stack(tuple(mpars[(k, "mu")] for k in cns), 1)[idx]
-        ln_s = self.xp.stack(tuple(mpars[(k, "ln-sigma")] for k in cns), 1)[idx]
+        mu = self._stack_param(mpars, "mu", cns)[idx]
+        ln_s = self._stack_param(mpars, "ln-sigma", cns)[idx]
         if cens is not None:
             # it's fine if sigma_o is 0
             sigma_o = data[cens].array[idx]
@@ -105,4 +116,4 @@ class Normal(ModelBase[Array, NNModel]):
 
         lnliks = self.xp.full_like(x, 0)  # missing data is ignored
         lnliks = array_at(lnliks, idx).set(value)
-        return lnliks.sum(1)  # (N,)
+        return lnliks.sum(1)  # (N,F) -> (N,)

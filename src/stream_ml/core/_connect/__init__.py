@@ -1,5 +1,5 @@
-"""Core library for stream membership likelihood, with ML."""
+"""Connections."""
 
 __all__: list[str] = []
 
-from stream_ml.core._connect import compat, data  # noqa: F401
+from stream_ml.core._connect import compat, data, nn_namespace  # noqa: F401

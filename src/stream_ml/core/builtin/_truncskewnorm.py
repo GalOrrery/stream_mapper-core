@@ -4,7 +4,7 @@ from __future__ import annotations
 
 __all__: list[str] = []
 
-from dataclasses import KW_ONLY, dataclass
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from stream_ml.core.builtin._skewnorm import SkewNormal
@@ -21,9 +21,6 @@ if TYPE_CHECKING:
 @dataclass
 class TruncatedSkewNormal(SkewNormal[Array, NNModel]):
     r"""Truncated Skew-Normal."""
-
-    _: KW_ONLY
-    require_where: bool = False
 
     def ln_likelihood(
         self,
@@ -69,9 +66,9 @@ class TruncatedSkewNormal(SkewNormal[Array, NNModel]):
         x = data[cns].array
 
         a, b = self.xp.asarray([self.coord_bounds[k] for k in cns]).T[:, None, :]
-        mu = self.xp.stack(tuple(mpars[(k, "mu")] for k in cns), 1)[idx]
-        ln_s = self.xp.stack(tuple(mpars[(k, "ln-sigma")] for k in cns), 1)[idx]
-        skew = self.xp.stack(tuple(mpars[(k, "skew")] for k in cns), 1)[idx]
+        mu = self._stack_param(mpars, "mu", cns)[idx]
+        ln_s = self._stack_param(mpars, "ln-sigma", cns)[idx]
+        skew = self._stack_param(mpars, "skew", cns)[idx]
         if cens is not None:
             # it's fine if sigma_o is 0
             sigma_o = data[cens].array[idx]

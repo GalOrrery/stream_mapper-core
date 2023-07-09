@@ -16,8 +16,9 @@ __all__ = [
 
 from typing import TypeAlias
 
-from stream_ml.core.typing._array import Array, Array_co, ArrayLike, ArrayNamespace
+from stream_ml.core.typing._array import Array, Array_co, ArrayLike
 from stream_ml.core.typing._nn import NNModel, NNNamespace
+from stream_ml.core.typing._xp import ArrayNamespace
 
 BoundsT: TypeAlias = tuple[float, float]
 

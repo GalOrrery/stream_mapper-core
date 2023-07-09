@@ -2,12 +2,12 @@
 
 
 __all__ = [
-    "PriorBase",
     "Prior",
+    "FunctionPrior",
     "HardThreshold",
 ]
 
 
-from stream_ml.core.prior._base import PriorBase
-from stream_ml.core.prior._core import Prior
+from stream_ml.core.prior._base import Prior
+from stream_ml.core.prior._core import FunctionPrior
 from stream_ml.core.prior._weight import HardThreshold

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 __all__: list[str] = []
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
 
 from stream_ml.core.typing import Array, NNModel
@@ -12,7 +12,7 @@ from stream_ml.core.typing._nn import NNModelProtocol
 from stream_ml.core.utils.sentinel import MISSING, MissingT
 
 if TYPE_CHECKING:
-    from stream_ml.core._core.api import Model
+    from stream_ml.core._core.model_api import Model
 
     Self = TypeVar("Self", bound="Model[Array, NNModel]")  # type: ignore[valid-type]  # noqa: E501
 
@@ -23,17 +23,17 @@ class NNField(Generic[NNModel]):
 
     Parameters
     ----------
-    default : NNModel | None, optional
-        Default value, by default `None`.
+    default : NNModel | MISSING, optional
+        Default value, by default ``MISSING``.
 
         - `NNModel` : a value.
         - `None` : defer setting a value until model init.
     """
 
     default: NNModel | MissingT = MISSING
+    _name: str = field(init=False, repr=False, compare=False)
 
     def __set_name__(self, owner: type, name: str) -> None:
-        self._name: str
         object.__setattr__(self, "_name", "_" + name)
 
     def __get__(self, model: Model[Array, NNModel] | None, model_cls: Any) -> NNModel:

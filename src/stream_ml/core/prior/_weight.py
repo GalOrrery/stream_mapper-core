@@ -8,14 +8,14 @@ from dataclasses import KW_ONLY, InitVar, dataclass
 from math import inf
 from typing import TYPE_CHECKING
 
-from stream_ml.core.prior._base import PriorBase
+from stream_ml.core.prior._base import Prior
 from stream_ml.core.typing import Array
 from stream_ml.core.utils.compat import array_at
 from stream_ml.core.utils.funcs import within_bounds
 from stream_ml.core.utils.scale import DataScaler  # noqa: TCH001
 
 if TYPE_CHECKING:
-    from stream_ml.core._core.api import Model
+    from stream_ml.core._core.model_api import Model
     from stream_ml.core._data import Data
     from stream_ml.core._multi.bases import ModelsBase
     from stream_ml.core.params._values import Params
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 
 @dataclass(frozen=True)
-class HardThreshold(PriorBase[Array]):
+class HardThreshold(Prior[Array]):
     """Threshold prior.
 
     Parameters

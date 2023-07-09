@@ -17,7 +17,7 @@ from stream_ml.core.utils.funcs import within_bounds
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from stream_ml.core._core.api import Model
+    from stream_ml.core._core.model_api import Model
     from stream_ml.core._data import Data
     from stream_ml.core.params import Params
     from stream_ml.core.typing import NNModel

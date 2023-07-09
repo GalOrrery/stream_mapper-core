@@ -4,10 +4,10 @@ from __future__ import annotations
 
 __all__: list[str] = []
 
-from dataclasses import KW_ONLY, dataclass
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from stream_ml.core._core.base import ModelBase
+from stream_ml.core.builtin._norm import Normal
 from stream_ml.core.builtin._stats.skewnorm import logpdf
 from stream_ml.core.builtin._utils import WhereRequiredError
 from stream_ml.core.typing import Array, NNModel
@@ -19,14 +19,40 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class SkewNormal(ModelBase[Array, NNModel]):
+class SkewNormal(Normal[Array, NNModel]):
     r"""1D Gaussian with mixture weight.
 
-    :math:`(weight, \mu, \ln\sigma)(\phi1)`
-    """
+    You probably want to use the
+    :class:`stream_ml.core.builtin.TruncatedSkewNormal` model instead.
 
-    _: KW_ONLY
-    require_where: bool = False
+    In each dimension the background is a skew-normal distribution:
+
+    .. math::
+
+        f(x) = 2 \phi(x) \Phi(\alpha x)
+
+    The model parameters are:
+
+    - "mu" : mean
+    - "ln-sigma" : log-standard deviation
+    - "skew" : skew parameter
+
+    Examples
+    --------
+    .. code-block:: python
+
+        model = Normal(
+            ...,
+            coord_names=("x", "y"),  # independent coordinates
+            coord_bounds={"x": (0, 1), "y": (1, 2)},
+            params=ModelParameters(
+                {
+                    "x": {"slope": ModelParameter(...)},
+                    "y": {"slope": ModelParameter(...)},
+                }
+            ),
+        )
+    """
 
     def ln_likelihood(
         self,
@@ -71,9 +97,9 @@ class SkewNormal(ModelBase[Array, NNModel]):
         cns, cens = self.coord_names, self.coord_err_names
         x = data[cns].array
 
-        mu = self.xp.stack(tuple(mpars[(k, "mu")] for k in cns), 1)[idx]
-        ln_s = self.xp.stack(tuple(mpars[(k, "ln-sigma")] for k in cns), 1)[idx]
-        skew = self.xp.stack(tuple(mpars[(k, "skew")] for k in cns), 1)[idx]
+        mu = self._stack_param(mpars, "mu", cns)[idx]
+        ln_s = self._stack_param(mpars, "ln-sigma", cns)[idx]
+        skew = self._stack_param(mpars, "skew", cns)[idx]
         if cens is not None:
             # it's fine if sigma_o is 0
             sigma_o = data[cens].array[idx]
