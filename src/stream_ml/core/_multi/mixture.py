@@ -23,7 +23,6 @@ from stream_ml.core.typing import Array, NNModel
 from stream_ml.core.utils.cached_property import cached_property
 from stream_ml.core.utils.funcs import get_prefixed_kwargs
 from stream_ml.core.utils.scale import DataScaler  # noqa: TCH001
-from stream_ml.core.utils.sentinel import MISSING
 
 if TYPE_CHECKING:
     from stream_ml.core._data import Data
@@ -455,7 +454,7 @@ class MixtureModel(
         mixture model.
     """
 
-    net: NNField[NNModel, NNModel] = NNField(default=MISSING)
+    net: NNField[NNModel, NNModel] = NNField()
 
     _: KW_ONLY
 
