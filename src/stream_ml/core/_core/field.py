@@ -37,22 +37,6 @@ class NNField(Generic[NNModel, OtherValue]):
     def __set_name__(self, owner: type, name: str) -> None:
         object.__setattr__(self, "_name", "_" + name)
 
-    # @overload
-    # def __get__(
-    #     self: NNField[NNModel, Literal[True]],
-    #     model: Model[Array, NNModel] | None,
-    #     model_cls: Any,
-    # ) -> NNModel | None:
-    #     ...
-
-    # @overload
-    # def __get__(
-    #     self: NNField[NNModel, Literal[False]],
-    #     model: Model[Array, NNModel] | None,
-    #     model_cls: Any,
-    # ) -> NNModel:
-    #     ...
-
     def __get__(
         self: NNField[NNModel, OtherValue],
         model: Model[Array, NNModel] | None,
