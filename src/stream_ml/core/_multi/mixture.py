@@ -455,7 +455,7 @@ class MixtureModel(
         mixture model.
     """
 
-    net: NNField[NNModel] = NNField(default=MISSING)
+    net: NNField[NNModel, NNModel] = NNField(default=MISSING)
 
     _: KW_ONLY
 

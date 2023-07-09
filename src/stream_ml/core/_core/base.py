@@ -76,7 +76,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         a mixture model (see :class:`~stream_ml.core.core.MixtureModel`).
     """
 
-    net: NNField[NNModel] = NNField()
+    net: NNField[NNModel, NNModel] = NNField()
 
     _: KW_ONLY
     array_namespace: ArrayNamespace[Array]
