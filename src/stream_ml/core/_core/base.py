@@ -250,7 +250,13 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         shape = data.array.shape[:1] + data.array.shape[2:]
         where = reduce(
             self.xp.logical_or,
-            (~within_bounds(data[k], *v) for k, v in self.coord_bounds.items()),
+            (
+                ~within_bounds(data[k], *v)
+                for k, v in self.coord_bounds.items()
+                if k in data.names
+                # don't require all coordinates to be present in the data,
+                # e.g. "distmod" on an isochrone model.
+            ),
             self.xp.zeros(shape, dtype=bool),
         )
         return self.xp.where(
