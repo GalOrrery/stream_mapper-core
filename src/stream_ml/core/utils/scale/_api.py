@@ -4,13 +4,15 @@ from __future__ import annotations
 
 __all__: list[str] = []
 
-from typing import TYPE_CHECKING, Protocol, overload
+from typing import TYPE_CHECKING, Any, Protocol, cast, overload
 
 from stream_ml.core.typing import Array
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from stream_ml.core._data import Data
-    from stream_ml.core.typing import ArrayNamespace
+    from stream_ml.core.typing import ArrayLike, ArrayNamespace
 
 
 class DataScaler(Protocol[Array]):
@@ -95,3 +97,27 @@ class DataScaler(Protocol[Array]):
     ) -> DataScaler[Array]:
         """Get a subset DataScaler with the given names."""
         ...
+
+    # ===============================================================
+
+    def astype(self, fmt: type[Array], /) -> DataScaler[Array]:
+        """Convert the data to a different format.
+
+        Parameters
+        ----------
+        fmt : type
+            The format to convert to.
+
+        Returns
+        -------
+        DataScaler
+        """
+        return cast("DataScaler[Array]", ASTYPE_REGISTRY[(type(self), fmt)](self))
+
+
+###############################################################################
+# HOOKS
+
+ASTYPE_REGISTRY: dict[
+    tuple[type, type], Callable[[DataScaler[Any]], DataScaler[ArrayLike]]
+] = {}

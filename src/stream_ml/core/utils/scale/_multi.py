@@ -4,7 +4,7 @@ from __future__ import annotations
 
 __all__: list[str] = []
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import functools
 import operator
 from typing import TYPE_CHECKING, overload
@@ -155,3 +155,19 @@ class CompoundDataScaler(DataScaler[Array]):
             if (ns := tuple(n for n in scaler.names if n in names_tuple))
         )
         return CompoundDataScaler[Array](scalers) if len(scalers) > 1 else scalers[0]
+
+    # ---------------------------------------------------------------
+
+    def astype(self, fmt: type[Array], /) -> CompoundDataScaler[Array]:
+        """Convert the data to a different format.
+
+        Parameters
+        ----------
+        fmt : type
+            The format to convert to.
+
+        Returns
+        -------
+        DataScaler
+        """
+        return replace(self, scalers=tuple(s.astype(fmt) for s in self.scalers))
