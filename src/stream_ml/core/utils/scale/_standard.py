@@ -26,6 +26,10 @@ class StandardScaler(DataScaler[Array]):
     scale: Array
     names: tuple[str, ...]
 
+    def __post_init__(self) -> None:
+        if not isinstance(self.names, tuple):
+            object.__setattr__(self, "names", tuple(self.names))  # type: ignore[unreachable]  # noqa: E501
+
     @classmethod
     def fit(cls, data: Any, names: tuple[str, ...]) -> StandardScaler[Array]:
         """Compute the mean and standard deviation to be used for later scaling.
