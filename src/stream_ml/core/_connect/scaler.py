@@ -21,13 +21,13 @@ __all__: list[str] = []
 
 
 def standard_scaler_astype_numpy(
-    scaler: StandardScaler[Any],
+    scaler: StandardScaler[Any], **kwargs: Any
 ) -> StandardScaler[NDArray[Any]]:
     """Register the `StandardScaler` class for `numpy.ndarray`."""
     return replace(
         scaler,
-        mean=np.asarray(scaler.mean),
-        scale=np.asarray(scaler.scale),
+        mean=np.asarray(scaler.mean, **kwargs),
+        scale=np.asarray(scaler.scale, **kwargs),
         names=scaler.names,
     )
 

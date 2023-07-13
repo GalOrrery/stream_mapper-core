@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from stream_ml.core._data import Data
     from stream_ml.core.params import ModelParameters, Params
     from stream_ml.core.prior import Prior
+    from stream_ml.core.typing import NNNamespace
 
 
 def _get_array_namespace(
@@ -115,6 +116,7 @@ class ModelsBase(
         self._mypyc_init_descriptor()  # TODO: Remove this when mypyc is fixed.
 
         self.array_namespace = _get_array_namespace(self.components)
+        self._nn_namespace_: NNNamespace[NNModel, Array]
         self._nn_namespace_ = NN_NAMESPACE[self.array_namespace]
 
         # Check that there is at least one component

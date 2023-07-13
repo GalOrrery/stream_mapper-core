@@ -342,20 +342,24 @@ class Data(Generic[Array]):
         """Convert to a JAX array."""
         return self.array
 
-    def astype(self, fmt: type[ArrayLikeT], /) -> Data[ArrayLikeT]:
+    def astype(self, fmt: type[ArrayLikeT], /, **kwargs: Any) -> Data[ArrayLikeT]:
         """Convert the data to a different format.
 
         Parameters
         ----------
         fmt : type
             The format to convert to.
+        **kwargs : Any
+            Additional keyword arguments to pass to the converter.
 
         Returns
         -------
         Data
             The converted data.
         """
-        return cast("Data[ArrayLikeT]", ASTYPE_REGISTRY[(type(self.array), fmt)](self))
+        return cast(
+            "Data[ArrayLikeT]", ASTYPE_REGISTRY[(type(self.array), fmt)](self, **kwargs)
+        )
 
     def to_format(self, fmt: type[ArrayLikeT], /) -> ArrayLikeT:
         """Convert the data to a different format.
@@ -429,7 +433,15 @@ def _parse_key_elt(key: Any, n2k: dict[str, int]) -> KeyT:
 ###############################################################################
 # HOOKS
 
-ASTYPE_REGISTRY: dict[tuple[type, type], Callable[[Data[Any]], Data[ArrayLike]]] = {}
+
+class AsTypeConverter(Protocol):
+    """ASTYPE_REGISTRY protocol."""
+
+    def __call__(self, obj: Data[Any], /, **kwargs: Any) -> Data[ArrayLike]:
+        ...
+
+
+ASTYPE_REGISTRY: dict[tuple[type, type], AsTypeConverter] = {}
 TO_FORMAT_REGISTRY: dict[tuple[type, type], Callable[[Data[Any]], ArrayLike]] = {}
 
 

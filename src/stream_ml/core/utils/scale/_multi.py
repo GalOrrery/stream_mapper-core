@@ -7,7 +7,7 @@ __all__: list[str] = []
 from dataclasses import dataclass, replace
 import functools
 import operator
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, Any, overload
 
 from stream_ml.core._data import Data
 from stream_ml.core.typing import Array
@@ -158,16 +158,20 @@ class CompoundDataScaler(DataScaler[Array]):
 
     # ---------------------------------------------------------------
 
-    def astype(self, fmt: type[Array], /) -> CompoundDataScaler[Array]:
+    def astype(self, fmt: type[Array], /, **kwargs: Any) -> CompoundDataScaler[Array]:
         """Convert the data to a different format.
 
         Parameters
         ----------
         fmt : type
             The format to convert to.
+        **kwargs : Any
+            Additional keyword arguments.
 
         Returns
         -------
         DataScaler
         """
-        return replace(self, scalers=tuple(s.astype(fmt) for s in self.scalers))
+        return replace(
+            self, scalers=tuple(s.astype(fmt, **kwargs) for s in self.scalers)
+        )
