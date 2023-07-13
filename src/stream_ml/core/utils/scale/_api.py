@@ -9,8 +9,6 @@ from typing import TYPE_CHECKING, Any, Protocol, cast, overload
 from stream_ml.core.typing import Array
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from stream_ml.core._data import Data
     from stream_ml.core.typing import ArrayLike, ArrayNamespace
 
@@ -100,24 +98,34 @@ class DataScaler(Protocol[Array]):
 
     # ===============================================================
 
-    def astype(self, fmt: type[Array], /) -> DataScaler[Array]:
+    def astype(self, fmt: type[Array], /, **kwargs: Any) -> DataScaler[Array]:
         """Convert the data to a different format.
 
         Parameters
         ----------
         fmt : type
             The format to convert to.
+        **kwargs : Any
+            Additional keyword arguments.
 
         Returns
         -------
         DataScaler
         """
-        return cast("DataScaler[Array]", ASTYPE_REGISTRY[(type(self), fmt)](self))
+        return cast(
+            "DataScaler[Array]", ASTYPE_REGISTRY[(type(self), fmt)](self, **kwargs)
+        )
 
 
 ###############################################################################
 # HOOKS
 
-ASTYPE_REGISTRY: dict[
-    tuple[type, type], Callable[[DataScaler[Any]], DataScaler[ArrayLike]]
-] = {}
+
+class AsTypeConverter(Protocol):
+    """ASTYPE_REGISTRY protocol."""
+
+    def __call__(self, obj: DataScaler[Any], /, **kwargs: Any) -> DataScaler[ArrayLike]:
+        ...
+
+
+ASTYPE_REGISTRY: dict[tuple[type, type], AsTypeConverter] = {}
