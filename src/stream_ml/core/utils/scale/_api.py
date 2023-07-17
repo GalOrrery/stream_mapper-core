@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-__all__: list[str] = []
+__all__: list[str] = ["ASTYPE_REGISTRY"]
+# ASTYPE_REGISTRY is public in this private module.
 
 from typing import TYPE_CHECKING, Any, Protocol, cast, overload
 
