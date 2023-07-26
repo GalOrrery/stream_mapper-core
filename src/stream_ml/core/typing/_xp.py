@@ -38,6 +38,11 @@ class ArrayNamespace(Protocol[Array]):
         ...
 
     @staticmethod
+    def any(array: Array) -> Array:  # noqa: A003
+        """Any."""
+        ...
+
+    @staticmethod
     def asarray(array: Any, dtype: Any = ...) -> Array:
         """As array."""
         ...
@@ -57,6 +62,11 @@ class ArrayNamespace(Protocol[Array]):
         arrays: tuple[Array, ...] | list[Array], axis: int = 0, **kwargs: Any
     ) -> Array:
         """Concatenate."""
+        ...
+
+    @staticmethod
+    def empty_like(array: Array, dtype: Any = None) -> Array:
+        """Empty-like."""
         ...
 
     @staticmethod
