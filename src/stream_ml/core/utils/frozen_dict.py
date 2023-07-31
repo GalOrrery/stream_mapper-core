@@ -230,7 +230,7 @@ class FrozenDict(Mapping[K, V]):
     # ===================================================================
 
     def __str__(self) -> str:
-        s = f"{self.__class__.__name__}(" + "{\n"  # noqa: ISC003
+        s = f"{self.__class__.__name__}(" + "{\n"
         s += "\n".join(
             textwrap.indent(f"{k}: {v!s}", prefix="\t") for k, v in self.items()
         )
