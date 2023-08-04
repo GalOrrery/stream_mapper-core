@@ -265,9 +265,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
             self.xp.zeros(shape),
         )
 
-    def ln_prior(
-        self, mpars: Params[Array], data: Data[Array], current_lnp: Array | None = None
-    ) -> Array:
+    def ln_prior(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
@@ -277,14 +275,12 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
             parameters.
         data : Data[Array[(N,F)]]
             Data (phi1, phi2).
-        current_lnp : Array[(N,)] | None, optional
-            Current value of the log prior, by default `None`.
 
         Returns
         -------
         Array
         """
-        lnp: Array = self.xp.zeros(()) if current_lnp is None else current_lnp
+        lnp: Array = self.xp.zeros(())
 
         # Coordinate Bounds
         lnp = lnp + self._ln_prior_coord_bnds(data)

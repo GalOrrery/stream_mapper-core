@@ -195,9 +195,7 @@ class ModelsBase(
     # ===============================================================
     # Statistics
 
-    def ln_prior(
-        self, mpars: Params[Array], data: Data[Array], current_lnp: Array | None = None
-    ) -> Array:
+    def ln_prior(self, mpars: Params[Array], data: Data[Array]) -> Array:
         """Log prior.
 
         Parameters
@@ -207,15 +205,13 @@ class ModelsBase(
             parameters.
         data : Data[Array[(N, F)]]
             Data.
-        current_lnp : Array | None, optional
-            Current value of the log prior, by default `None`.
 
         Returns
         -------
         Array
         """
         # Loop over the components
-        lnp: Array = self.xp.zeros(()) if current_lnp is None else current_lnp
+        lnp: Array = self.xp.zeros(())
         for name, m in self.components.items():
             lnp = lnp + m.ln_prior(mpars.get_prefixed(name), data)
         # Parameter Bounds
