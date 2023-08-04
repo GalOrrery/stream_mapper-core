@@ -85,7 +85,7 @@ class Uniform(ModelBase[Array, NNModel]):
         elif self.require_where:
             raise WhereRequiredError
         else:
-            idx = self.xp.ones((len(data), len(self.coord_names)), dtype=bool)
+            idx = self.xp.ones((len(data), self.ndim), dtype=bool)
             # This has shape (N,F) so will broadcast correctly.
 
         x = data[self.coord_names].array  # (N, F)

@@ -98,7 +98,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
     priors: tuple[Prior[Array], ...] = ()
 
     # Masked data
-    require_where: bool = False
+    require_where: bool = True
 
     def __new__(
         cls: type[Self],
@@ -146,7 +146,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         # we can't check that the names are the same, because they aren't.
         # TODO: better way to ensure that
         kcen = self.coord_err_names
-        if kcen is not None and len(kcen) != len(self.coord_names):
+        if kcen is not None and len(kcen) != self.ndim:
             msg = (
                 f"`coord_err_names` ({kcen}) must be None or "
                 f"the same length as `coord_names` ({self.coord_names})."
