@@ -55,7 +55,7 @@ class TruncatedSkewNormal(SkewNormal[Array, NNModel]):
         # 'where' is not provided, then all data points are assumed to be
         # available.
         if where is not None:
-            idx = where[tuple(self.coord_bounds.keys())].array
+            idx = where[self.coord_names].array
         elif self.require_where:
             raise WhereRequiredError
         else:

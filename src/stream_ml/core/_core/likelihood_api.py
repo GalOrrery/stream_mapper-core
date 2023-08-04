@@ -37,13 +37,7 @@ class LnProbabilities(Protocol[Array]):
         """
         ...
 
-    def ln_prior(
-        self,
-        mpars: Params[Array],
-        /,
-        data: Data[Array],
-        current_lnp: Array | None = None,
-    ) -> Array:
+    def ln_prior(self, mpars: Params[Array], /, data: Data[Array]) -> Array:
         r"""Elementwise log prior :math:`\ln p(\theta)`.
 
         Parameters
@@ -52,8 +46,6 @@ class LnProbabilities(Protocol[Array]):
             Model parameters.
         data : Data[Array[(N, F)]]
             Data.
-        current_lnp : Array[(N,)] | None, optional
-            Current value of the log prior, by default `None`.
 
         Returns
         -------
@@ -207,13 +199,7 @@ class Probabilities(LnProbabilities[Array], SupportsXP[Array], Protocol[Array]):
         """
         return self.xp.exp(self.ln_likelihood(mpars, data, **kwargs))
 
-    def prior(
-        self,
-        mpars: Params[Array],
-        /,
-        data: Data[Array],
-        current_lnp: Array | None = None,
-    ) -> Array:
+    def prior(self, mpars: Params[Array], /, data: Data[Array]) -> Array:
         """Elementwise prior.
 
         Parameters
@@ -222,14 +208,12 @@ class Probabilities(LnProbabilities[Array], SupportsXP[Array], Protocol[Array]):
             Model parameters.
         data : Data[Array[(N, F)]]
             Data.
-        current_lnp : Array[(N,)] | None, optional
-            Current value of the log prior, by default `None`.
 
         Returns
         -------
         Array[(N,)]
         """
-        return self.xp.exp(self.ln_prior(mpars, data, current_lnp))
+        return self.xp.exp(self.ln_prior(mpars, data))
 
     def evidence(self, data: Data[Array]) -> Array:
         """Evidence.
