@@ -156,7 +156,7 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         # Parameters must be a subset of the `coord_names`.
         if not set(self.params.keys()).issubset(self.coord_names):
             msg = (
-                f"`params` ({self.params.keys()}) must be a subset of "
+                f"`params` ({tuple(self.params.keys())}) must be a subset of "
                 f"`coord_names` ({self.coord_names})."
             )
             raise ValueError(msg)
@@ -280,10 +280,8 @@ class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
         -------
         Array
         """
-        lnp: Array = self.xp.zeros(())
-
         # Coordinate Bounds
-        lnp = lnp + self._ln_prior_coord_bnds(data)
+        lnp = self._ln_prior_coord_bnds(data)
         # Parameter Bounds
         for p in self.params.flatvalues():
             lnp = lnp + p.bounds.logpdf(mpars, data, self, lnp)
