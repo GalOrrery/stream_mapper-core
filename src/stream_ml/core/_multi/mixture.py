@@ -39,6 +39,8 @@ class ComponentAllProbabilities(
         mpars: Params[Array],
         /,
         data: Data[Array],
+        *,
+        where: Data[Array] | None = None,
         **kwargs: Array,
     ) -> Array:
         """Log-likelihood of a component, including the weight.
@@ -53,6 +55,9 @@ class ComponentAllProbabilities(
         data : Data[Array], positional-only
             Data.
 
+        where : Data[Array], optional keyword-only
+            Where to evaluate the log-likelihood. If not provided, then the
+            log-likelihood is evaluated at all data points.
         **kwargs : Array
             Additional arguments, passed to the component's
             :meth:`~stream_ml.core.ModelAPI.ln_likelihood``.
@@ -64,6 +69,7 @@ class ComponentAllProbabilities(
         return self[component].ln_likelihood(
             mpars.get_prefixed(component),
             data,
+            where=where,
             **get_prefixed_kwargs(component, kwargs),
         ) + self.xp.log(mpars[(f"{component}.weight",)])
 
@@ -110,6 +116,8 @@ class ComponentAllProbabilities(
         mpars: Params[Array],
         /,
         data: Data[Array],
+        *,
+        where: Data[Array] | None = None,
         **kwargs: Array,
     ) -> Array:
         """Log-posterior of a component, including the weight.
@@ -124,6 +132,9 @@ class ComponentAllProbabilities(
         data : Data[Array], positional-only
             Data.
 
+        where : Data[Array], optional keyword-only
+            Where to evaluate the log-likelihood. If not provided, then the
+            log-likelihood is evaluated at all data points.
         **kwargs : Array
             Additional arguments, passed to the component's
             :meth:`~stream_ml.core.ModelAPI.ln_likelihood``.
@@ -135,6 +146,7 @@ class ComponentAllProbabilities(
         return self[component].ln_posterior(
             mpars.get_prefixed(component),
             data,
+            where=where,
             **get_prefixed_kwargs(component, kwargs),
         ) + self.xp.log(mpars[(f"{component}.weight",)])
 
@@ -146,6 +158,8 @@ class ComponentAllProbabilities(
         mpars: Params[Array],
         /,
         data: Data[Array],
+        *,
+        where: Data[Array] | None = None,
         **kwargs: Array,
     ) -> Array:
         """Sum of the component log-likelihood, including the weight.
@@ -160,6 +174,9 @@ class ComponentAllProbabilities(
         data : Data[Array], positional-only
             Data.
 
+        where : Data[Array], optional keyword-only
+            Where to evaluate the log-likelihood. If not provided, then the
+            log-likelihood is evaluated at all data points.
         **kwargs : Array
             Additional arguments, passed to the component's
             :meth:`~stream_ml.core.ModelAPI.ln_likelihood``.
@@ -169,7 +186,7 @@ class ComponentAllProbabilities(
         Array
         """
         return self.xp.sum(
-            self.component_ln_likelihood(component, mpars, data, **kwargs)
+            self.component_ln_likelihood(component, mpars, data, where=where, **kwargs)
         )
 
     def component_ln_prior_tot(
@@ -215,6 +232,8 @@ class ComponentAllProbabilities(
         mpars: Params[Array],
         /,
         data: Data[Array],
+        *,
+        where: Data[Array] | None = None,
         **kwargs: Array,
     ) -> Array:
         """Sum of the component log-posterior, including the weight.
@@ -229,6 +248,9 @@ class ComponentAllProbabilities(
         data : Data[Array], positional-only
             Data.
 
+        where : Data[Array], optional keyword-only
+            Where to evaluate the log-likelihood. If not provided, then the
+            log-likelihood is evaluated at all data points.
         **kwargs : Array
             Additional arguments, passed to the component's
             :meth:`~stream_ml.core.ModelAPI.ln_likelihood``.
@@ -238,13 +260,19 @@ class ComponentAllProbabilities(
         Array
         """
         return self.xp.sum(
-            self.component_ln_posterior(component, mpars, data, **kwargs)
+            self.component_ln_posterior(component, mpars, data, where=where, **kwargs)
         )
 
     # ----------------------------------------------------------------
 
     def component_likelihood(
-        self, component: str, mpars: Params[Array], data: Data[Array], **kwargs: Array
+        self,
+        component: str,
+        mpars: Params[Array],
+        data: Data[Array],
+        *,
+        where: Data[Array] | None = None,
+        **kwargs: Array,
     ) -> Array:
         """Likelihood of a component, including the weight.
 
@@ -258,6 +286,9 @@ class ComponentAllProbabilities(
         data : Data[Array], positional-only
             Data.
 
+        where : Data[Array], optional keyword-only
+            Where to evaluate the log-likelihood. If not provided, then the
+            log-likelihood is evaluated at all data points.
         **kwargs : Array
             Additional arguments, passed to the component's
             :meth:`~stream_ml.core.ModelAPI.ln_likelihood``.
@@ -267,7 +298,7 @@ class ComponentAllProbabilities(
         Array
         """
         return self.xp.exp(
-            self.component_ln_likelihood(component, mpars, data, **kwargs)
+            self.component_ln_likelihood(component, mpars, data, where=where, **kwargs)
         )
 
     def component_prior(
@@ -312,7 +343,13 @@ class ComponentAllProbabilities(
         return self.xp.exp(self.component_ln_evidence(component, data))
 
     def component_posterior(
-        self, component: str, mpars: Params[Array], data: Data[Array], **kwargs: Array
+        self,
+        component: str,
+        mpars: Params[Array],
+        data: Data[Array],
+        *,
+        where: Data[Array] | None = None,
+        **kwargs: Array,
     ) -> Array:
         """Posterior of a component, including the weight.
 
@@ -326,6 +363,9 @@ class ComponentAllProbabilities(
         data : Data[Array], positional-only
             Data.
 
+        where : Data[Array], optional keyword-only
+            Where to evaluate the log-likelihood. If not provided, then the
+            log-likelihood is evaluated at all data points.
         **kwargs : Array
             Additional arguments, passed to the component's
             :meth:`~stream_ml.core.ModelAPI.ln_likelihood``.
@@ -335,13 +375,19 @@ class ComponentAllProbabilities(
         Array
         """
         return self.xp.exp(
-            self.component_ln_posterior(component, mpars, data, **kwargs)
+            self.component_ln_posterior(component, mpars, data, where=where, **kwargs)
         )
 
     # ----------------------------------------------------------------
 
     def component_likelihood_tot(
-        self, component: str, mpars: Params[Array], data: Data[Array], **kwargs: Array
+        self,
+        component: str,
+        mpars: Params[Array],
+        data: Data[Array],
+        *,
+        where: Data[Array] | None = None,
+        **kwargs: Array,
     ) -> Array:
         """Sum of the component likelihood, including the weight.
 
@@ -355,6 +401,9 @@ class ComponentAllProbabilities(
         data : Data[Array], positional-only
             Data.
 
+        where : Data[Array], optional keyword-only
+            Where to evaluate the log-likelihood. If not provided, then the
+            log-likelihood is evaluated at all data points.
         **kwargs : Array
             Additional arguments, passed to the component's
             :meth:`~stream_ml.core.ModelAPI.ln_likelihood``.
@@ -363,7 +412,9 @@ class ComponentAllProbabilities(
         -------
         Array
         """
-        return self.xp.sum(self.component_likelihood(component, mpars, data, **kwargs))
+        return self.xp.sum(
+            self.component_likelihood(component, mpars, data, where=where, **kwargs)
+        )
 
     def component_prior_tot(
         self, component: str, mpars: Params[Array], data: Data[Array]
@@ -403,7 +454,13 @@ class ComponentAllProbabilities(
         return self.xp.sum(self.component_evidence(component, data))
 
     def component_posterior_tot(
-        self, component: str, mpars: Params[Array], data: Data[Array], **kwargs: Array
+        self,
+        component: str,
+        mpars: Params[Array],
+        data: Data[Array],
+        *,
+        where: Data[Array] | None = None,
+        **kwargs: Array,
     ) -> Array:
         """Sum of the component posterior, including the weight.
 
@@ -417,6 +474,9 @@ class ComponentAllProbabilities(
         data : Data[Array], positional-only
             Data.
 
+        where : Data[Array], optional keyword-only
+            Where to evaluate the log-likelihood. If not provided, then the
+            log-likelihood is evaluated at all data points.
         **kwargs : Array
             Additional arguments, passed to the component's
             :meth:`~stream_ml.core.ModelAPI.ln_likelihood``.
@@ -425,7 +485,9 @@ class ComponentAllProbabilities(
         -------
         Array
         """
-        return self.xp.sum(self.component_posterior(component, mpars, data, **kwargs))
+        return self.xp.sum(
+            self.component_posterior(component, mpars, data, where=where, **kwargs)
+        )
 
 
 # ============================================================================
@@ -614,7 +676,13 @@ class MixtureModel(
     # ===============================================================
 
     def ln_likelihood(
-        self, mpars: Params[Array], /, data: Data[Array], **kwargs: Array
+        self,
+        mpars: Params[Array],
+        /,
+        data: Data[Array],
+        *,
+        where: Data[Array] | None = None,
+        **kwargs: Array,
     ) -> Array:
         """Log likelihood.
 
@@ -628,6 +696,10 @@ class MixtureModel(
             parameters.
         data : (N, F) Data[Array]
             Data.
+
+        where : Data[Array], optional keyword-only
+            Where to evaluate the log-likelihood. If not provided, then the
+            log-likelihood is evaluated at all data points.
         **kwargs : Array
             Additional arguments.
 
@@ -637,8 +709,8 @@ class MixtureModel(
         """
         # Get the parameters for each model, stripping the model name,
         # and use that to evaluate the log likelihood for the model.
-        lnliks = (
-            self.component_ln_likelihood(name, mpars, data, **kwargs)  # (N,)
+        lnliks = (  # (N,)
+            self.component_ln_likelihood(name, mpars, data, where=where, **kwargs)
             for name in self.components
         )
         # Sum over the models, keeping the data dimension

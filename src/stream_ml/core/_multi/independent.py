@@ -193,7 +193,13 @@ class IndependentModels(ModelsBase[Array, NNModel]):
     # Statistics
 
     def ln_likelihood(
-        self, mpars: Params[Array], /, data: Data[Array], **kwargs: Array
+        self,
+        mpars: Params[Array],
+        /,
+        data: Data[Array],
+        *,
+        where: Data[Array] | None = None,
+        **kwargs: Array,
     ) -> Array:
         """Log likelihood.
 
@@ -206,6 +212,10 @@ class IndependentModels(ModelsBase[Array, NNModel]):
             parameters.
         data : Data[Array]
             Data.
+
+        where : Data[Array], optional keyword-only
+            Where to evaluate the log-likelihood. If not provided, then the
+            log-likelihood is evaluated at all data points.
         **kwargs : Array
             Additional arguments.
 
@@ -216,6 +226,9 @@ class IndependentModels(ModelsBase[Array, NNModel]):
         lnlik: Array = self.xp.zeros(())
         for name, m in self.components.items():
             lnlik = lnlik + m.ln_likelihood(
-                mpars.get_prefixed(name), data, **get_prefixed_kwargs(name, kwargs)
+                mpars.get_prefixed(name),
+                data,
+                where=where,
+                **get_prefixed_kwargs(name, kwargs),
             )
         return lnlik

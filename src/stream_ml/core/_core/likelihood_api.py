@@ -18,7 +18,13 @@ class LnProbabilities(Protocol[Array]):
     """Protocol for objects that support probabilities."""
 
     def ln_likelihood(
-        self, mpars: Params[Array], /, data: Data[Array], **kwargs: Any
+        self,
+        mpars: Params[Array],
+        /,
+        data: Data[Array],
+        *,
+        where: Data[Array] | None = None,
+        **kwargs: Any,
     ) -> Array:
         r"""Elementwise log-likelihood :math:`\ln p(X | \theta)`.
 
@@ -28,6 +34,10 @@ class LnProbabilities(Protocol[Array]):
             Model parameters.
         data : Data[Array[(N, F)]]
             Data.
+
+        where : Data[Array], optional keyword-only
+            Where to evaluate the log-likelihood. If not provided, then the
+            log-likelihood is evaluated at all data points.
         **kwargs : Any
             Additional arguments.
 
@@ -68,7 +78,13 @@ class LnProbabilities(Protocol[Array]):
         ...
 
     def ln_posterior(
-        self, mpars: Params[Array], /, data: Data[Array], **kw: Array
+        self,
+        mpars: Params[Array],
+        /,
+        data: Data[Array],
+        *,
+        where: Data[Array] | None = None,
+        **kwargs: Array,
     ) -> Array:
         r"""Elementwise log posterior  :math:`\ln p(\theta | X)`.
 
@@ -80,7 +96,11 @@ class LnProbabilities(Protocol[Array]):
             Model parameters.
         data : Data[Array[(N, F)]]
             Data.
-        **kw : Array[(N,)]
+
+        where : Data[Array], optional keyword-only
+            Where to evaluate the log-likelihood. If not provided, then the
+            log-likelihood is evaluated at all data points.
+        **kwargs : Array[(N,)]
             Arguments.
 
         Returns
@@ -88,7 +108,7 @@ class LnProbabilities(Protocol[Array]):
         Array[(N,)]
         """
         return (
-            self.ln_likelihood(mpars, data, **kw)
+            self.ln_likelihood(mpars, data, where=where, **kwargs)
             + self.ln_prior(mpars, data)
             - self.ln_evidence(data)
         )
@@ -101,7 +121,13 @@ class TotalLnProbabilities(LnProbabilities[Array], SupportsXP[Array], Protocol[A
     """Protocol for objects that support total probabilities."""
 
     def ln_likelihood_tot(
-        self, mpars: Params[Array], /, data: Data[Array], **kwargs: Array
+        self,
+        mpars: Params[Array],
+        /,
+        data: Data[Array],
+        *,
+        where: Data[Array] | None = None,
+        **kwargs: Array,
     ) -> Array:
         """Total log-likelihood.
 
@@ -113,6 +139,10 @@ class TotalLnProbabilities(LnProbabilities[Array], SupportsXP[Array], Protocol[A
             Model parameters.
         data : Data[Array[(N, F)]]
             Data.
+
+        where : Data[Array], optional keyword-only
+            Where to evaluate the log-likelihood. If not provided, then the
+            log-likelihood is evaluated at all data points.
         **kwargs : Array[(N,)]
             Additional arguments.
 
@@ -120,7 +150,7 @@ class TotalLnProbabilities(LnProbabilities[Array], SupportsXP[Array], Protocol[A
         -------
         Array[(N,)]
         """
-        return self.xp.sum(self.ln_likelihood(mpars, data, **kwargs))
+        return self.xp.sum(self.ln_likelihood(mpars, data, where=where, **kwargs))
 
     def ln_prior_tot(self, mpars: Params[Array], /, data: Data[Array]) -> Array:
         """Total log-prior over the data set.
@@ -153,7 +183,13 @@ class TotalLnProbabilities(LnProbabilities[Array], SupportsXP[Array], Protocol[A
         return self.xp.sum(self.ln_evidence(data))
 
     def ln_posterior_tot(
-        self, mpars: Params[Array], /, data: Data[Array], **kw: Array
+        self,
+        mpars: Params[Array],
+        /,
+        data: Data[Array],
+        *,
+        where: Data[Array] | None = None,
+        **kwargs: Array,
     ) -> Array:
         """Sum of the log-posterior.
 
@@ -163,14 +199,18 @@ class TotalLnProbabilities(LnProbabilities[Array], SupportsXP[Array], Protocol[A
             Model parameters.
         data : Data[Array[(N, F)]]
             Data.
-        **kw : Array[(N,)]
+
+        where : Data[Array], optional keyword-only
+            Where to evaluate the log-likelihood. If not provided, then the
+            log-likelihood is evaluated at all data points.
+        **kwargs : Array[(N,)]
             Keyword arguments. These are passed to the likelihood function.
 
         Returns
         -------
         Array[(N,)]
         """
-        return self.xp.sum(self.ln_posterior(mpars, data, **kw))
+        return self.xp.sum(self.ln_posterior(mpars, data, where=where, **kwargs))
 
 
 # ============================================================================
@@ -180,7 +220,13 @@ class Probabilities(LnProbabilities[Array], SupportsXP[Array], Protocol[Array]):
     """Protocol for objects that support probabilities."""
 
     def likelihood(
-        self, mpars: Params[Array], /, data: Data[Array], **kwargs: Array
+        self,
+        mpars: Params[Array],
+        /,
+        data: Data[Array],
+        *,
+        where: Data[Array] | None = None,
+        **kwargs: Array,
     ) -> Array:
         """Elementwise likelihood of the model.
 
@@ -190,6 +236,10 @@ class Probabilities(LnProbabilities[Array], SupportsXP[Array], Protocol[Array]):
             Model parameters.
         data : Data[Array[(N, F)]]
             Data.
+
+        where : Data[Array], optional keyword-only
+            Where to evaluate the log-likelihood. If not provided, then the
+            log-likelihood is evaluated at all data points.
         **kwargs : Array[(N,)]
             Additional arguments.
 
@@ -197,7 +247,7 @@ class Probabilities(LnProbabilities[Array], SupportsXP[Array], Protocol[Array]):
         -------
         Array[(N,)]
         """
-        return self.xp.exp(self.ln_likelihood(mpars, data, **kwargs))
+        return self.xp.exp(self.ln_likelihood(mpars, data, where=where, **kwargs))
 
     def prior(self, mpars: Params[Array], /, data: Data[Array]) -> Array:
         """Elementwise prior.
@@ -230,7 +280,13 @@ class Probabilities(LnProbabilities[Array], SupportsXP[Array], Protocol[Array]):
         return self.xp.exp(self.ln_evidence(data))
 
     def posterior(
-        self, mpars: Params[Array], /, data: Data[Array], **kw: Array
+        self,
+        mpars: Params[Array],
+        /,
+        data: Data[Array],
+        *,
+        where: Data[Array] | None = None,
+        **kwargs: Array,
     ) -> Array:
         """Elementwise posterior.
 
@@ -240,14 +296,18 @@ class Probabilities(LnProbabilities[Array], SupportsXP[Array], Protocol[Array]):
             Model parameters.
         data : Data[Array[(N, F)]]
             Data.
-        **kw : Array[(N,)]
+
+        where : Data[Array], optional keyword-only
+            Where to evaluate the log-likelihood. If not provided, then the
+            log-likelihood is evaluated at all data points.
+        **kwargs : Array[(N,)]
             Arguments.
 
         Returns
         -------
         Array[(N,)]
         """
-        return self.xp.exp(self.ln_posterior(mpars, data, **kw))
+        return self.xp.exp(self.ln_posterior(mpars, data, where=where, **kwargs))
 
 
 # ============================================================================
@@ -259,7 +319,13 @@ class TotalProbabilities(
     """Protocol for objects that support total probabilities."""
 
     def likelihood_tot(
-        self, mpars: Params[Array], /, data: Data[Array], **kwargs: Array
+        self,
+        mpars: Params[Array],
+        /,
+        data: Data[Array],
+        *,
+        where: Data[Array] | None = None,
+        **kwargs: Array,
     ) -> Array:
         """Total likelihood, evaluated over the entire data set.
 
@@ -269,6 +335,10 @@ class TotalProbabilities(
             Model parameters.
         data : Data[Array[(N, F)]]
             Data.
+
+        where : Data[Array], optional keyword-only
+            Where to evaluate the log-likelihood. If not provided, then the
+            log-likelihood is evaluated at all data points.
         **kwargs : Array[(N,)]
             Additional arguments.
 
@@ -276,7 +346,7 @@ class TotalProbabilities(
         -------
         Array[(N,)]
         """
-        return self.xp.exp(self.ln_likelihood_tot(mpars, data, **kwargs))
+        return self.xp.exp(self.ln_likelihood_tot(mpars, data, where=where, **kwargs))
 
     def prior_tot(self, mpars: Params[Array], /, data: Data[Array]) -> Array:
         """Total prior, evaluated over the entire data set.
@@ -309,7 +379,13 @@ class TotalProbabilities(
         return self.xp.exp(self.ln_evidence_tot(data))
 
     def posterior_tot(
-        self, mpars: Params[Array], /, data: Data[Array], **kw: Array
+        self,
+        mpars: Params[Array],
+        /,
+        data: Data[Array],
+        *,
+        where: Data[Array] | None = None,
+        **kwargs: Array,
     ) -> Array:
         """Total posterior, evaluated over the entire data set.
 
@@ -319,14 +395,18 @@ class TotalProbabilities(
             Model parameters.
         data : Data[Array[(N, F)]]
             Data.
-        **kw : Array[(N,)]
+
+        where : Data[Array], optional keyword-only
+            Where to evaluate the log-likelihood. If not provided, then the
+            log-likelihood is evaluated at all data points.
+        **kwargs : Array[(N,)]
             Keyword arguments. These are passed to the likelihood function.
 
         Returns
         -------
         Array[(N,)]
         """
-        return self.xp.exp(self.ln_posterior_tot(mpars, data, **kw))
+        return self.xp.exp(self.ln_posterior_tot(mpars, data, where=where, **kwargs))
 
 
 # ============================================================================
