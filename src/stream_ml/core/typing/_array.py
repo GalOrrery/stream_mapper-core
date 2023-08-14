@@ -96,19 +96,19 @@ class ArrayLike(Protocol):
     # ========================================================================
     # Math
 
-    def __add__(self: Self, other: ArrayLike | int | float) -> Self:
+    def __add__(self: Self, other: ArrayLike | float) -> Self:
         """Addition."""
         ...
 
-    def __radd__(self: Self, other: ArrayLike | int | float) -> Self:
+    def __radd__(self: Self, other: ArrayLike | float) -> Self:
         """Right addition."""
         ...
 
-    def __mul__(self: Self, other: ArrayLike | int | float) -> Self:
+    def __mul__(self: Self, other: ArrayLike | float) -> Self:
         """Multiplication."""
         ...
 
-    def __rmul__(self: Self, other: ArrayLike | int | float) -> Self:
+    def __rmul__(self: Self, other: ArrayLike | float) -> Self:
         """Multiplication."""
         ...
 
@@ -116,23 +116,23 @@ class ArrayLike(Protocol):
         """Negation."""
         ...
 
-    def __sub__(self: Self, other: ArrayLike | int | float) -> Self:
+    def __sub__(self: Self, other: ArrayLike | float) -> Self:
         """Subtraction."""
         ...
 
-    def __rsub__(self: Self, other: ArrayLike | int | float) -> Self:
+    def __rsub__(self: Self, other: ArrayLike | float) -> Self:
         """Right subtraction."""
         ...
 
-    def __truediv__(self: Self, other: ArrayLike | int | float) -> Self:
+    def __truediv__(self: Self, other: ArrayLike | float) -> Self:
         """True division."""
         ...
 
-    def __rtruediv__(self: Self, other: ArrayLike | int | float) -> Self:
+    def __rtruediv__(self: Self, other: ArrayLike | float) -> Self:
         """Right true division."""
         ...
 
-    def __pow__(self: Self, other: ArrayLike | int | float) -> Self:
+    def __pow__(self: Self, other: ArrayLike | float) -> Self:
         """Power."""
         ...
 
