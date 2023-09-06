@@ -19,6 +19,11 @@ class ArrayNamespace(Protocol[Array]):
     """Protocol for array API namespace."""
 
     @property
+    def __name__(self) -> str:  # noqa: A003
+        """Name of the namespace."""
+        ...
+
+    @property
     def special(self) -> ArraySpecialNamespace[Array]:
         """Special namespace."""
         ...

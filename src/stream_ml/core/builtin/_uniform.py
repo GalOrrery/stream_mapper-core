@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from stream_ml.core.params import Params
 
 
-@dataclass
+@dataclass(repr=False)
 class Uniform(ModelBase[Array, NNModel]):
     """Uniform background model."""
 

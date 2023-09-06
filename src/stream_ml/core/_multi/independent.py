@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from stream_ml.core.utils.frozen_dict import FrozenDict
 
 
-@dataclass(unsafe_hash=True)
+@dataclass(unsafe_hash=True, repr=False)
 class IndependentModels(ModelsBase[Array, NNModel]):
     """Composite of a few models that acts like one model.
 

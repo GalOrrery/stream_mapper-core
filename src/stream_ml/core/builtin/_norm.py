@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from stream_ml.core.params import Params
 
 
-@dataclass
+@dataclass(repr=False)
 class Normal(ModelBase[Array, NNModel]):
     r"""Univariate Gaussian.
 

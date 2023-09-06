@@ -42,7 +42,7 @@ class ForwardHook(Protocol[Array]):
         ...
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, repr=False)
 class FunctionPrior(Prior[Array]):
     """Prior with custom function hooks."""
 

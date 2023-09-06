@@ -493,7 +493,7 @@ class ComponentAllProbabilities(
 # ============================================================================
 
 
-@dataclass
+@dataclass(repr=False)
 class MixtureModel(
     ModelsBase[Array, NNModel], ComponentAllProbabilities[Array, NNModel]
 ):
