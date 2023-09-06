@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from stream_ml.core.params import Params
 
 
-@dataclass
+@dataclass(repr=False)
 class SkewNormal(Normal[Array, NNModel]):
     r"""1D Gaussian with mixture weight.
 

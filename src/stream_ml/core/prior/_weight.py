@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from stream_ml.core.typing import NNModel
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, repr=False)
 class HardThreshold(Prior[Array]):
     """Threshold prior.
 

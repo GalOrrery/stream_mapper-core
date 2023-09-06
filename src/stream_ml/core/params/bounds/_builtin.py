@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     Self = TypeVar("Self", bound="ParameterBounds")  # type: ignore[type-arg]
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, repr=False)
 class NoBounds(ParameterBounds[Array]):
     """No bounds."""
 
@@ -58,7 +58,7 @@ class NoBounds(ParameterBounds[Array]):
         return pred
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, repr=False)
 class ClippedBounds(ParameterBounds[Array]):
     """Clipped bounds."""
 

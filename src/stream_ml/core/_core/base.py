@@ -17,6 +17,7 @@ from stream_ml.core.params._field import ModelParametersField
 from stream_ml.core.params._values import Params, freeze_params, set_param
 from stream_ml.core.setup_package import CompiledShim
 from stream_ml.core.typing import Array, ArrayNamespace, BoundsT, NNModel
+from stream_ml.core.utils.dataclasses import ArrayNamespaceReprMixin
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 from stream_ml.core.utils.funcs import within_bounds
 from stream_ml.core.utils.scale._api import DataScaler  # noqa: TCH001
@@ -32,8 +33,13 @@ if TYPE_CHECKING:
 #####################################################################
 
 
-@dataclass(unsafe_hash=True)
-class ModelBase(Model[Array, NNModel], CompiledShim, metaclass=ABCMeta):
+@dataclass(unsafe_hash=True, repr=False)
+class ModelBase(
+    Model[Array, NNModel],
+    ArrayNamespaceReprMixin[Array],
+    CompiledShim,
+    metaclass=ABCMeta,
+):
     """Single-model base class.
 
     Parameters

@@ -12,6 +12,7 @@ from stream_ml.core._api import SupportsXP
 from stream_ml.core.params.scaler import ParamScaler  # noqa: TCH001
 from stream_ml.core.typing import Array, ArrayNamespace, ParamNameTupleOpts
 from stream_ml.core.utils.compat import array_at
+from stream_ml.core.utils.dataclasses import ArrayNamespaceReprMixin
 from stream_ml.core.utils.funcs import within_bounds
 
 if TYPE_CHECKING:
@@ -25,8 +26,10 @@ if TYPE_CHECKING:
     Self = TypeVar("Self", bound="ParameterBounds")  # type: ignore[type-arg]
 
 
-@dataclass(frozen=True)
-class ParameterBounds(SupportsXP[Array], metaclass=ABCMeta):
+@dataclass(frozen=True, repr=False)
+class ParameterBounds(
+    ArrayNamespaceReprMixin[Array], SupportsXP[Array], metaclass=ABCMeta
+):
     """Base class for prior bounds."""
 
     lower: Array | float

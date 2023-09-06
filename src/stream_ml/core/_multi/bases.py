@@ -56,7 +56,7 @@ class SupportsComponentGetItem(Protocol[Array, NNModel]):
 # ========================================================================
 
 
-@dataclass
+@dataclass(repr=False)
 class ModelsBase(
     Model[Array, NNModel],
     Mapping[str, Model[Array, NNModel]],

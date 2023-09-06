@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, TypeVar
 
 from stream_ml.core._api import SupportsXP
 from stream_ml.core.typing import Array
+from stream_ml.core.utils.dataclasses import ArrayNamespaceReprMixin
 
 if TYPE_CHECKING:
     from stream_ml.core._core.model_api import Model
@@ -21,8 +22,8 @@ if TYPE_CHECKING:
 Self = TypeVar("Self", bound="Prior[Array]")  # type: ignore[valid-type]
 
 
-@dataclass(frozen=True)
-class Prior(SupportsXP[Array], metaclass=ABCMeta):
+@dataclass(frozen=True, repr=False)
+class Prior(ArrayNamespaceReprMixin[Array], SupportsXP[Array], metaclass=ABCMeta):
     """Prior."""
 
     _: KW_ONLY

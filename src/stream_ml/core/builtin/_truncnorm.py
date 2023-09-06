@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from stream_ml.core.params import Params
 
 
-@dataclass
+@dataclass(repr=False)
 class TruncatedNormal(Normal[Array, NNModel]):
     r"""Truncated Univariate Gaussian.
 
