@@ -9,7 +9,7 @@ from mypy_extensions import trait
 
 from stream_ml.core._data import Data
 
-WEIGHT_NAME: Final = "weight"
+WEIGHT_NAME: Final = "ln-weight"
 BACKGROUND_KEY: Final = "background"
 PACK_PARAM_JOIN: Final = "_"
 IS_COMPILED = hasattr(Data, "__mypyc_attrs__")
