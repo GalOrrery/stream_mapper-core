@@ -115,7 +115,7 @@ class HardThreshold(Prior[Array]):
         return array_at(lnp, where).set(-self.xp.inf)
 
     def __call__(
-        self, pred: Array, data: Data[Array], model: ModelsBase[Array, NNModel]  # type: ignore[override]  # noqa: E501
+        self, pred: Array, data: Data[Array], model: ModelsBase[Array, NNModel]  # type: ignore[override]
     ) -> Array:
         """Evaluate the forward step in the prior.
 

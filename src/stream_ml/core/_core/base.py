@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from stream_ml.core.prior import Prior
     from stream_ml.core.typing import ParamNameAllOpts, ParamsLikeDict
 
-    Self = TypeVar("Self", bound="ModelBase[Array, NNModel]")  # type: ignore[valid-type]  # noqa: E501
+    Self = TypeVar("Self", bound="ModelBase[Array, NNModel]")  # type: ignore[valid-type]
 
 
 #####################################################################
