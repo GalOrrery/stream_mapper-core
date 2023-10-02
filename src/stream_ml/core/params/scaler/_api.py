@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from stream_ml.core.utils.scale import DataScaler
 
 T = TypeVar("T", bound=str | EllipsisType)
-ParamScalerT = TypeVar("ParamScalerT", bound="ParamScaler[Array]")  # type: ignore[valid-type]  # noqa: E501
+ParamScalerT = TypeVar("ParamScalerT", bound="ParamScaler[Array]")  # type: ignore[valid-type]
 
 
 @runtime_checkable

@@ -20,14 +20,14 @@ if TYPE_CHECKING:
     from stream_ml.core.utils.scale import DataScaler
 
 T = TypeVar("T", bound=str | EllipsisType)
-ParamScalerT = TypeVar("ParamScalerT", bound="ParamScaler[Array]")  # type: ignore[valid-type]  # noqa: E501
+ParamScalerT = TypeVar("ParamScalerT", bound="ParamScaler[Array]")  # type: ignore[valid-type]
 
 
 @dataclass(frozen=True, slots=True)
 class Identity(ParamScaler[Array]):
     """Identity scaler."""
 
-    def transform(self, data: Array | float, /) -> Array | float:  # type: ignore[override]  # noqa: E501
+    def transform(self, data: Array | float, /) -> Array | float:  # type: ignore[override]
         """Transform the data."""
         return data
 
@@ -163,7 +163,7 @@ class StandardLnWidth(ParamScaler[Array]):
 
     ln_scale: Array | float
 
-    def transform(self, ln_width: Array | float, /) -> Array | float:  # type: ignore[override]  # noqa: E501
+    def transform(self, ln_width: Array | float, /) -> Array | float:  # type: ignore[override]
         """Transform the ln_width."""
         return ln_width - self.ln_scale
 

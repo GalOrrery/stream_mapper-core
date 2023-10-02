@@ -32,4 +32,4 @@ def standard_scaler_astype_numpy(
     )
 
 
-ASTYPE_REGISTRY[(StandardScaler, np.ndarray)] = standard_scaler_astype_numpy  # type: ignore[assignment]  # noqa: E501
+ASTYPE_REGISTRY[(StandardScaler, np.ndarray)] = standard_scaler_astype_numpy  # type: ignore[assignment]

@@ -282,7 +282,7 @@ class Data(Generic[Array]):
                 [9]]]), names=('a', 'b'))
         """
         if isinstance(key, int):  # get a row
-            return type(self)(self.array[None, key, :], names=self.names)  # type: ignore[index]  # noqa: E501
+            return type(self)(self.array[None, key, :], names=self.names)  # type: ignore[index]
         elif isinstance(key, str):  # get a column
             return cast("Array", self.array[:, self._n2k[key]])  # type: ignore[index]
         elif isinstance(key, tuple):

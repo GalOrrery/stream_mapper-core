@@ -28,7 +28,7 @@ class StandardScaler(DataScaler[Array]):
 
     def __post_init__(self) -> None:
         if not isinstance(self.names, tuple):
-            object.__setattr__(self, "names", tuple(self.names))  # type: ignore[unreachable]  # noqa: E501
+            object.__setattr__(self, "names", tuple(self.names))  # type: ignore[unreachable]
 
     @classmethod
     def fit(cls, data: Any, names: tuple[str, ...]) -> StandardScaler[Array]:
