@@ -16,7 +16,7 @@ from stream_ml.core._core.model_api import Model
 from stream_ml.core.params._field import ModelParametersField
 from stream_ml.core.params._values import Params, freeze_params, set_param
 from stream_ml.core.setup_package import CompiledShim
-from stream_ml.core.typing import Array, ArrayNamespace, BoundsT, NNModel
+from stream_ml.core.typing import Array, ArrayNamespace, BoundsT, NNModel, NNNamespace
 from stream_ml.core.utils.dataclasses import ArrayNamespaceReprMixin
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
 from stream_ml.core.utils.funcs import within_bounds
@@ -139,6 +139,9 @@ class ModelBase(
         """Post-init validation."""
         super().__post_init__()
         self._mypyc_init_descriptor()  # TODO: Remove this when mypyc is fixed.
+
+        # Type hint
+        self._nn_namespace_: NNNamespace[NNModel, Array]
 
         # Coordinate bounds are necessary (before they were auto-filled).
         if self.coord_bounds.keys() != set(self.coord_names):
