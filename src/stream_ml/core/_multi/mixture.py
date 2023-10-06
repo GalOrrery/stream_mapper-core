@@ -638,10 +638,18 @@ class MixtureModel(
                 # The background weight is 1 - the other weights
                 ln_weight = self.xp.log(
                     1
-                    - self.xp.logsumexp(
-                        cast("Array", pars[f"{k}.{WEIGHT_NAME}"])
-                        for k in tuple(self.components.keys())[:-1]
-                        # skipping the background, which is the last component
+                    - self.xp.sum(
+                        self.xp.exp(
+                            self.xp.stack(
+                                tuple(
+                                    cast("Array", pars[f"{k}.{WEIGHT_NAME}"])
+                                    for k in tuple(self.components.keys())[:-1]
+                                    # bkg is the last component
+                                ),
+                                1,
+                            )
+                        ),
+                        1,
                     )
                 )
 
