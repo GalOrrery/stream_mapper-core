@@ -11,6 +11,7 @@ import textwrap
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 
 from stream_ml.core._connect.nn_namespace import NN_NAMESPACE
+from stream_ml.core._connect.xp_namespace import XP_NAMESPACE
 from stream_ml.core._core.field import NNField
 from stream_ml.core._core.model_api import Model
 from stream_ml.core.params._field import ModelParametersField
@@ -109,7 +110,7 @@ class ModelBase(
     def __new__(
         cls: type[Self],
         *args: Any,  # noqa: ARG003
-        array_namespace: ArrayNamespace[Array] | None = None,
+        array_namespace: ArrayNamespace[Array] | str | None = None,
         **kwargs: Any,  # noqa: ARG003
     ) -> Self:
         # Construct the dataclass. Need to use `__new__` to ensure that the
@@ -122,11 +123,13 @@ class ModelBase(
 
         # Ensure that the array and nn namespaces are available to the dataclass
         # descriptor fields.
-        xp: ArrayNamespace[Array] | None = (
-            getattr(cls, "array_namespace", None)
-            if array_namespace is None
-            else array_namespace
-        )
+        xp: ArrayNamespace[Array] | None = XP_NAMESPACE[
+            (
+                getattr(cls, "array_namespace", None)
+                if array_namespace is None
+                else array_namespace
+            )
+        ]
         if xp is None:
             msg = f"Model {cls} requires array_namespace"
             raise TypeError(msg)
@@ -139,6 +142,14 @@ class ModelBase(
         """Post-init validation."""
         super().__post_init__()
         self._mypyc_init_descriptor()  # TODO: Remove this when mypyc is fixed.
+
+        # Have to reset array_namespace if it's a string.
+        if isinstance(self.array_namespace, str):
+            object.__setattr__(
+                self,
+                "array_namespace",
+                XP_NAMESPACE[self.array_namespace],
+            )
 
         # Type hint
         self._nn_namespace_: NNNamespace[NNModel, Array]
