@@ -9,6 +9,7 @@ from dataclasses import KW_ONLY, InitVar, dataclass
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from stream_ml.core._api import SupportsXP
+from stream_ml.core._connect.xp_namespace import XP_NAMESPACE
 from stream_ml.core.params.scaler import ParamScaler  # noqa: TCH001
 from stream_ml.core.typing import Array, ArrayNamespace, ParamNameTupleOpts
 from stream_ml.core.utils.compat import array_at
@@ -47,18 +48,20 @@ class ParameterBounds(
     def __new__(
         cls: type[Self],
         *args: Any,  # noqa: ARG003
-        array_namespace: ArrayNamespace[Array] | None = None,
+        array_namespace: ArrayNamespace[Array] | str | None = None,
         **kwargs: Any,  # noqa: ARG003
     ) -> Self:
         # Create the instance
         self = super().__new__(cls)
 
         # Set the array namespace
-        xp: ArrayNamespace[Array] | None = (
-            getattr(cls, "array_namespace", None)
-            if array_namespace is None
-            else array_namespace
-        )
+        xp: ArrayNamespace[Array] | None = XP_NAMESPACE[
+            (
+                getattr(cls, "array_namespace", None)
+                if array_namespace is None
+                else array_namespace
+            )
+        ]
         object.__setattr__(self, "array_namespace", xp)
 
         return self
@@ -68,6 +71,12 @@ class ParameterBounds(
         if self.lower >= self.upper:
             msg = "lower must be less than upper"
             raise ValueError(msg)
+
+        # Need to convert xp if it's a string
+        if isinstance(self.array_namespace, str):
+            object.__setattr__(
+                self, "array_namespace", XP_NAMESPACE[self.array_namespace]
+            )
 
         # Scale the bounds. Note that we add and subtract eps to the bounds to
         # ensure that the bounds are not violated when the parameters are

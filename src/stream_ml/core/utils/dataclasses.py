@@ -21,7 +21,7 @@ class ArrayNamespaceReprMixin(SupportsXP[Array]):
         fs = (
             f"{f.name}={getattr(self, f.name)!r}"
             if f.name != "array_namespace"
-            else f"{f.name}={self.array_namespace.__name__!r}"
+            else f"{f.name}={(self.xp if isinstance(self.xp, str) else self.xp.__name__)!r}"  # noqa: E501
             for f in fields(self)
         )
         return f"{self.__class__.__name__}({', '.join(fs)})"

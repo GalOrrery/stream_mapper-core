@@ -9,6 +9,7 @@ from dataclasses import KW_ONLY, dataclass
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from stream_ml.core._api import SupportsXP
+from stream_ml.core._connect.xp_namespace import XP_NAMESPACE
 from stream_ml.core.typing import Array
 from stream_ml.core.utils.dataclasses import ArrayNamespaceReprMixin
 
@@ -33,18 +34,20 @@ class Prior(ArrayNamespaceReprMixin[Array], SupportsXP[Array], metaclass=ABCMeta
     def __new__(
         cls: type[Self],
         *args: Any,  # noqa: ARG003
-        array_namespace: ArrayNamespace[Array] | None = None,
+        array_namespace: ArrayNamespace[Array] | str | None = None,
         **kwargs: Any,  # noqa: ARG003
     ) -> Self:
         # Create the instance
         self = super().__new__(cls)
 
         # Set the array namespace
-        xp: ArrayNamespace[Array] | None = (
-            getattr(cls, "array_namespace", None)
-            if array_namespace is None
-            else array_namespace
-        )
+        xp: ArrayNamespace[Array] | None = XP_NAMESPACE[
+            (
+                getattr(cls, "array_namespace", None)
+                if array_namespace is None
+                else array_namespace
+            )
+        ]
         if xp is None:
             msg = f"Model {cls} requires array_namespace"
             raise TypeError(msg)
