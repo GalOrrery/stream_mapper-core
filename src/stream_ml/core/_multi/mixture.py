@@ -66,12 +66,15 @@ class ComponentAllProbabilities(
         -------
         Array
         """
-        return self[component].ln_likelihood(
-            mpars.get_prefixed(component),
-            data,
-            where=where,
-            **get_prefixed_kwargs(component, kwargs),
-        ) + self.xp.log(mpars[(f"{component}.weight",)])
+        return (
+            self[component].ln_likelihood(
+                mpars.get_prefixed(component),
+                data,
+                where=where,
+                **get_prefixed_kwargs(component, kwargs),
+            )
+            + mpars[(f"{component}.{WEIGHT_NAME}",)]
+        )
 
     def component_ln_prior(
         self, component: str, mpars: Params[Array], /, data: Data[Array]
@@ -143,12 +146,15 @@ class ComponentAllProbabilities(
         -------
         Array
         """
-        return self[component].ln_posterior(
-            mpars.get_prefixed(component),
-            data,
-            where=where,
-            **get_prefixed_kwargs(component, kwargs),
-        ) + self.xp.log(mpars[(f"{component}.weight",)])
+        return (
+            self[component].ln_posterior(
+                mpars.get_prefixed(component),
+                data,
+                where=where,
+                **get_prefixed_kwargs(component, kwargs),
+            )
+            + mpars[(f"{component}.{WEIGHT_NAME}",)]
+        )
 
     # ----------------------------------------------------------------
 
@@ -547,7 +553,7 @@ class MixtureModel(
             str, ModelParameter[Array] | FrozenDict[str, ModelParameter[Array]]
         ] = {}
         for n, m in self.components.items():
-            cps[f"{n}.weight"] = self.params[f"{n}.weight"]
+            cps[f"{n}.{WEIGHT_NAME}"] = self.params[f"{n}.{WEIGHT_NAME}"]
             cps.update({f"{n}.{k}": v for k, v in m.params.items()})
         return ModelParameters[Array](cps)
 
@@ -620,7 +626,7 @@ class MixtureModel(
         for n, m in self.components.items():  # iter thru models
             # Weight
             if n != BACKGROUND_KEY:
-                weight = arr[:, j]
+                ln_weight = arr[:, j]
             else:
                 # The background is special, because it has a weight parameter
                 # that is defined as 1 - the sum of the other weights.
@@ -630,13 +636,21 @@ class MixtureModel(
                 # any network output, rather just a placeholder.
 
                 # The background weight is 1 - the other weights
-                weight = 1 - sum(
-                    (
-                        cast("Array", pars[f"{k}.weight"])
-                        for k in tuple(self.components.keys())[:-1]
-                        # skipping the background, which is the last component
-                    ),
-                    start=self.xp.zeros(len(arr), dtype=arr.dtype),
+                ln_weight = self.xp.log(
+                    1
+                    - self.xp.sum(
+                        self.xp.exp(
+                            self.xp.stack(
+                                tuple(
+                                    cast("Array", pars[f"{k}.{WEIGHT_NAME}"])
+                                    for k in tuple(self.components.keys())[:-1]
+                                    # bkg is the last component
+                                ),
+                                1,
+                            )
+                        ),
+                        1,
+                    )
                 )
 
             j += 1  # Increment the index (weight)
@@ -648,7 +662,7 @@ class MixtureModel(
             # If there are no parameters, then just add the weight
             if delta == 0:
                 # Add the component's parameters, prefixed with the component name
-                pars[f"{n}.weight"] = weight
+                pars[f"{n}.{WEIGHT_NAME}"] = ln_weight
                 continue
 
             # Otherwise, get the relevant slice of the array
@@ -659,7 +673,7 @@ class MixtureModel(
                 add_prefix(
                     m.unpack_params(
                         marr,
-                        extras=extras_ | {WEIGHT_NAME: weight},  # pass the weight
+                        extras=extras_ | {WEIGHT_NAME: ln_weight},  # pass the weight
                         freeze=False,
                     ),
                     n + ".",

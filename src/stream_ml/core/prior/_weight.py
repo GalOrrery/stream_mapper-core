@@ -44,8 +44,8 @@ class HardThreshold(Prior[Array]):
         `"phi1"`.
     """
 
-    threshold: float = 5e-3
-    set_to: float = 1e-10
+    threshold: float = -2.5
+    set_to: float = -10
     _: KW_ONLY
     param_name: str
     coord_name: str = "phi1"
