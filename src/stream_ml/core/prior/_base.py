@@ -57,6 +57,8 @@ class Prior(ArrayNamespaceReprMixin[Array], SupportsXP[Array], metaclass=ABCMeta
 
     def __post_init__(self, *args: Any, **kwargs: Any) -> None:
         """Post-init."""
+        if isinstance(self.array_namespace, str):
+            object.__setattr__(self, "array_namespace", XP_NAMESPACE[self.xp])
 
     @abstractmethod
     def logpdf(
