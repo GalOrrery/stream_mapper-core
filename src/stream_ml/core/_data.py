@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import KW_ONLY, dataclass, field
+from copy import deepcopy
+from dataclasses import KW_ONLY, dataclass, field, fields, replace
 from textwrap import indent
 from typing import (
     TYPE_CHECKING,
@@ -395,6 +396,20 @@ class Data(Generic[Array]):
             The converted data.
         """
         return FROM_FORMAT_REGISTRY[fmt](data, **kwargs)
+
+    def __deepcopy__(self, memo: dict[int, Any]) -> Data[Array]:
+        """Deepcopy.
+
+        Need to implement since using forwarding with ``__getattr__``.
+        """
+        return replace(
+            self,
+            **{
+                f.name: deepcopy(getattr(self, f.name), memo)
+                for f in fields(self)
+                if f.init
+            },
+        )
 
 
 def _parse_key_elt(key: Any, n2k: dict[str, int]) -> KeyT:
