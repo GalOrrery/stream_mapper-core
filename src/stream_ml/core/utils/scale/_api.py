@@ -5,13 +5,17 @@ from __future__ import annotations
 __all__: list[str] = ["ASTYPE_REGISTRY"]
 # ASTYPE_REGISTRY is public in this private module.
 
-from typing import TYPE_CHECKING, Any, Protocol, cast, overload
+from typing import TYPE_CHECKING, Any, Protocol, TypeVar, cast, overload
 
 from stream_ml.core.typing import Array
 
 if TYPE_CHECKING:
+    from typing_extensions import Self
+
     from stream_ml.core._data import Data
     from stream_ml.core.typing import ArrayLike, ArrayNamespace
+
+DS = TypeVar("DS", bound="DataScaler")  # type: ignore[type-arg]
 
 
 class DataScaler(Protocol[Array]):
@@ -91,15 +95,13 @@ class DataScaler(Protocol[Array]):
 
     # ---------------------------------------------------------------
 
-    def __getitem__(
-        self: DataScaler[Array], names: str | tuple[str, ...]
-    ) -> DataScaler[Array]:
+    def __getitem__(self: Self, names: str | tuple[str, ...]) -> Self:
         """Get a subset DataScaler with the given names."""
         ...
 
     # ===============================================================
 
-    def astype(self, fmt: type[Array], /, **kwargs: Any) -> DataScaler[Array]:
+    def astype(self: DS[Any], fmt: type[Array], /, **kwargs: Any) -> DS[Array]:  # type: ignore[valid-type]
         """Convert the data to a different format.
 
         Parameters
@@ -113,9 +115,7 @@ class DataScaler(Protocol[Array]):
         -------
         DataScaler
         """
-        return cast(
-            "DataScaler[Array]", ASTYPE_REGISTRY[(type(self), fmt)](self, **kwargs)
-        )
+        return cast("DS[Array]", ASTYPE_REGISTRY[(type(self), fmt)](self, **kwargs))  # type: ignore[valid-type]
 
 
 ###############################################################################
