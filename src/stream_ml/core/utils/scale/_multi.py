@@ -146,7 +146,9 @@ class CompoundDataScaler(DataScaler[Array]):
 
     # ---------------------------------------------------------------
 
-    def __getitem__(self, names: str | tuple[str, ...]) -> DataScaler[Array]:
+    def __getitem__(  # type: ignore[override]
+        self, names: str | tuple[str, ...]
+    ) -> CompoundDataScaler[Array] | DataScaler[Array]:
         """Get a subset DataScaler with the given names."""
         names_tuple = (names,) if isinstance(names, str) else names
         scalers = tuple(
