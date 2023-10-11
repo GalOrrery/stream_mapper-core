@@ -636,21 +636,16 @@ class MixtureModel(
                 # any network output, rather just a placeholder.
 
                 # The background weight is 1 - the other weights
+                other_weights = self.xp.stack(
+                    tuple(
+                        cast("Array", pars[f"{k}.{WEIGHT_NAME}"])
+                        for k in tuple(self.components.keys())[:-1]
+                        # bkg is the last component
+                    ),
+                    1,
+                )
                 ln_weight = self.xp.log(
-                    1
-                    - self.xp.sum(
-                        self.xp.exp(
-                            self.xp.stack(
-                                tuple(
-                                    cast("Array", pars[f"{k}.{WEIGHT_NAME}"])
-                                    for k in tuple(self.components.keys())[:-1]
-                                    # bkg is the last component
-                                ),
-                                1,
-                            )
-                        ),
-                        1,
-                    )
+                    -self.xp.expm1(self.xp.special.logsumexp(other_weights, 1))
                 )
 
             j += 1  # Increment the index (weight)
