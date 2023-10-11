@@ -7,7 +7,7 @@ __all__: list[str] = []
 from abc import ABCMeta, abstractmethod
 from collections.abc import ItemsView, Iterator, KeysView, Mapping, ValuesView
 from dataclasses import KW_ONLY, dataclass, fields
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 from stream_ml.core._connect.nn_namespace import NN_NAMESPACE
 from stream_ml.core._core.model_api import Model
@@ -40,6 +40,7 @@ def _get_array_namespace(
     return ns.pop()
 
 
+@runtime_checkable
 class UnpackParamsCallable(Protocol[Array]):
     """Protocol for unpacking parameters."""
 
