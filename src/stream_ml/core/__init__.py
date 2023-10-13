@@ -9,7 +9,7 @@ from stream_ml.core._data import Data
 from stream_ml.core._multi.bases import ModelsBase
 from stream_ml.core._multi.independent import IndependentModels
 from stream_ml.core._multi.mixture import MixtureModel
-from stream_ml.core.setup_package import WEIGHT_NAME
+from stream_ml.core.setup_package import BACKGROUND_KEY, WEIGHT_NAME
 
 __all__ = [
     # classes
@@ -28,6 +28,7 @@ __all__ = [
     "NNField",
     # misc
     "WEIGHT_NAME",
+    "BACKGROUND_KEY",
 ]
 
 
