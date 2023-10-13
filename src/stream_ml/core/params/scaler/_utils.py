@@ -9,9 +9,7 @@ from typing import TYPE_CHECKING
 from stream_ml.core.params._values import freeze_params, set_param
 
 if TYPE_CHECKING:
-    from stream_ml.core._core.base import ModelBase
-    from stream_ml.core._multi.bases import ModelsBase
-    from stream_ml.core.params._values import Params
+    from stream_ml.core import ModelBase, ModelsBase, Params
     from stream_ml.core.typing import Array, NNModel
 
 

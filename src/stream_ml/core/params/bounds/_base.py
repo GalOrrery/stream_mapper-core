@@ -12,16 +12,13 @@ from stream_ml.core._api import SupportsXP
 from stream_ml.core._connect.xp_namespace import XP_NAMESPACE
 from stream_ml.core.params.scaler import ParamScaler  # noqa: TCH001
 from stream_ml.core.typing import Array, ArrayNamespace, ParamNameTupleOpts
-from stream_ml.core.utils.compat import array_at
+from stream_ml.core.utils import array_at, within_bounds
 from stream_ml.core.utils.dataclasses import ArrayNamespaceReprMixin
-from stream_ml.core.utils.funcs import within_bounds
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from stream_ml.core._core.model_api import Model
-    from stream_ml.core._data import Data
-    from stream_ml.core.params import Params
+    from stream_ml.core import Data, ModelAPI as Model, Params
     from stream_ml.core.typing import NNModel
 
     Self = TypeVar("Self", bound="ParameterBounds")  # type: ignore[type-arg]

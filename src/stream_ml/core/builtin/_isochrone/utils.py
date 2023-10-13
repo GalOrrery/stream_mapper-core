@@ -38,8 +38,7 @@ class Parallax2DistMod(SupportsXP[Array]):
         #       distmod = 5 log10(d [pc]) - 5 = -5 log10(plx [arcsec]) - 5
         #               = -5 log10(plx [mas] / 1e3) - 5
         #               = 10 - 5 log10(plx [mas])
-        # dm = 10 - 5 * xp.log10(pars["photometric.parallax"]["mu"].reshape((-1,
-        # 1)))
+        # dm = 10 - 5 * xp.log10(pars["photometric.parallax"]["mu"].reshape((-1, 1)))
         mu = self.xp.clip(pars[self.astrometric_coord]["mu"], self.neg_clip_mu)  # type: ignore[arg-type]
         dm = 10 - 5 * self.xp.log10(mu)
         ln_dm_sigma = self.xp.log(

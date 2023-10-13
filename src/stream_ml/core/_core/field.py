@@ -12,7 +12,7 @@ from stream_ml.core.typing._nn import NNModelProtocol
 from stream_ml.core.utils.sentinel import MISSING, MissingT
 
 if TYPE_CHECKING:
-    from stream_ml.core._core.model_api import Model
+    from stream_ml.core import ModelAPI as Model
 
 
 OtherValue = TypeVar("OtherValue")
