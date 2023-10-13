@@ -40,7 +40,7 @@ from collections.abc import (
     Sequence,
     ValuesView,
 )
-import textwrap
+from textwrap import indent
 from typing import Any, Generic, Protocol, TypeVar
 
 from stream_ml.core.utils.sentinel import MISSING, MissingT
@@ -230,12 +230,8 @@ class FrozenDict(Mapping[K, V]):
     # ===================================================================
 
     def __str__(self) -> str:
-        s = f"{self.__class__.__name__}(" + "{\n"
-        s += "\n".join(
-            textwrap.indent(f"{k}: {v!s}", prefix="\t") for k, v in self.items()
-        )
-        s += "\n})"
-        return s
+        fs = (indent(f"{k}: {v!s}", prefix="\t") for k, v in self.items())
+        return f"{self.__class__.__name__}(" + "{\n" + "\n".join(fs) + "\n})"
 
 
 # ===================================================================

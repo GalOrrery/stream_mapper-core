@@ -7,7 +7,7 @@ __all__: tuple[str, ...] = ()
 from abc import ABCMeta
 from dataclasses import KW_ONLY, dataclass, fields
 from functools import reduce
-import textwrap
+from textwrap import indent
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 
 from stream_ml.core._connect.nn_namespace import NN_NAMESPACE
@@ -355,10 +355,8 @@ class ModelBase(
 
     def __str__(self) -> str:
         """Return nicer string representation."""
-        s = f"{self.__class__.__name__}(\n"
-        s += "\n".join(
-            textwrap.indent(f"{f.name}: {getattr(self, f.name)!s}", prefix="\t")
+        fs = (
+            indent(f"{f.name}: {getattr(self, f.name)!s}", prefix="\t")
             for f in fields(self)
         )
-        s += "\n)"
-        return s
+        return self.__class__.__name__ + "(\n" + "\n".join(fs) + "\n)"
