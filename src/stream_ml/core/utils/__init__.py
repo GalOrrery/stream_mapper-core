@@ -1,6 +1,6 @@
 """Utilities."""
 
-__all__ = [
+__all__ = (
     # compat
     "array_at",
     "get_namespace",
@@ -13,7 +13,7 @@ __all__ = [
     "StandardScaler",
     "DataScaler",
     "names_intersect",
-]
+)
 
 from stream_ml.core.utils.compat import array_at, copy, get_namespace
 from stream_ml.core.utils.funcs import pairwise_distance, within_bounds

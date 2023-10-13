@@ -1,7 +1,7 @@
 """Core library for stream membership likelihood, with ML."""
 
 
-__all__ = ["Prior", "FunctionPrior", "HardThreshold", "ControlRegions"]
+__all__ = ("Prior", "FunctionPrior", "HardThreshold", "ControlRegions")
 
 
 from stream_ml.core.prior._base import Prior

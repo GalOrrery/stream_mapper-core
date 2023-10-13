@@ -29,7 +29,7 @@ Main changes:
 
 from __future__ import annotations
 
-__all__ = ["FrozenDict", "freeze", "unfreeze"]
+__all__ = ("FrozenDict", "freeze", "unfreeze")
 
 from collections.abc import (
     ItemsView,

@@ -12,7 +12,7 @@ from stream_ml.core._multi.mixture import MixtureModel
 from stream_ml.core.params._values import Params
 from stream_ml.core.setup_package import BACKGROUND_KEY, WEIGHT_NAME
 
-__all__ = [
+__all__ = (
     # classes
     "Data",
     "Params",
@@ -31,7 +31,7 @@ __all__ = [
     # misc
     "WEIGHT_NAME",
     "BACKGROUND_KEY",
-]
+)
 
 
 # isort: split

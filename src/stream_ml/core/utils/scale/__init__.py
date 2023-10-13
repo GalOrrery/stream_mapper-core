@@ -1,6 +1,6 @@
 """Utilities."""
 
-__all__ = ["DataScaler", "CompoundDataScaler", "StandardScaler", "names_intersect"]
+__all__ = ("DataScaler", "CompoundDataScaler", "StandardScaler", "names_intersect")
 
 from stream_ml.core.utils.scale._api import DataScaler
 from stream_ml.core.utils.scale._multi import CompoundDataScaler

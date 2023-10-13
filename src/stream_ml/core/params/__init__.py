@@ -1,6 +1,6 @@
 """Parameters."""
 
-__all__ = [
+__all__ = (
     # modules
     "bounds",
     "scaler",
@@ -17,7 +17,7 @@ __all__ = [
     # scaler api
     "ParamScaler",
     "scale_params",
-]
+)
 
 from stream_ml.core.params import bounds, scaler
 from stream_ml.core.params._collection import ModelParameters

@@ -1,6 +1,6 @@
 """Built-in models."""
 
-__all__ = [
+__all__ = (
     "Uniform",
     "Exponential",
     "Normal",
@@ -15,7 +15,7 @@ __all__ = [
     "HardCutoffMassFunction",
     "StepwiseMassFunction",
     "Parallax2DistMod",
-]
+)
 
 
 from stream_ml.core.builtin._exponential import Exponential

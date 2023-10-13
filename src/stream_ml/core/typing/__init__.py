@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-__all__ = [
+__all__ = (
     "Array",
     "Array_co",
     "ArrayLike",
@@ -11,7 +11,7 @@ __all__ = [
     "NNNamespace",
     "NNModel",
     "ParamNameTupleOpts",
-]
+)
 
 
 from typing import TypeAlias
