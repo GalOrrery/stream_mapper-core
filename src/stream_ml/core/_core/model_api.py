@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from stream_ml.core._core.likelihood_api import AllProbabilities
 
-__all__: list[str] = []
+__all__: tuple[str, ...] = ()
 
 from abc import abstractmethod
 from collections.abc import Mapping

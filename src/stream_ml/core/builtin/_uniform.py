@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from stream_ml.core.utils.compat import array_at
 
-__all__: list[str] = []
+__all__: tuple[str, ...] = ()
 
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any

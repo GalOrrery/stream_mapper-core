@@ -1,6 +1,6 @@
 """Connect array namespace to NN namespace."""
 
-__all__: list[str] = []
+__all__: tuple[str, ...] = ()
 
 from typing import Protocol, cast
 

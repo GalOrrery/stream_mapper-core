@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+__all__: tuple[str, ...] = ()
+
 from dataclasses import replace
 from typing import TYPE_CHECKING, Any
 
@@ -12,8 +14,6 @@ from stream_ml.core.utils.scale._standard import StandardScaler
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
-
-__all__: list[str] = []
 
 
 #####################################################################
