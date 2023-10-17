@@ -13,7 +13,6 @@ from stream_ml.core.params import set_param
 from stream_ml.core.typing import Array
 
 if TYPE_CHECKING:
-    from stream_ml.core.params import Params
     from stream_ml.core.typing import ArrayNamespace
 
 
@@ -31,18 +30,21 @@ class Parallax2DistMod(SupportsXP[Array]):
     neg_clip_mu: float = 1e-30
     array_namespace: ArrayNamespace[Array]
 
-    def __call__(self, pars: Params[Array], /) -> Params[Array]:
+    def __call__(
+        self, pars: dict[str, Array | dict[str, Array]], /
+    ) -> dict[str, Array | dict[str, Array]]:
         # Convert parallax (mas) to distance modulus
         # .. math::
         #       distmod = 5 log10(d [pc]) - 5 = -5 log10(plx [arcsec]) - 5
         #               = -5 log10(plx [mas] / 1e3) - 5
         #               = 10 - 5 log10(plx [mas])
-        # dm = 10 - 5 * xp.log10(pars["photometric.parallax"]["mu"].reshape((-1, 1)))
-        mu = self.xp.clip(pars[self.astrometric_coord]["mu"], self.neg_clip_mu)
+        # dm = 10 - 5 * xp.log10(pars["photometric.parallax"]["mu"].reshape((-1,
+        # 1)))
+        mu = self.xp.clip(pars[self.astrometric_coord]["mu"], self.neg_clip_mu)  # type: ignore[arg-type]
         dm = 10 - 5 * self.xp.log10(mu)
         ln_dm_sigma = self.xp.log(
             _five_over_log10
-            * self.xp.exp(pars[self.astrometric_coord]["ln-sigma"])
+            * self.xp.exp(pars[self.astrometric_coord]["ln-sigma"])  # type: ignore[arg-type]
             / mu
         )
 
