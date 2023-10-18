@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-__all__: list[str] = []
+__all__: tuple[str, ...] = ()
 
 from dataclasses import dataclass, replace
 import functools
@@ -25,13 +25,12 @@ class CompoundDataScaler(DataScaler[Array]):
 
     def __post_init__(self) -> None:
         # Check that all names are unique.
-        names = set()
+        names = set[str]()
         for scaler in self.scalers:
-            for name in scaler.names:
-                if name in names:
-                    msg = f"duplicate name: {name}"
-                    raise ValueError(msg)
-                names.add(name)
+            if names.intersection(scaler.names):
+                msg = f"duplicate name(s): {names.intersection(scaler.names)}"
+                raise ValueError(msg)
+            names.update(scaler.names)
 
         self.names: tuple[str, ...]
         object.__setattr__(

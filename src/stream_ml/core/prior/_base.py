@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-__all__: list[str] = []
+__all__: tuple[str, ...] = ()
 
 from abc import ABCMeta, abstractmethod
 from dataclasses import KW_ONLY, dataclass
@@ -14,9 +14,7 @@ from stream_ml.core.typing import Array
 from stream_ml.core.utils.dataclasses import ArrayNamespaceReprMixin
 
 if TYPE_CHECKING:
-    from stream_ml.core._core.model_api import Model
-    from stream_ml.core._data import Data
-    from stream_ml.core.params._values import Params
+    from stream_ml.core import Data, ModelAPI as Model, Params
     from stream_ml.core.typing import ArrayNamespace, NNModel
 
 

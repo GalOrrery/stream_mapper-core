@@ -2,21 +2,16 @@
 
 from __future__ import annotations
 
-__all__: list[str] = []
+__all__: tuple[str, ...] = ()
 
 from types import EllipsisType
-from typing import (
-    TYPE_CHECKING,
-    Protocol,
-    TypeVar,
-    runtime_checkable,
-)
+from typing import TYPE_CHECKING, Protocol, TypeVar, runtime_checkable
 
 from stream_ml.core.typing import Array
 
 if TYPE_CHECKING:
     from stream_ml.core.typing import ArrayNamespace
-    from stream_ml.core.utils.scale import DataScaler
+    from stream_ml.core.utils import DataScaler
 
 T = TypeVar("T", bound=str | EllipsisType)
 ParamScalerT = TypeVar("ParamScalerT", bound="ParamScaler[Array]")  # type: ignore[valid-type]

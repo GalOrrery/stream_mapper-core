@@ -1,6 +1,6 @@
 """Connections."""
 
-__all__: list[str] = []
+__all__: tuple[str, ...] = ()
 
 from stream_ml.core._connect import (  # noqa: F401
     compat,

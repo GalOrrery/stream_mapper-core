@@ -2,29 +2,27 @@
 
 from __future__ import annotations
 
-__all__: list[str] = []
+__all__: tuple[str, ...] = ()
 
 from abc import ABCMeta
 from dataclasses import KW_ONLY, dataclass, fields
 from functools import reduce
-import textwrap
+from textwrap import indent
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 
 from stream_ml.core._connect.nn_namespace import NN_NAMESPACE
 from stream_ml.core._connect.xp_namespace import XP_NAMESPACE
 from stream_ml.core._core.field import NNField
 from stream_ml.core._core.model_api import Model
-from stream_ml.core.params._field import ModelParametersField
-from stream_ml.core.params._values import Params, freeze_params, set_param
+from stream_ml.core.params import ModelParametersField, Params, freeze_params, set_param
 from stream_ml.core.setup_package import CompiledShim
 from stream_ml.core.typing import Array, ArrayNamespace, BoundsT, NNModel, NNNamespace
+from stream_ml.core.utils import DataScaler, within_bounds
 from stream_ml.core.utils.dataclasses import ArrayNamespaceReprMixin
 from stream_ml.core.utils.frozen_dict import FrozenDict, FrozenDictField
-from stream_ml.core.utils.funcs import within_bounds
-from stream_ml.core.utils.scale._api import DataScaler  # noqa: TCH001
 
 if TYPE_CHECKING:
-    from stream_ml.core._data import Data
+    from stream_ml.core import Data
     from stream_ml.core.prior import Prior
     from stream_ml.core.typing import ParamNameAllOpts, ParamsLikeDict
 
@@ -357,10 +355,8 @@ class ModelBase(
 
     def __str__(self) -> str:
         """Return nicer string representation."""
-        s = f"{self.__class__.__name__}(\n"
-        s += "\n".join(
-            textwrap.indent(f"{f.name}: {getattr(self, f.name)!s}", prefix="\t")
+        fs = (
+            indent(f"{f.name}: {getattr(self, f.name)!s}", prefix="\t")
             for f in fields(self)
         )
-        s += "\n)"
-        return s
+        return self.__class__.__name__ + "(\n" + "\n".join(fs) + "\n)"

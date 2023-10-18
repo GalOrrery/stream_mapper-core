@@ -1,6 +1,6 @@
 """Core feature."""
 
-__all__ = [
+__all__ = (
     "ParamScaler",
     # builtin
     "Identity",
@@ -9,7 +9,7 @@ __all__ = [
     "StandardLnWidth",
     # funcs
     "scale_params",
-]
+)
 
 from stream_ml.core.params.scaler._api import ParamScaler
 from stream_ml.core.params.scaler._builtin import (

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-__all__ = ["logpdf"]
+__all__ = ("logpdf",)
 
 from math import inf
 from typing import TYPE_CHECKING

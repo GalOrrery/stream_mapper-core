@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-__all__: list[str] = []
+__all__: tuple[str, ...] = ()
 
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
@@ -12,7 +12,7 @@ from stream_ml.core.typing._nn import NNModelProtocol
 from stream_ml.core.utils.sentinel import MISSING, MissingT
 
 if TYPE_CHECKING:
-    from stream_ml.core._core.model_api import Model
+    from stream_ml.core import ModelAPI as Model
 
 
 OtherValue = TypeVar("OtherValue")

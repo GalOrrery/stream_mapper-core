@@ -1,6 +1,6 @@
 """Parameters."""
 
-__all__ = [
+__all__ = (
     # modules
     "bounds",
     "scaler",
@@ -14,7 +14,10 @@ __all__ = [
     "unfreeze_params",
     "set_param",
     "add_prefix",
-]
+    # scaler api
+    "ParamScaler",
+    "scale_params",
+)
 
 from stream_ml.core.params import bounds, scaler
 from stream_ml.core.params._collection import ModelParameters
@@ -27,3 +30,5 @@ from stream_ml.core.params._values import (
     set_param,
     unfreeze_params,
 )
+from stream_ml.core.params.scaler._api import ParamScaler
+from stream_ml.core.params.scaler._utils import scale_params

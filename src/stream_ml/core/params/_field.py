@@ -1,6 +1,6 @@
 """Parameter."""
 
-__all__: list[str] = []
+__all__: tuple[str, ...] = ()
 
 from collections.abc import Mapping
 from typing import Generic, Protocol, final

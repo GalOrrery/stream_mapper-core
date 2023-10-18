@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-__all__ = ["logpdf", "cdf", "logcdf"]
+__all__ = ("logpdf", "cdf", "logcdf")
 
 import math
 from typing import TYPE_CHECKING

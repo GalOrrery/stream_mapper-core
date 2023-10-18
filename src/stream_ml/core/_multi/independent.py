@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-__all__: list[str] = []
+__all__: tuple[str, ...] = ()
 
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal, overload
@@ -16,8 +16,8 @@ from stream_ml.core.utils.cached_property import cached_property
 from stream_ml.core.utils.funcs import get_prefixed_kwargs
 
 if TYPE_CHECKING:
-    from stream_ml.core._data import Data
-    from stream_ml.core.params._core import ModelParameter
+    from stream_ml.core import Data
+    from stream_ml.core.params import ModelParameter
     from stream_ml.core.typing import ParamNameAllOpts, ParamsLikeDict
     from stream_ml.core.utils.frozen_dict import FrozenDict
 

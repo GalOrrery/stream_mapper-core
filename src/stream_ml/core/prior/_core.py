@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-__all__: list[str] = []
+__all__: tuple[str, ...] = ()
 
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Protocol
@@ -11,9 +11,7 @@ from stream_ml.core.prior._base import Prior
 from stream_ml.core.typing import Array
 
 if TYPE_CHECKING:
-    from stream_ml.core._core.model_api import Model
-    from stream_ml.core._data import Data
-    from stream_ml.core.params._values import Params
+    from stream_ml.core import Data, ModelAPI as Model, Params
     from stream_ml.core.typing import NNModel
 
 

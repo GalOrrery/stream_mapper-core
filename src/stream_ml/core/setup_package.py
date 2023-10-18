@@ -1,6 +1,6 @@
 """Package Setup."""
 
-__all__: list[str] = []
+__all__: tuple[str, ...] = ()
 
 from itertools import chain
 from typing import Final

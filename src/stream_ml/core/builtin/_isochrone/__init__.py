@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-__all__ = [
+__all__ = (
     # Utils
     "Parallax2DistMod",
     # Mass Functions
@@ -11,7 +11,7 @@ __all__ = [
     "StepwiseMassFunction",
     "StreamMassFunction",
     "UniformStreamMassFunction",
-]
+)
 
 from stream_ml.core.builtin._isochrone.mf import (
     HardCutoffMassFunction,
