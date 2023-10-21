@@ -39,6 +39,7 @@ class ParameterBounds(
     param_name: ParamNameTupleOpts | None = None
     scaler: InitVar[ParamScaler[Array] | None] = None
     name: str | None = None  # the name of the prior
+    neg_inf: Array | float = -float("inf")
 
     array_namespace: ArrayNamespace[Array]
 
@@ -129,7 +130,7 @@ class ParameterBounds(
         bp = self.xp.zeros_like(mpars[self.param_name])
         return array_at(
             bp, ~within_bounds(mpars[self.param_name], self.lower, self.upper)
-        ).set(-self.xp.inf)
+        ).set(self.neg_inf)
 
     @abstractmethod
     def __call__(
