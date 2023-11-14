@@ -7,7 +7,7 @@ __all__: tuple[str, ...] = ()
 from collections.abc import Iterable, Mapping
 from dataclasses import replace
 from itertools import chain
-from typing import TYPE_CHECKING, Any, cast, overload
+from typing import TYPE_CHECKING, Any, overload
 
 from stream_ml.core.params._core import ModelParameter
 from stream_ml.core.setup_package import PACK_PARAM_JOIN
@@ -78,7 +78,6 @@ class ModelParameters(
         elif len(key) == 1:
             value = self._dict[key[0]]
         elif len(key) == LEN_NAME_TUPLE:
-            key = cast("tuple[str, str]", key)  # TODO: remove cast
             cm = self._dict[key[0]]
             if not isinstance(cm, Mapping):
                 raise KeyError(str(key))
