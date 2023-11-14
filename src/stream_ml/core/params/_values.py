@@ -6,7 +6,7 @@ __all__: tuple[str, ...] = ()
 
 from collections.abc import Iterable, Mapping
 import itertools
-from typing import TYPE_CHECKING, TypeVar, cast, overload
+from typing import TYPE_CHECKING, TypeVar, overload
 
 from stream_ml.core.setup_package import PACK_PARAM_JOIN
 from stream_ml.core.utils.frozen_dict import FrozenDict
@@ -60,7 +60,6 @@ class Params(FrozenDict[str, V | FrozenDict[str, V]]):
         elif len(key) == 1:
             value = self._dict[key[0]]
         elif len(key) == LEN_NAME_TUPLE:
-            key = cast("tuple[str, str]", key)  # TODO: remove cast
             cm = self._dict[key[0]]
             if not isinstance(cm, Mapping):
                 raise KeyError(str(key))
@@ -211,7 +210,6 @@ def _set_param_dict(
     elif len(key) == 1:
         m[key[0]] = value
     else:
-        key = cast("tuple[str, str]", key)  # TODO: remove cast
         if key[0] not in m:
             m[key[0]] = {}
         if not isinstance((cm := m[key[0]]), dict):
