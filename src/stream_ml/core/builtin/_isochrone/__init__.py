@@ -2,21 +2,10 @@
 
 from __future__ import annotations
 
-__all__ = (
-    # Utils
-    "Parallax2DistMod",
-    # Mass Functions
-    "HardCutoffMassFunction",
-    "Parallax2DistMod",
-    "StepwiseMassFunction",
-    "StreamMassFunction",
-    "UniformStreamMassFunction",
-)
+from stream_ml.core.builtin._isochrone import mf, utils
+from stream_ml.core.builtin._isochrone.mf import *
+from stream_ml.core.builtin._isochrone.utils import *
 
-from stream_ml.core.builtin._isochrone.mf import (
-    HardCutoffMassFunction,
-    StepwiseMassFunction,
-    StreamMassFunction,
-    UniformStreamMassFunction,
-)
-from stream_ml.core.builtin._isochrone.utils import Parallax2DistMod
+__all__ = []
+__all__ += mf.__all__
+__all__ += utils.__all__
