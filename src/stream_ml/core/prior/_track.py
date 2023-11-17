@@ -4,14 +4,17 @@ from __future__ import annotations
 
 __all__: tuple[str, ...] = ()
 
-from dataclasses import KW_ONLY, dataclass
+from dataclasses import KW_ONLY, dataclass, fields
 from typing import TYPE_CHECKING
 
+from stream_ml.core._data import Data
 from stream_ml.core.prior import Prior
 from stream_ml.core.typing import Array, NNModel
 
 if TYPE_CHECKING:
-    from stream_ml.core import Data, ModelAPI, Params
+    from typing import Any
+
+    from stream_ml.core import ModelAPI, Params
     from stream_ml.core.typing import ArrayNamespace
 
 
@@ -141,3 +144,22 @@ class ControlRegions(Prior[Array]):
         lnpdf[where] = (cmp_arr[where] - (self._y[where] + self._w[where])) ** 2  # type: ignore[index]
 
         return -self.lamda * self.xp.sum(lnpdf)  # (C, F) -> 1
+
+    def __str__(self) -> str:
+        """String representation."""
+        fs = (
+            f"{f.name}={_as_str(getattr(self, f.name))}"
+            if f.name != "array_namespace"
+            else f"{f.name}={(self.xp if isinstance(self.xp, str) else self.xp.__name__)!r}"  # noqa: E501
+            for f in fields(self)
+        )
+        return f"{self.__class__.__name__}({' '.join(fs)})"
+
+
+def _as_str(v: Any) -> str:
+    """Get string representation."""
+    if isinstance(v, Data):
+        return "..."
+    elif isinstance(v, str):
+        return f"{v!r}"
+    return str(v)
