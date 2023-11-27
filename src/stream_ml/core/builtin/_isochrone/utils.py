@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-__all__: tuple[str, ...] = ()
+__all__ = ["Parallax2DistMod"]
 
 from dataclasses import KW_ONLY, dataclass
 from math import log
