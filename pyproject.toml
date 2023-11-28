@@ -1,5 +1,5 @@
 [project]
-  name = "stream_ml.core"
+  name = "stream_mapper.core"
   version = "0.1.0"
   description = "Stream ML."
   readme = "README.rst"
@@ -48,9 +48,9 @@
   ]
 
 [project.urls]
-  homepage = "https://github.com/nstarman/stream_ml-core"
-  repository = "https://github.com/nstarman/stream_ml-core"
-  documentation = "https://github.com/nstarman/stream_ml-core"
+  homepage = "https://github.com/GalOrrery/stream_mapper-core"
+  repository = "https://github.com/GalOrrery/stream_mapper-core"
+  documentation = "https://github.com/GalOrrery/stream_mapper-core"
 
 
 [build-system]
@@ -192,7 +192,7 @@ ban-relative-imports = "all"
 [tool.ruff.isort]
 force-sort-within-sections = true
 combine-as-imports = true
-known-first-party = ["stream_ml"]
+known-first-party = ["stream_mapper"]
 known-third-party = ["numpy", "pytest"]
 
 [tool.ruff.pydocstyle]

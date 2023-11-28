@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from stream_ml.core.typing import ArrayLike
+from stream_mapper.core.typing import ArrayLike
 
 
 def test_ndarray_is_arraylike():
