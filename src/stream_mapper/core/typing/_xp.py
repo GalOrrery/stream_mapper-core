@@ -58,6 +58,11 @@ class ArrayNamespace(Protocol[Array]):
         ...
 
     @staticmethod
+    def atleast_2d(array: Array) -> Array:
+        """At least 2D."""
+        ...
+
+    @staticmethod
     def clip(array: Array, *args: Any) -> Array:
         """Clip."""
         ...

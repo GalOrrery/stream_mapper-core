@@ -33,6 +33,8 @@ from stream_mapper.core.utils.dataclasses import ArrayNamespaceReprMixin
 from stream_mapper.core.utils.frozen_dict import FrozenDict, FrozenDictField
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from stream_mapper.core import Data
     from stream_mapper.core.prior import Prior
     from stream_mapper.core.typing import ParamNameAllOpts, ParamsLikeDict
@@ -163,13 +165,18 @@ class ModelBase(
         # Type hint
         self._nn_namespace_: NNNamespace[NNModel, Array]
 
-        # Coordinate bounds are necessary (before they were auto-filled).
-        if self.coord_bounds.keys() != set(self.coord_names):
+        # Coordinate bounds are necessary and the orders must match.
+        if tuple(self.coord_bounds.keys()) != tuple(self.coord_names):
             msg = (
                 f"`coord_bounds` ({tuple(self.coord_bounds.keys())}) do not match "
                 f"`coord_names` ({self.coord_names})."
             )
             raise ValueError(msg)
+
+        # also pre-compute whether the bounds are callable
+        self._bounds_callable = FrozenDict(
+            {k: (callable(a), callable(b)) for k, (a, b) in self.coord_bounds.items()}
+        )
 
         # coord_err_names must be None or the same length as coord_names.
         # we can't check that the names are the same, because they aren't.
@@ -189,6 +196,36 @@ class ModelBase(
                 f"`coord_names` ({self.coord_names})."
             )
             raise ValueError(msg)
+
+    def _get_lower_upper_bound(self, x: Array, /) -> tuple[Array, Array]:
+        """Get the lower bound."""
+        if x.ndim > 1 and x.shape[1] > 1:
+            msg = "x must be 1D"
+            raise ValueError(msg)
+        _0 = self.xp.zeros_like(x)
+        a = self.xp.stack(
+            [
+                self.xp.atleast_2d(
+                    self.xp.asarray(
+                        a(x[:, 0]) if self._bounds_callable[k][0] else _0 + a  # type: ignore[arg-type, operator]
+                    )
+                )
+                for k, (a, _) in self.coord_bounds.items()
+            ],
+            -1,
+        )
+        b = self.xp.stack(
+            [
+                self.xp.atleast_2d(
+                    self.xp.asarray(
+                        b(x[:, 0]) if self._bounds_callable[k][0] else _0 + b  # type: ignore[arg-type, operator]
+                    )
+                )
+                for k, (_, b) in self.coord_bounds.items()
+            ],
+            -1,
+        )
+        return self.xp.atleast_2d(a), self.xp.atleast_2d(b)
 
     # ========================================================================
 
@@ -277,15 +314,25 @@ class ModelBase(
         coordinate bounds, where it is -inf.
         """
         shape = data.array.shape[:1] + data.array.shape[2:]
+
+        # don't require all coordinates to be present in the data,
+        # e.g. "distmod" on an isochrone model.
+        context = data[self.indep_coord_names].array
+        kab: Iterator[tuple[str, tuple[Array | float, Array | float]]] = (
+            (  # type: ignore[misc]
+                k,
+                (
+                    a(context) if self._bounds_callable[k][0] else a,  # type: ignore[arg-type, operator]
+                    b(context) if self._bounds_callable[k][1] else b,  # type: ignore[arg-type, operator]
+                ),
+            )
+            for k, (a, b) in self.coord_bounds.items()
+            if k in data.names
+        )
+
         where = reduce(
             self.xp.logical_or,
-            (
-                ~within_bounds(data[k], *v)
-                for k, v in self.coord_bounds.items()
-                if k in data.names
-                # don't require all coordinates to be present in the data,
-                # e.g. "distmod" on an isochrone model.
-            ),
+            (~within_bounds(data[k], a, b) for k, (a, b) in kab),
             self.xp.zeros(shape, dtype=bool),
         )
         return self.xp.where(
