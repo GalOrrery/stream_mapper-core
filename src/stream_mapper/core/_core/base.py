@@ -203,7 +203,7 @@ class ModelBase(
             msg = "x must be 1D"
             raise ValueError(msg)
         _0 = self.xp.zeros_like(x)
-        a = self.xp.stack(
+        a = self.xp.concat(
             [
                 self.xp.atleast_2d(
                     self.xp.asarray(
@@ -214,7 +214,7 @@ class ModelBase(
             ],
             -1,
         )
-        b = self.xp.stack(
+        b = self.xp.concat(
             [
                 self.xp.atleast_2d(
                     self.xp.asarray(
