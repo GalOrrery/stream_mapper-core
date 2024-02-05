@@ -317,7 +317,8 @@ class ModelBase(
 
         # don't require all coordinates to be present in the data,
         # e.g. "distmod" on an isochrone model.
-        context = data[self.indep_coord_names].array
+        # TODO: enable this for multiple context dimension. Right now it's only 1.
+        context = data[self.indep_coord_names[0]].array
         kab: Iterator[tuple[str, tuple[Array | float, Array | float]]] = (
             (  # type: ignore[misc]
                 k,
