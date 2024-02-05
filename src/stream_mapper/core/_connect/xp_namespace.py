@@ -13,12 +13,12 @@ class XPNamespaceMap(Protocol):
     """Protocol for mapping array namespaces to XP namespaces."""
 
     @overload
-    def __getitem__(self, key: None) -> None:
-        ...
+    def __getitem__(self, key: None) -> None: ...
 
     @overload
-    def __getitem__(self, key: ArrayNamespace[Array] | str) -> ArrayNamespace[Array]:
-        ...
+    def __getitem__(
+        self, key: ArrayNamespace[Array] | str
+    ) -> ArrayNamespace[Array]: ...
 
     def __getitem__(
         self, key: ArrayNamespace[Array] | str | None
@@ -29,14 +29,12 @@ class XPNamespaceMap(Protocol):
     # ---------------------------------------------------------------
 
     @overload
-    def __setitem__(self, key: None, value: None) -> None:
-        ...
+    def __setitem__(self, key: None, value: None) -> None: ...
 
     @overload
     def __setitem__(
         self, key: ArrayNamespace[Array] | str, value: ArrayNamespace[Array]
-    ) -> None:
-        ...
+    ) -> None: ...
 
     def __setitem__(
         self,
@@ -57,12 +55,10 @@ class XPReverseNamespaceMap(Protocol):
     """Protocol for mapping array namespaces to XP namespaces."""
 
     @overload
-    def __getitem__(self, key: None) -> None:
-        ...
+    def __getitem__(self, key: None) -> None: ...
 
     @overload
-    def __getitem__(self, key: ArrayNamespace[Array]) -> str:
-        ...
+    def __getitem__(self, key: ArrayNamespace[Array]) -> str: ...
 
     def __getitem__(self, key: ArrayNamespace[Array] | None) -> str | None:
         """Get item."""
@@ -71,12 +67,10 @@ class XPReverseNamespaceMap(Protocol):
     # ---------------------------------------------------------------
 
     @overload
-    def __setitem__(self, key: None, value: None) -> None:
-        ...
+    def __setitem__(self, key: None, value: None) -> None: ...
 
     @overload
-    def __setitem__(self, key: ArrayNamespace[Array], value: str) -> None:
-        ...
+    def __setitem__(self, key: ArrayNamespace[Array], value: str) -> None: ...
 
     def __setitem__(self, key: ArrayNamespace[Array] | None, value: str | None) -> None:
         """Set item."""

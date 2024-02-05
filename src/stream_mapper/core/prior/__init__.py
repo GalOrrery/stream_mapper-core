@@ -1,6 +1,5 @@
 """Core library for stream membership likelihood, with ML."""
 
-
 __all__ = ("Prior", "FunctionPrior", "HardThreshold", "ControlRegions")
 
 

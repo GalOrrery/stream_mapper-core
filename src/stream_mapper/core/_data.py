@@ -162,29 +162,30 @@ class Data(Generic[Array]):
             ...,
         ],
         /,
-    ) -> Array:
-        ...
+    ) -> Array: ...
 
     def __getitem__(
         self: Self,
-        key: str
-        | int
-        | slice
-        | list[int]
-        | ArrayLike  # [np.integer[Any]]
-        | tuple[int, ...]
-        | tuple[str, ...]
-        | tuple[slice, ...]
-        | tuple[
-            int
-            | str
+        key: (
+            str
+            | int
             | slice
+            | list[int]
+            | ArrayLike  # [np.integer[Any]]
             | tuple[int, ...]
             | tuple[str, ...]
             | tuple[slice, ...]
-            | tuple[int | str | slice, ...],
-            ...,
-        ],
+            | tuple[
+                int
+                | str
+                | slice
+                | tuple[int, ...]
+                | tuple[str, ...]
+                | tuple[slice, ...]
+                | tuple[int | str | slice, ...],
+                ...,
+            ]
+        ),
         /,
     ) -> Array | Self:
         """Get an item or items from the data.
@@ -453,8 +454,7 @@ def _parse_key_elt(key: Any, n2k: dict[str, int]) -> KeyT:
 class AsTypeConverter(Protocol):
     """ASTYPE_REGISTRY protocol."""
 
-    def __call__(self, obj: Data[Any], /, **kwargs: Any) -> Data[ArrayLike]:
-        ...
+    def __call__(self, obj: Data[Any], /, **kwargs: Any) -> Data[ArrayLike]: ...
 
 
 ASTYPE_REGISTRY: dict[tuple[type, type], AsTypeConverter] = {}
@@ -464,8 +464,7 @@ TO_FORMAT_REGISTRY: dict[tuple[type, type], Callable[[Data[Any]], ArrayLike]] = 
 class FromFormatCallable(Protocol):
     """Callable to convert data from a different format."""
 
-    def __call__(self, obj: Any, /, **kwargs: Any) -> Data[Any]:
-        ...
+    def __call__(self, obj: Any, /, **kwargs: Any) -> Data[Any]: ...
 
 
 FROM_FORMAT_REGISTRY: dict[str, FromFormatCallable] = {}

@@ -27,7 +27,6 @@ class LogPDFHook(Protocol[Array]):
         /,
     ) -> Array:
         """Evaluate the logpdf."""
-        ...
 
 
 class ForwardHook(Protocol[Array]):
@@ -37,7 +36,6 @@ class ForwardHook(Protocol[Array]):
         self, pred: Array, data: Data[Array], model: Model[Array, NNModel], /
     ) -> Array:
         """Evaluate the forward step in the prior."""
-        ...
 
 
 @dataclass(frozen=True, repr=False)

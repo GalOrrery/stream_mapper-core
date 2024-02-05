@@ -41,9 +41,9 @@ class ModelParameters(
             return
 
         # Freeze sub-dicts
-        d: dict[
-            str, ModelParameter[Array] | FrozenDict[str, ModelParameter[Array]]
-        ] = {}
+        d: dict[str, ModelParameter[Array] | FrozenDict[str, ModelParameter[Array]]] = (
+            {}
+        )
 
         for k, v in chain(m.items(), kwargs.items()):
             if not isinstance(v, Mapping):
@@ -61,8 +61,7 @@ class ModelParameters(
     @overload
     def __getitem__(
         self, key: str
-    ) -> ModelParameter[Array] | FrozenDict[str, ModelParameter[Array]]:
-        ...
+    ) -> ModelParameter[Array] | FrozenDict[str, ModelParameter[Array]]: ...
 
     @overload
     def __getitem__(

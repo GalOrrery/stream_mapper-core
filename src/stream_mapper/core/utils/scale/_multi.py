@@ -49,8 +49,7 @@ class CompoundDataScaler(DataScaler[Array]):
         names: tuple[str, ...],
         *,
         xp: ArrayNamespace[Array] | None,
-    ) -> Data[Array]:
-        ...
+    ) -> Data[Array]: ...
 
     @overload
     def transform(
@@ -60,8 +59,7 @@ class CompoundDataScaler(DataScaler[Array]):
         names: tuple[str, ...],
         *,
         xp: ArrayNamespace[Array] | None,
-    ) -> Array:
-        ...
+    ) -> Array: ...
 
     def transform(
         self,
@@ -101,8 +99,7 @@ class CompoundDataScaler(DataScaler[Array]):
         names: tuple[str, ...],
         *,
         xp: ArrayNamespace[Array] | None,
-    ) -> Data[Array]:
-        ...
+    ) -> Data[Array]: ...
 
     @overload
     def inverse_transform(
@@ -112,8 +109,7 @@ class CompoundDataScaler(DataScaler[Array]):
         names: tuple[str, ...],
         *,
         xp: ArrayNamespace[Array] | None,
-    ) -> Array:
-        ...
+    ) -> Array: ...
 
     def inverse_transform(
         self,

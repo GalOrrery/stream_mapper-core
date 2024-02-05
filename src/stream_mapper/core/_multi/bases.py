@@ -46,12 +46,10 @@ class UnpackParamsCallable(Protocol[Array]):
 
     def __call__(self, *args: Any, **kwds: Any) -> ParamsLikeDict[Array]:
         """Callable."""
-        ...
 
 
 class SupportsComponentGetItem(Protocol[Array, NNModel]):
-    def __getitem__(self, key: str) -> Model[Array, NNModel]:
-        ...
+    def __getitem__(self, key: str) -> Model[Array, NNModel]: ...
 
 
 # ========================================================================

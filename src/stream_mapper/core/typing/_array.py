@@ -139,15 +139,15 @@ class ArrayLike(Protocol):
     # ========================================================================
     # Math Methods
 
-    def max(self: Self) -> Self:  # noqa: A003
+    def max(self: Self) -> Self:
         """Maximum."""
         ...
 
-    def min(self: Self) -> Self:  # noqa: A003
+    def min(self: Self) -> Self:
         """Minimum."""
         ...
 
-    def sum(self: Self, axis: int | None | tuple[int, ...] = ...) -> Self:  # noqa: A003
+    def sum(self: Self, axis: int | None | tuple[int, ...] = ...) -> Self:
         """Sum."""
         ...
 

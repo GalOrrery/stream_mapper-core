@@ -33,8 +33,7 @@ class DataScaler(Protocol[Array]):
         names: tuple[str, ...],
         *,
         xp: ArrayNamespace[Array] | None,
-    ) -> Data[Array]:
-        ...
+    ) -> Data[Array]: ...
 
     @overload
     def transform(
@@ -44,8 +43,7 @@ class DataScaler(Protocol[Array]):
         names: tuple[str, ...],
         *,
         xp: ArrayNamespace[Array] | None,
-    ) -> Array:
-        ...
+    ) -> Array: ...
 
     def transform(
         self,
@@ -56,7 +54,6 @@ class DataScaler(Protocol[Array]):
         xp: ArrayNamespace[Array] | None,
     ) -> Data[Array] | Array:
         """Scale features of X according to feature_range."""
-        ...
 
     # ---------------------------------------------------------------
 
@@ -68,8 +65,7 @@ class DataScaler(Protocol[Array]):
         names: tuple[str, ...],
         *,
         xp: ArrayNamespace[Array] | None,
-    ) -> Data[Array]:
-        ...
+    ) -> Data[Array]: ...
 
     @overload
     def inverse_transform(
@@ -79,8 +75,7 @@ class DataScaler(Protocol[Array]):
         names: tuple[str, ...],
         *,
         xp: ArrayNamespace[Array] | None,
-    ) -> Array:
-        ...
+    ) -> Array: ...
 
     def inverse_transform(
         self,
@@ -91,13 +86,11 @@ class DataScaler(Protocol[Array]):
         xp: ArrayNamespace[Array] | None,
     ) -> Data[Array] | Array:
         """Scale features of X according to feature_range."""
-        ...
 
     # ---------------------------------------------------------------
 
     def __getitem__(self: Self, names: str | tuple[str, ...]) -> Self:
         """Get a subset DataScaler with the given names."""
-        ...
 
     # ===============================================================
 
@@ -125,8 +118,9 @@ class DataScaler(Protocol[Array]):
 class AsTypeConverter(Protocol):
     """ASTYPE_REGISTRY protocol."""
 
-    def __call__(self, obj: DataScaler[Any], /, **kwargs: Any) -> DataScaler[ArrayLike]:
-        ...
+    def __call__(
+        self, obj: DataScaler[Any], /, **kwargs: Any
+    ) -> DataScaler[ArrayLike]: ...
 
 
 ASTYPE_REGISTRY: dict[tuple[type, type], AsTypeConverter] = {}

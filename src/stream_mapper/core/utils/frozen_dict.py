@@ -66,11 +66,9 @@ class SupportsKeysAndGetItem(Protocol[K, _VT_co]):
 
     def keys(self) -> Iterable[K]:
         """Return keys."""
-        ...
 
     def __getitem__(self, __key: K) -> _VT_co:
         """Get item."""
-        ...
 
 
 # ===================================================================
@@ -316,10 +314,9 @@ class FrozenDictField(Generic[K, V]):
 
     def __init__(
         self,
-        default: dict[K, V]
-        | FrozenDict[K, V]
-        | Sequence[tuple[K, V]]
-        | MissingT = MISSING,
+        default: (
+            dict[K, V] | FrozenDict[K, V] | Sequence[tuple[K, V]] | MissingT
+        ) = MISSING,
     ) -> None:
         self._name: str
         self._default: FrozenDict[K, V] | MissingT
