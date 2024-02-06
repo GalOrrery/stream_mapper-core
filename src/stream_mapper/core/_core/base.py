@@ -323,8 +323,8 @@ class ModelBase(
             (  # type: ignore[misc]
                 k,
                 (
-                    a(context)[:,0] if self._bounds_callable[k][0] else a,  # type: ignore[arg-type, operator]
-                    b(context)[:,0] if self._bounds_callable[k][1] else b,  # type: ignore[arg-type, operator]
+                    a(context)[:, 0] if self._bounds_callable[k][0] else a,  # type: ignore[arg-type, operator]
+                    b(context)[:, 0] if self._bounds_callable[k][1] else b,  # type: ignore[arg-type, operator]
                 ),
             )
             for k, (a, b) in self.coord_bounds.items()
