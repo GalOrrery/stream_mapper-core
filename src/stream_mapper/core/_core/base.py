@@ -333,7 +333,7 @@ class ModelBase(
 
         where = reduce(
             self.xp.logical_or,
-            (~within_bounds(data[k], a[:, 0], b[:, 0]) for k, (a, b) in kab),
+            (~within_bounds(data[k], a, b) for k, (a, b) in kab),
             self.xp.zeros(shape, dtype=bool),
         )
         return self.xp.where(
