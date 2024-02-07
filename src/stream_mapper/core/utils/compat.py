@@ -18,7 +18,7 @@ class ArrayAt(Protocol[Array]):
     """Array at index."""
 
     @abstractmethod
-    def set(self, value: Array | float) -> Array:  # noqa: A003
+    def set(self, value: Array | float) -> Array:
         """Set the value at the index."""
         ...
 

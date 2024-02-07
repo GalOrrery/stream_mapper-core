@@ -67,8 +67,7 @@ class Model(
     # Priors on the parameters.
     priors: tuple[Prior[Array], ...] = ()
 
-    def __post_init__(self, *args: Any, **kwargs: Any) -> None:
-        ...
+    def __post_init__(self, *args: Any, **kwargs: Any) -> None: ...
 
     @property
     def ndim(self) -> int:
@@ -85,8 +84,7 @@ class Model(
         extras: dict[ParamNameAllOpts, Array] | None,
         *,
         freeze: Literal[False],
-    ) -> ParamsLikeDict[Array]:
-        ...
+    ) -> ParamsLikeDict[Array]: ...
 
     @overload
     def _unpack_params_from_map(
@@ -96,8 +94,7 @@ class Model(
         extras: dict[ParamNameAllOpts, Array] | None,
         *,
         freeze: Literal[True],
-    ) -> Params[Array]:
-        ...
+    ) -> Params[Array]: ...
 
     @overload
     def _unpack_params_from_map(
@@ -107,8 +104,7 @@ class Model(
         extras: dict[ParamNameAllOpts, Array] | None,
         *,
         freeze: bool,
-    ) -> Params[Array] | ParamsLikeDict[Array]:
-        ...
+    ) -> Params[Array] | ParamsLikeDict[Array]: ...
 
     def _unpack_params_from_map(
         self,
@@ -164,8 +160,7 @@ class Model(
         extras: dict[ParamNameAllOpts, Array] | None,
         *,
         freeze: Literal[False],
-    ) -> ParamsLikeDict[Array]:
-        ...
+    ) -> ParamsLikeDict[Array]: ...
 
     @overload
     @abstractmethod
@@ -176,8 +171,7 @@ class Model(
         extras: dict[ParamNameAllOpts, Array] | None,
         *,
         freeze: Literal[True],
-    ) -> Params[Array]:
-        ...
+    ) -> Params[Array]: ...
 
     @overload
     @abstractmethod
@@ -188,8 +182,7 @@ class Model(
         extras: dict[ParamNameAllOpts, Array] | None,
         *,
         freeze: bool,
-    ) -> Params[Array] | ParamsLikeDict[Array]:
-        ...
+    ) -> Params[Array] | ParamsLikeDict[Array]: ...
 
     @abstractmethod
     def _unpack_params_from_arr(
@@ -228,8 +221,7 @@ class Model(
         extras: dict[ParamNameAllOpts, Array] | None = None,
         *,
         freeze: Literal[False],
-    ) -> ParamsLikeDict[Array]:
-        ...
+    ) -> ParamsLikeDict[Array]: ...
 
     @overload
     def unpack_params(
@@ -239,8 +231,7 @@ class Model(
         extras: dict[ParamNameAllOpts, Array] | None = None,
         *,
         freeze: Literal[True],
-    ) -> Params[Array]:
-        ...
+    ) -> Params[Array]: ...
 
     @overload
     def unpack_params(
@@ -250,8 +241,7 @@ class Model(
         extras: dict[ParamNameAllOpts, Array] | None = None,
         *,
         freeze: bool,
-    ) -> Params[Array] | ParamsLikeDict[Array]:
-        ...
+    ) -> Params[Array] | ParamsLikeDict[Array]: ...
 
     def unpack_params(
         self,
@@ -307,4 +297,3 @@ class Model(
 
     def __call__(self, *args: Any, **kwds: Any) -> Array:
         """Call the model."""
-        ...

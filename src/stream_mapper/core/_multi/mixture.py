@@ -567,8 +567,7 @@ class MixtureModel(
         extras: dict[ParamNameAllOpts, Array] | None,
         *,
         freeze: Literal[False],
-    ) -> ParamsLikeDict[Array]:
-        ...
+    ) -> ParamsLikeDict[Array]: ...
 
     @overload
     def _unpack_params_from_arr(
@@ -578,8 +577,7 @@ class MixtureModel(
         extras: dict[ParamNameAllOpts, Array] | None,
         *,
         freeze: Literal[True],
-    ) -> Params[Array]:
-        ...
+    ) -> Params[Array]: ...
 
     @overload
     def _unpack_params_from_arr(
@@ -589,8 +587,7 @@ class MixtureModel(
         extras: dict[ParamNameAllOpts, Array] | None,
         *,
         freeze: bool,
-    ) -> Params[Array] | ParamsLikeDict[Array]:
-        ...
+    ) -> Params[Array] | ParamsLikeDict[Array]: ...
 
     def _unpack_params_from_arr(
         self,

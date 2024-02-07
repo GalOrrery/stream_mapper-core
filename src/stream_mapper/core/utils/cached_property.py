@@ -74,12 +74,10 @@ class cached_property(cached_[R]):  # noqa: N801
     """Emulate PyProperty_Type() in Objects/descrobject.c."""
 
     @overload
-    def __get__(self: Self, obj: None, objtype: type | None = None) -> Self:
-        ...
+    def __get__(self: Self, obj: None, objtype: type | None = None) -> Self: ...
 
     @overload
-    def __get__(self, obj: object, objtype: type | None = None) -> R:
-        ...
+    def __get__(self, obj: object, objtype: type | None = None) -> R: ...
 
     def __get__(
         self: Self, obj: object | None, objtype: type | None = None
@@ -104,12 +102,10 @@ class WrappedValue(Generic[R]):
 
 class cached_noargmethod(cached_[R]):  # noqa: N801
     @overload
-    def __get__(self: Self, obj: None, objtype: type | None = None) -> Self:
-        ...
+    def __get__(self: Self, obj: None, objtype: type | None = None) -> Self: ...
 
     @overload
-    def __get__(self, obj: object, objtype: type | None = None) -> Callable[[], R]:
-        ...
+    def __get__(self, obj: object, objtype: type | None = None) -> Callable[[], R]: ...
 
     def __get__(
         self: Self, obj: object | None, objtype: type | None = None

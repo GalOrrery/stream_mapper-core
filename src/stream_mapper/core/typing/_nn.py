@@ -24,5 +24,4 @@ class NNModelProtocol(Protocol[Array]):
     """Protocol for Neural Network Models."""
 
     @staticmethod
-    def __call__(x: Array) -> Array:
-        ...
+    def __call__(x: Array) -> Array: ...

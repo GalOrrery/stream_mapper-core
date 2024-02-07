@@ -44,7 +44,6 @@ class LnProbabilities(Protocol[Array]):
         -------
         Array[(N,)]
         """
-        ...
 
     def ln_prior(self, mpars: Params[Array], /, data: Data[Array]) -> Array:
         r"""Elementwise log prior :math:`\ln p(\theta)`.
@@ -60,7 +59,6 @@ class LnProbabilities(Protocol[Array]):
         -------
         Array[(N,)]
         """
-        ...
 
     def ln_evidence(self, data: Data[Array]) -> Array:
         r"""Log evidence :math:`\ln p(X)`.
@@ -74,7 +72,6 @@ class LnProbabilities(Protocol[Array]):
         -------
         Array[(N,)]
         """
-        ...
 
     def ln_posterior(
         self,

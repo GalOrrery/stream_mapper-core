@@ -36,7 +36,9 @@ class ModelParametersField(Generic[Array]):
     def __set__(
         self,
         model: SupportsCoordNames,
-        value: ModelParameters[Array]
-        | Mapping[str, ModelParameter[Array] | Mapping[str, ModelParameter[Array]]],
+        value: (
+            ModelParameters[Array]
+            | Mapping[str, ModelParameter[Array] | Mapping[str, ModelParameter[Array]]]
+        ),
     ) -> None:
         object.__setattr__(model, self._name, ModelParameters[Array](value))

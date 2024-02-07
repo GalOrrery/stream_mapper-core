@@ -30,10 +30,8 @@ class SupportsXP(Protocol[Array]):
         if isinstance(reduced, str):
             return reduced
 
-        reduced[2]["array_namespace"] = (
-            XP_NAMESPACE_REVERSE[self.array_namespace]
-            if self.array_namespace in XP_NAMESPACE_REVERSE
-            else self.array_namespace
+        reduced[2]["array_namespace"] = XP_NAMESPACE_REVERSE.get(
+            self.array_namespace, self.array_namespace
         )
         return reduced
 

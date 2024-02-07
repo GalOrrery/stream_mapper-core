@@ -89,9 +89,11 @@ class ControlRegions(Prior[Array]):
         object.__setattr__(
             self,
             "_w",
-            _atleast_2d(self.xp.squeeze(self.width[self._y_names].array))
-            if not isinstance(self.width, float)
-            else self.xp.ones_like(self._y) * self.width,
+            (
+                _atleast_2d(self.xp.squeeze(self.width[self._y_names].array))
+                if not isinstance(self.width, float)
+                else self.xp.ones_like(self._y) * self.width
+            ),
         )
 
     def logpdf(
@@ -147,10 +149,13 @@ class ControlRegions(Prior[Array]):
 
     def __str__(self) -> str:
         """String representation."""
+        xpname = self.xp if isinstance(self.xp, str) else self.xp.__name__
         fs = (
-            f"{f.name}={_as_str(getattr(self, f.name))}"
-            if f.name != "array_namespace"
-            else f"{f.name}={(self.xp if isinstance(self.xp, str) else self.xp.__name__)!r}"  # noqa: E501
+            (
+                f"{f.name}={_as_str(getattr(self, f.name))}"
+                if f.name != "array_namespace"
+                else f"{f.name}={(xpname)!r}"
+            )
             for f in fields(self)
         )
         return f"{self.__class__.__name__}({' '.join(fs)})"

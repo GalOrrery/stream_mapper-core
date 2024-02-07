@@ -43,16 +43,13 @@ class Params(FrozenDict[str, V | FrozenDict[str, V]]):
     # -----------------------------------------------------
 
     @overload
-    def __getitem__(self, key: str) -> V | FrozenDict[str, V]:
-        ...
+    def __getitem__(self, key: str) -> V | FrozenDict[str, V]: ...
 
     @overload
-    def __getitem__(self, key: tuple[str]) -> V:
-        ...
+    def __getitem__(self, key: tuple[str]) -> V: ...
 
     @overload
-    def __getitem__(self, key: tuple[str, str]) -> V:
-        ...
+    def __getitem__(self, key: tuple[str, str]) -> V: ...
 
     def __getitem__(self, key: ParamNameAllOpts) -> V | FrozenDict[str, V]:
         if isinstance(key, str):
@@ -157,8 +154,7 @@ def set_param(
     /,
     key: ParamNameAllOpts,
     value: V | dict[str, V],
-) -> dict[str, V | dict[str, V]]:
-    ...
+) -> dict[str, V | dict[str, V]]: ...
 
 
 @overload
@@ -167,8 +163,7 @@ def set_param(
     /,
     key: ParamNameAllOpts,
     value: V | dict[str, V],
-) -> Params[V]:
-    ...
+) -> Params[V]: ...
 
 
 def set_param(

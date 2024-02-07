@@ -23,11 +23,9 @@ class ParamScaler(Protocol[Array]):
 
     def transform(self, data: Array | float, /) -> Array:
         """Transform the data."""
-        ...
 
     def inverse_transform(self, data: Array, /) -> Array:
         """Inverse transform the data."""
-        ...
 
     @classmethod
     def from_data_scaler(
@@ -54,4 +52,3 @@ class ParamScaler(Protocol[Array]):
         -------
         ``ParamScaler``
         """
-        ...
