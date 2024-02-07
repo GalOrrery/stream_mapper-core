@@ -136,67 +136,69 @@ where = ["src"]
 
 
 [tool.ruff]
-target-version = "py310"
-line-length = 88
-select = ["ALL"]
-ignore = [
-  # flake8-annotations (ANN)
-  "ANN101",  # missing-type-self
-  "ANN102",  # missing-type-cls
-  "ANN401",  # dynamically-typed-expression
+  target-version = "py310"
+  line-length = 88
 
-  # flake8-unused-arguments (ARG)
-  "ARG001",  # unused-function-argument
-  "ARG002",  # unused-method-argument
+[tool.ruff.lint]
+  select = ["ALL"]
+  ignore = [
+    # flake8-annotations (ANN)
+    "ANN101",  # missing-type-self
+    "ANN102",  # missing-type-cls
+    "ANN401",  # dynamically-typed-expression
 
-  # flake8-commas (COM)
-  "COM812",  # TrailingCommaMissing
-  "COM818",  # TrailingCommaOnBareTupleProhibited
-  "COM819",  # TrailingCommaProhibited
+    # flake8-unused-arguments (ARG)
+    "ARG001",  # unused-function-argument
+    "ARG002",  # unused-method-argument
 
-  # pydocstyle (D)
-  "D105",  # magic-method  # don't need docstrings for magic methods
-  "D107",  # public-init   # docstring is on the class
-  "D213",  # multi-line-summary-second-line
-  "D401",  # non-imperative-mood
+    # flake8-commas (COM)
+    "COM812",  # TrailingCommaMissing
+    "COM818",  # TrailingCommaOnBareTupleProhibited
+    "COM819",  # TrailingCommaProhibited
 
-  # eradicate (ERA)
-  "ERA001",  # commented-out-code
+    # pydocstyle (D)
+    "D105",  # magic-method  # don't need docstrings for magic methods
+    "D107",  # public-init   # docstring is on the class
+    "D213",  # multi-line-summary-second-line
+    "D401",  # non-imperative-mood
 
-  # (FIX)
-  "FIX002",  # Line contains TODO
+    # eradicate (ERA)
+    "ERA001",  # commented-out-code
 
-  # pandas-vet (PD)
-  "PD",
+    # (FIX)
+    "FIX002",  # Line contains TODO
 
-  # flake8-return (RET)
-  "RET505", "RET506", "RET507",
+    # pandas-vet (PD)
+    "PD",
 
-  # Ruff
-  "RUF009",  # Do not perform function call in dataclass defaults
+    # flake8-return (RET)
+    "RET505", "RET506", "RET507",
 
-  # flake8-self (SLF)
-  "SLF001",
+    # Ruff
+    "RUF009",  # Do not perform function call in dataclass defaults
 
-  # flake8-todos (TD)
-  "TD",
-]
+    # flake8-self (SLF)
+    "SLF001",
 
-[tool.ruff.per-file-ignores]
-"tests/*.py" = ["ANN", "S101"]
-"__init__.py" = ["F403"]
+    # flake8-todos (TD)
+    "TD",
+  ]
 
-[tool.ruff.flake8-tidy-imports]
-ban-relative-imports = "all"
+[tool.ruff.lint.per-file-ignores]
+  "tests/*.py" = ["ANN", "S101"]
+  "__init__.py" = ["F403"]
 
-[tool.ruff.isort]
-force-sort-within-sections = true
-combine-as-imports = true
-known-first-party = ["stream_mapper"]
-known-third-party = ["numpy", "pytest"]
+[tool.ruff.lint.flake8-tidy-imports]
+  ban-relative-imports = "all"
 
-[tool.ruff.pydocstyle]
-convention = "numpy"
+[tool.ruff.lint.isort]
+  force-sort-within-sections = true
+  combine-as-imports = true
+  known-first-party = ["stream_mapper"]
+  known-third-party = ["numpy", "pytest"]
 
-[tool.ruff.pylint]
-max-args = 6
+[tool.ruff.lint.pydocstyle]
+  convention = "numpy"
+
+[tool.ruff.lint.pylint]
+  max-args = 6

@@ -149,11 +149,12 @@ class ControlRegions(Prior[Array]):
 
     def __str__(self) -> str:
         """String representation."""
+        xpname = self.xp if isinstance(self.xp, str) else self.xp.__name__
         fs = (
             (
                 f"{f.name}={_as_str(getattr(self, f.name))}"
                 if f.name != "array_namespace"
-                else f"{f.name}={(self.xp if isinstance(self.xp, str) else self.xp.__name__)!r}"
+                else f"{f.name}={(xpname)!r}"
             )
             for f in fields(self)
         )

@@ -2,7 +2,7 @@
 
 __all__: tuple[str, ...] = ()
 
-from typing import Protocol, cast, overload
+from typing import Any, Protocol, cast, overload
 
 from stream_mapper.core.typing import Array, ArrayNamespace
 
@@ -80,6 +80,12 @@ class XPReverseNamespaceMap(Protocol):
 
     def __contains__(self, key: ArrayNamespace[Array] | None) -> bool:
         """Check if key is in the map."""
+        ...
+
+    # ---------------------------------------------------------------
+
+    def get(self, key: ArrayNamespace[Array] | None, default: Any = None) -> str | None:
+        """Get item."""
         ...
 
 
