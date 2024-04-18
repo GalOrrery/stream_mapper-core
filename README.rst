@@ -4,7 +4,8 @@ Stream Likelihoods with ML
 This is the core library of the StreamMapper code, which can be used to model stellar streams.
 StreamMapper is a PyTorch framework for building Bayesian Mixture Density Networks, which can
 then be trained using the standard PyTorch tooling.
-For full information, see https://ui.adsabs.harvard.edu/abs/2023arXiv231116960S/abstract.
+Detailed explanations can be found in our paper (https://ui.adsabs.harvard.edu/abs/2023arXiv231116960S/abstract)
+and especially in the code repository for the paper (https://github.com/nstarman/stellar_stream_density_ml_paper).
 
 As an illustruative example:
 
