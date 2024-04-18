@@ -18,17 +18,21 @@ As an illustruative example:
       coord_bounds={"phi2": (lower, upper)},
       params=ModelParameters(),
   )
-  
+
   bkg_plx_model = sml.builtin.Exponential(
-      net=sml.nn.sequential(data=1, hidden_features=32, layers=3, features=1, dropout=0.15),
+      net=sml.nn.sequential(
+          data=1, hidden_features=32, layers=3, features=1, dropout=0.15
+      ),
       data_scaler=scaler,
       indep_coord_names=("phi1",),
       coord_names=("parallax",),
       coord_bounds={"parallax": (lower, upper)},
-      params=ModelParameters({"parallax": {"slope": ModelParameter(bounds=SigmoidBounds(15.0, 25.0))}}),
+      params=ModelParameters(
+          {"parallax": {"slope": ModelParameter(bounds=SigmoidBounds(15.0, 25.0))}}
+      ),
   )
-  
-  
+
+
   bkg_flow = sml.builtin.compat.ZukoFlowModel(
       net=zuko.flows.MAF(features=2, context=1, transforms=4, hidden_features=[4] * 4),
       jacobian_logdet=-xp.log(xp.prod(...)),
@@ -37,7 +41,7 @@ As an illustruative example:
       coord_bounds=phot_bounds,
       params=ModelParameters(),
   )
-  
+
   background_model = sml.IndependentModels(
       {
           "astrometric": sml.IndependentModels(
@@ -46,22 +50,29 @@ As an illustruative example:
           "photometric": bkg_flow,
       }
   )
-  
-  
+
+
   stream_astrometric_model = sml.builtin.Normal(
       net=...,  # PyTorch NN
       data_scaler=scaler,
       coord_names=coord_astrometric_names,
       coord_bounds=coord_astrometric_bounds,
       params=ModelParameters(
-          {"phi2": {"mu": ModelParameter(bounds=..., scaler=...),
-                    "ln-sigma": ModelParameter(bounds=..., scaler=...)},
-           "parallax": {"mu": ModelParameter(bounds=..., scaler=...),
-                        "ln-sigma": ModelParameter(bounds=..., scaler=...)}})
+          {
+              "phi2": {
+                  "mu": ModelParameter(bounds=..., scaler=...),
+                  "ln-sigma": ModelParameter(bounds=..., scaler=...),
+              },
+              "parallax": {
+                  "mu": ModelParameter(bounds=..., scaler=...),
+                  "ln-sigma": ModelParameter(bounds=..., scaler=...),
+              },
+          }
+      ),
   )
-  
+
   stream_isochrone_model = sml.builtin.IsochroneMVNorm(...)
-  
+
   stream_model = sml.IndependentModels(
       {"astrometric": stream_astrometric_model, "photometric": stream_isochrone_model},
       unpack_params_hooks=(
@@ -71,12 +82,15 @@ As an illustruative example:
           ),
       ),
   )
-  
+
   model = sml.MixtureModel(
       {"stream": stream_model, "background": background_model},
       net=...,
       data_scaler=scaler,
       params=ModelParameters(
-          {f"stream.ln-weight": ModelParameter(...),
-           f"background.ln-weight": ModelParameter(...)})
+          {
+              f"stream.ln-weight": ModelParameter(...),
+              f"background.ln-weight": ModelParameter(...),
+          }
+      ),
   )
