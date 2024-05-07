@@ -123,7 +123,7 @@ class ModelsBase(
             msg = "must have at least one component."
             raise ValueError(msg)
 
-        super().__post_init__()
+        super().__post_init__()  # type: ignore[safe-super]
 
     @cached_property
     def coord_names(self) -> tuple[str, ...]:  # type: ignore[override]

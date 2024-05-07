@@ -149,7 +149,7 @@ class ModelBase(
 
     def __post_init__(self) -> None:
         """Post-init validation."""
-        super().__post_init__()
+        super().__post_init__()  # type: ignore[safe-super]
         self._mypyc_init_descriptor()  # TODO: Remove this when mypyc is fixed.
 
         # Have to reset array_namespace if it's a string.
