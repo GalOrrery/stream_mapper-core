@@ -73,16 +73,6 @@ class Exponential(ModelBase[Array, NNModel]):
             msg = f"Missing parameter for coordinate(s) {missing}"
             raise ValueError(msg)
 
-        # Pre-compute the associated constant factors
-        _a = [a for k, (a, _) in self.coord_bounds.items() if k in self.params]
-        _b = [b for k, (_, b) in self.coord_bounds.items() if k in self.params]
-
-        self._a = self.xp.asarray(_a)[None, :]  # ([N], F)
-        self._b = self.xp.asarray(_b)[None, :]  # ([N], F)
-
-    # ========================================================================
-    # Statistics
-
     def ln_likelihood(
         self,
         mpars: Params[Array],
@@ -128,15 +118,15 @@ class Exponential(ModelBase[Array, NNModel]):
         # slope is a parameter. If it is not, then we assume it is 0.
         # When the slope is 0, the log-likelihood reduces to a Uniform.
         ms = self._stack_param(mpars, "slope", self.coord_names)[idx]
+        a, b = self._get_lower_upper_bound(data[self.indep_coord_names].array)
 
         # the distribution is not affected by the errors!
         # if self.coord_err_names is not None: pass
-        _0 = self.xp.zeros_like(x)
         value = exponential_logpdf(
             x[idx],
             m=ms,
-            a=(_0 + self._a)[idx],
-            b=(_0 + self._b)[idx],
+            a=a[idx],
+            b=b[idx],
             xp=self.xp,
             nil=-self.xp.inf,
             m_eps=self.m_eps,
