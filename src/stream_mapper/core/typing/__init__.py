@@ -4,12 +4,12 @@ from __future__ import annotations
 
 __all__ = (
     "Array",
-    "Array_co",
     "ArrayLike",
     "ArrayNamespace",
+    "Array_co",
     "BoundsT",
-    "NNNamespace",
     "NNModel",
+    "NNNamespace",
     "ParamNameTupleOpts",
 )
 

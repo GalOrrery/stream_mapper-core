@@ -7,7 +7,7 @@ __all__: tuple[str, ...] = ()
 from dataclasses import KW_ONLY, dataclass, field, replace
 from typing import TYPE_CHECKING, Any, Generic, cast
 
-from stream_mapper.core.params.bounds._base import ParameterBounds  # noqa: TCH001
+from stream_mapper.core.params.bounds._base import ParameterBounds  # noqa: TC001
 from stream_mapper.core.params.scaler._builtin import Identity
 from stream_mapper.core.typing import Array, ParamNameTupleOpts
 

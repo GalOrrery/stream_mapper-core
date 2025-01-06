@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, TypeVar
 
 from stream_mapper.core._api import SupportsXP
 from stream_mapper.core._connect.xp_namespace import XP_NAMESPACE
-from stream_mapper.core.params.scaler import ParamScaler  # noqa: TCH001
+from stream_mapper.core.params.scaler import ParamScaler  # noqa: TC001
 from stream_mapper.core.typing import Array, ArrayNamespace, ParamNameTupleOpts
 from stream_mapper.core.utils import array_at, within_bounds
 from stream_mapper.core.utils.dataclasses import ArrayNamespaceReprMixin

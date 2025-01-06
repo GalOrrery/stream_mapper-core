@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-__all__ = ("logpdf", "cdf", "logcdf")
+__all__ = ("cdf", "logcdf", "logpdf")
 
 import math
 from typing import TYPE_CHECKING
