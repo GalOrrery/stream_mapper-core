@@ -22,6 +22,6 @@ def _copy_numpy(array: npt.NDArray[T], /) -> npt.NDArray[T]:  # type: ignore[mis
 @get_namespace.register(np.ndarray)  # type: ignore[misc]
 def _get_namespace_numpy(
     array: npt.NDArray[Any], /
-) -> ArrayNamespace[npt.NDArray[Any]]:
+) -> ArrayNamespace[npt.NDArray[Any]]:  # type: ignore[type-var]
     """Get numpy namespace."""
-    return cast("ArrayNamespace[npt.NDArray[Any]]", np)
+    return cast("ArrayNamespace[npt.NDArray[Any]]", np)  # type: ignore[type-var]

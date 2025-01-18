@@ -143,8 +143,6 @@ where = ["src"]
   select = ["ALL"]
   ignore = [
     # flake8-annotations (ANN)
-    "ANN101",  # missing-type-self
-    "ANN102",  # missing-type-cls
     "ANN401",  # dynamically-typed-expression
 
     # flake8-unused-arguments (ARG)
@@ -176,6 +174,7 @@ where = ["src"]
 
     # Ruff
     "RUF009",  # Do not perform function call in dataclass defaults
+    "RUF022",
 
     # flake8-self (SLF)
     "SLF001",

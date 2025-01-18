@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 def standard_scaler_astype_numpy(
     scaler: StandardScaler[Any], **kwargs: Any
-) -> StandardScaler[NDArray[Any]]:
+) -> StandardScaler[NDArray[Any]]:  # type: ignore[type-var]
     """Register the `StandardScaler` class for `numpy.ndarray`."""
     return replace(
         scaler,
