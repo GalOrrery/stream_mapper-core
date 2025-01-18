@@ -67,7 +67,7 @@ class SupportsKeysAndGetItem(Protocol[K, _VT_co]):
     def keys(self) -> Iterable[K]:
         """Return keys."""
 
-    def __getitem__(self, __key: K) -> _VT_co:
+    def __getitem__(self, key: K) -> _VT_co:
         """Get item."""
 
 

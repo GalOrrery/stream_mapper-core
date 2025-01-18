@@ -22,7 +22,7 @@ from stream_mapper.core.setup_package import BACKGROUND_KEY, WEIGHT_NAME
 from stream_mapper.core.typing import Array, NNModel
 from stream_mapper.core.utils.cached_property import cached_property
 from stream_mapper.core.utils.funcs import get_prefixed_kwargs
-from stream_mapper.core.utils.scale import DataScaler  # noqa: TCH001
+from stream_mapper.core.utils.scale import DataScaler  # noqa: TC001
 
 if TYPE_CHECKING:
     from stream_mapper.core._data import Data

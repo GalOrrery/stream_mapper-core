@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 # NUMPY
 
 
-def _from_structured_array(array: NDArray[Any], /, **kwargs: Any) -> Data[NDArray[Any]]:
+def _from_structured_array(array: NDArray[Any], /, **kwargs: Any) -> Data[NDArray[Any]]:  # type: ignore[type-var]
     """Create a `Data` instance from a structured numpy array.
 
     Requires :mod:`numpy` to be installed.
@@ -59,7 +59,7 @@ def _from_structured_array(array: NDArray[Any], /, **kwargs: Any) -> Data[NDArra
     )
 
 
-def _to_format_structured_array(data: Data[NDArray[Any]], /) -> NDArray[Any]:
+def _to_format_structured_array(data: Data[NDArray[Any]], /) -> NDArray[Any]:  # type: ignore[type-var]
     """Convert the data to a structured numpy array.
 
     Requires :mod:`numpy` to be installed.
@@ -85,14 +85,14 @@ except ImportError:
     pass
 else:
     FROM_FORMAT_REGISTRY["numpy.structured"] = _from_structured_array
-    TO_FORMAT_REGISTRY[(np.ndarray, np.ndarray)] = _to_format_structured_array
+    TO_FORMAT_REGISTRY[(np.ndarray, np.ndarray)] = _to_format_structured_array  # type: ignore[assignment]
 
 
 #####################################################################
 # ASTROPY
 
 
-def _from_astropy_table(table: Table, /, **kwargs: Any) -> Data[NDArray[Any]]:
+def _from_astropy_table(table: Table, /, **kwargs: Any) -> Data[NDArray[Any]]:  # type: ignore[type-var]
     """Create a `Data` instance from an `astropy.table.Table`.
 
     Requires :mod:`astropy` to be installed.

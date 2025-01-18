@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 from stream_mapper.core.prior._base import Prior
 from stream_mapper.core.typing import Array
 from stream_mapper.core.utils import array_at, within_bounds
-from stream_mapper.core.utils.scale import DataScaler  # noqa: TCH001
+from stream_mapper.core.utils.scale import DataScaler  # noqa: TC001
 
 if TYPE_CHECKING:
     from stream_mapper.core import Data, ModelAPI as Model, ModelsBase, Params
