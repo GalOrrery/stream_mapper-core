@@ -21,4 +21,4 @@ class NNNamespaceMap(Protocol):
         ...
 
 
-NN_NAMESPACE = cast(NNNamespaceMap, {})
+NN_NAMESPACE = cast("NNNamespaceMap", {})

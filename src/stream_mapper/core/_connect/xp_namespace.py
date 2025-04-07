@@ -45,7 +45,7 @@ class XPNamespaceMap(Protocol):
         ...
 
 
-XP_NAMESPACE = cast(XPNamespaceMap, {})
+XP_NAMESPACE = cast("XPNamespaceMap", {})
 XP_NAMESPACE[None] = None
 
 # ===============================================================
@@ -89,5 +89,5 @@ class XPReverseNamespaceMap(Protocol):
         ...
 
 
-XP_NAMESPACE_REVERSE = cast(XPReverseNamespaceMap, {})
+XP_NAMESPACE_REVERSE = cast("XPReverseNamespaceMap", {})
 XP_NAMESPACE_REVERSE[None] = None

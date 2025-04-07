@@ -118,9 +118,9 @@ class ModelBase(
 
     def __new__(
         cls: type[Self],
-        *args: Any,  # noqa: ARG003
+        *args: Any,
         array_namespace: ArrayNamespace[Array] | str | None = None,
-        **kwargs: Any,  # noqa: ARG003
+        **kwargs: Any,
     ) -> Self:
         # Construct the dataclass. Need to use `__new__` to ensure that the
         # array (xp) and nn (xpnn) namespaces are available to the dataclass

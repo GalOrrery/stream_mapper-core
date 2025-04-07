@@ -7,6 +7,8 @@ __all__: tuple[str, ...] = ()
 from types import EllipsisType
 from typing import TYPE_CHECKING, Protocol, TypeVar, runtime_checkable
 
+from typing_extensions import Self
+
 from stream_mapper.core.typing import Array
 
 if TYPE_CHECKING:
@@ -29,13 +31,13 @@ class ParamScaler(Protocol[Array]):
 
     @classmethod
     def from_data_scaler(
-        cls: type[ParamScalerT],
+        cls,
         scaler: DataScaler[Array],
         /,
         name: str,
         *,
         xp: ArrayNamespace[Array] | None = None,
-    ) -> ParamScalerT:
+    ) -> Self:
         """Construct from ``DataScaler`` object.
 
         Parameters

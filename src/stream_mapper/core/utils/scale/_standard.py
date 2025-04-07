@@ -89,7 +89,7 @@ class StandardScaler(DataScaler[Array]):
         mean = self.mean[[self.names.index(n) for n in names]]
         scale = self.scale[[self.names.index(n) for n in names]]
         return cast(
-            Data[Array] | Array, _transform(data, mean, scale, names=names, xp=xp)
+            "Data[Array] | Array", _transform(data, mean, scale, names=names, xp=xp)
         )
 
     # ---------------------------------------------------------------
@@ -124,7 +124,7 @@ class StandardScaler(DataScaler[Array]):
     ) -> Data[Array] | Array:
         """Scale back the data to the original representation."""
         return cast(
-            Data[Array] | Array,
+            "Data[Array] | Array",
             _transform_inv(data, self.mean, self.scale, names=names, xp=xp),
         )
 
