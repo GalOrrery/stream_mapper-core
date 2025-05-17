@@ -45,9 +45,9 @@ class ParameterBounds(
 
     def __new__(
         cls: type[Self],
-        *args: Any,  # noqa: ARG003
+        *args: Any,
         array_namespace: ArrayNamespace[Array] | str | None = None,
-        **kwargs: Any,  # noqa: ARG003
+        **kwargs: Any,
     ) -> Self:
         # Create the instance
         self = super().__new__(cls)

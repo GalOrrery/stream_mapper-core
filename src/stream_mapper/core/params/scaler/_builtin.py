@@ -11,6 +11,8 @@ from typing import (
     TypeVar,
 )
 
+from typing_extensions import Self
+
 from stream_mapper.core.params.scaler._api import ParamScaler
 from stream_mapper.core.typing import Array
 from stream_mapper.core.utils.scale import StandardScaler
@@ -37,13 +39,13 @@ class Identity(ParamScaler[Array]):
 
     @classmethod
     def from_data_scaler(
-        cls: type[ParamScalerT],
+        cls,
         scaler: DataScaler[Array],  # noqa: ARG003
         /,
         name: str,  # noqa: ARG003
         *,
         xp: ArrayNamespace[Array] | None = None,  # noqa: ARG003
-    ) -> ParamScalerT:
+    ) -> Self:
         """Construct from ``DataScaler`` object.
 
         Parameters

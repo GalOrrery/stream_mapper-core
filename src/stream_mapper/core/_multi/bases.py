@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 
 
 def _get_array_namespace(
-    components: FrozenDict[str, Model[Array, NNModel]]
+    components: FrozenDict[str, Model[Array, NNModel]],
 ) -> ArrayNamespace[Array]:
     """Get the array namespace."""
     ns = {v.array_namespace for v in components.values()}
