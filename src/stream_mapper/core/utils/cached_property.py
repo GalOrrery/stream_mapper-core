@@ -4,15 +4,13 @@ from __future__ import annotations
 
 __all__: tuple[str, ...] = ()
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast, overload
+from typing import Any, Generic, TypeVar, cast, overload
 
-if TYPE_CHECKING:
-    from collections.abc import Callable
-
+from typing_extensions import Self
 
 R = TypeVar("R")
-Self = TypeVar("Self", bound="cached_[R]")  # type: ignore[valid-type]
 
 
 class cached_(Generic[R]):  # noqa: N801

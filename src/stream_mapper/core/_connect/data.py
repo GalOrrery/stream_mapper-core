@@ -53,7 +53,7 @@ def _from_structured_array(array: NDArray[Any], /, **kwargs: Any) -> Data[NDArra
     names = _names if (_names := kwargs.get("names")) is not None else array.dtype.names
     renamer = _renamer if (_renamer := kwargs.get("renamer")) is not None else {}
 
-    return Data(
+    return Data(  # type: ignore[type-var]
         structured_to_unstructured(array[list(names)]),  # unstructured array selection
         names=tuple(renamer.get(n, n) for n in names),  # column (re)names
     )
@@ -75,7 +75,7 @@ def _to_format_structured_array(data: Data[NDArray[Any]], /) -> NDArray[Any]:  #
         The structured array.
     """
     return cast(
-        "NDArray[Any]", unstructured_to_structured(data.array, names=data.names)
+        "NDArray[Any]", unstructured_to_structured(data.array, names=data.names)  # type: ignore[call-overload]
     )
 
 

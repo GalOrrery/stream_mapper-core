@@ -18,14 +18,14 @@ from typing import (
     overload,
 )
 
+from typing_extensions import Self
+
 from stream_mapper.core.typing import Array
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from stream_mapper.core.typing import ArrayLike
-
-    Self = TypeVar("Self", bound="Data[Array]")  # type: ignore[valid-type]
 
     ArrayLikeT = TypeVar("ArrayLikeT", bound=ArrayLike)
 
@@ -285,17 +285,14 @@ class Data(Generic[Array]):
                 [9]]]), names=('a', 'b'))
         """
         if isinstance(key, int):  # get a row
-            return type(self)(self.array[None, key, :], names=self.names)  # type: ignore[index]
+            return type(self)(self.array[None, key, :], names=self.names)
         elif isinstance(key, str):  # get a column
-            return cast("Array", self.array[:, self._n2k[key]])  # type: ignore[index]
+            return self.array[:, self._n2k[key]]
         elif isinstance(key, tuple):
             if _all_strs(key):  # multiple columns
-                return type(self)(
-                    self.array[:, [self._n2k[k] for k in key]],  # type: ignore[index]
-                    names=key,
-                )
+                return type(self)(self.array[:, [self._n2k[k] for k in key]], names=key)
             elif len(key) > 1 and isinstance(key[1], int):  # get column
-                return cast("Array", self.array[key])  # type: ignore[index]
+                return self.array[key]
 
             array: Array = self.array[
                 (
@@ -303,7 +300,7 @@ class Data(Generic[Array]):
                     _parse_key_elt(key[1], self._n2k),  # column key(s)
                     *key[2:],  # additional key(s)
                 )
-            ]  # type: ignore[index]
+            ]
             if array.ndim == 1:
                 array = array[None, :]  # always return a 2D array
 
@@ -320,7 +317,7 @@ class Data(Generic[Array]):
 
             return type(self)(array, names=names)
 
-        return type(self)(self.array[key], names=self.names)  # type: ignore[index]
+        return type(self)(self.array[key], names=self.names)
 
     # =========================================================================
     # Mapping methods

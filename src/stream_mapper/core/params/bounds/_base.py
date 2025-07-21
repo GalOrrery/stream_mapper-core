@@ -6,11 +6,13 @@ __all__: tuple[str, ...] = ()
 
 from abc import ABCMeta, abstractmethod
 from dataclasses import KW_ONLY, InitVar, dataclass
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any
+
+from typing_extensions import Self
 
 from stream_mapper.core._api import SupportsXP
 from stream_mapper.core._connect.xp_namespace import XP_NAMESPACE
-from stream_mapper.core.params.scaler import ParamScaler  # noqa: TC001
+from stream_mapper.core.params.scaler import ParamScaler
 from stream_mapper.core.typing import Array, ArrayNamespace, ParamNameTupleOpts
 from stream_mapper.core.utils import array_at, within_bounds
 from stream_mapper.core.utils.dataclasses import ArrayNamespaceReprMixin
@@ -20,8 +22,6 @@ if TYPE_CHECKING:
 
     from stream_mapper.core import Data, ModelAPI as Model, Params
     from stream_mapper.core.typing import NNModel
-
-    Self = TypeVar("Self", bound="ParameterBounds")  # type: ignore[type-arg]
 
 
 @dataclass(frozen=True, repr=False)
@@ -45,9 +45,9 @@ class ParameterBounds(
 
     def __new__(
         cls: type[Self],
-        *args: Any,
+        *_: Any,
         array_namespace: ArrayNamespace[Array] | str | None = None,
-        **kwargs: Any,
+        **__: Any,
     ) -> Self:
         # Create the instance
         self = super().__new__(cls)

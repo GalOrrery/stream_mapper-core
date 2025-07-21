@@ -118,7 +118,6 @@ where = ["src"]
   warn_unused_configs = true
   warn_unreachable = true
   exclude = '''(^|/)docs/|(^|/)tests/'''
-  plugins = ["numpy.typing.mypy_plugin",]
 
   [[tool.mypy.overrides]]
     module = [
@@ -178,6 +177,10 @@ where = ["src"]
 
     # flake8-self (SLF)
     "SLF001",
+
+    # Type-checking
+    "TC001",
+    "TC003",
 
     # flake8-todos (TD)
     "TD",

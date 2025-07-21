@@ -22,7 +22,7 @@ from stream_mapper.core.setup_package import BACKGROUND_KEY, WEIGHT_NAME
 from stream_mapper.core.typing import Array, NNModel
 from stream_mapper.core.utils.cached_property import cached_property
 from stream_mapper.core.utils.funcs import get_prefixed_kwargs
-from stream_mapper.core.utils.scale import DataScaler  # noqa: TC001
+from stream_mapper.core.utils.scale import DataScaler
 
 if TYPE_CHECKING:
     from stream_mapper.core._data import Data
@@ -533,7 +533,7 @@ class MixtureModel(
     indep_coord_names: tuple[str, ...] = ("phi1",)
 
     # Model Parameters, generally produced by the neural network.
-    params: ModelParametersField[Array] = ModelParametersField[Array]()
+    params: ModelParameters[Array] = ModelParametersField[Array]()  # type: ignore[assignment]
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -548,7 +548,7 @@ class MixtureModel(
         self._bkg_slc = slice(-1) if includes_bkg else slice(None)
 
     @cached_property
-    def composite_params(self) -> ModelParameters[Array]:  # type: ignore[override]
+    def composite_params(self) -> ModelParameters[Array]:
         cps: dict[
             str, ModelParameter[Array] | FrozenDict[str, ModelParameter[Array]]
         ] = {}

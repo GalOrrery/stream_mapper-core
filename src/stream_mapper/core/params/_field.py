@@ -42,3 +42,12 @@ class ModelParametersField(Generic[Array]):
         ),
     ) -> None:
         object.__setattr__(model, self._name, ModelParameters[Array](value))
+
+    # --------------------------
+    # Hack to get Mypy to understand descriptors.  # noqa: FIX004
+
+    # flatskeys: Callable[[], tuple[str, ...]]
+    # flatsvalues: Callable[[], tuple[ModelParameter[Array], ...]]
+    # flatsitems: Callable[
+    #     [], tuple[tuple[ParamNameTupleOpts, ModelParameter[Array]], ...]
+    # ]

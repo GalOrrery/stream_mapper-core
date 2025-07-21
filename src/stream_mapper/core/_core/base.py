@@ -8,13 +8,16 @@ from abc import ABCMeta
 from dataclasses import KW_ONLY, dataclass, fields
 from functools import reduce
 from textwrap import indent
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Literal, overload
+
+from typing_extensions import Self
 
 from stream_mapper.core._connect.nn_namespace import NN_NAMESPACE
 from stream_mapper.core._connect.xp_namespace import XP_NAMESPACE
 from stream_mapper.core._core.field import NNField
 from stream_mapper.core._core.model_api import Model
 from stream_mapper.core.params import (
+    ModelParameters,
     ModelParametersField,
     Params,
     freeze_params,
@@ -36,8 +39,6 @@ if TYPE_CHECKING:
     from stream_mapper.core import Data
     from stream_mapper.core.prior import Prior
     from stream_mapper.core.typing import ParamNameAllOpts, ParamsLikeDict
-
-    Self = TypeVar("Self", bound="ModelBase[Array, NNModel]")  # type: ignore[valid-type]
 
 
 #####################################################################
@@ -105,10 +106,10 @@ class ModelBase(
     indep_coord_names: tuple[str, ...] = ("phi1",)
     coord_names: tuple[str, ...]
     coord_err_names: tuple[str, ...] | None = None
-    coord_bounds: FrozenDictField[str, BoundsT] = FrozenDictField(FrozenDict())
+    coord_bounds: FrozenDict[str, BoundsT] = FrozenDictField(FrozenDict())  # type: ignore[assignment]
 
     # Model Parameters, generally produced by the neural network.
-    params: ModelParametersField[Array] = ModelParametersField[Array]()
+    params: ModelParameters[Array] = ModelParametersField[Array]()  # type: ignore[assignment]
 
     # Priors on the parameters.
     priors: tuple[Prior[Array], ...] = ()
@@ -118,9 +119,9 @@ class ModelBase(
 
     def __new__(
         cls: type[Self],
-        *args: Any,
+        *_: Any,
         array_namespace: ArrayNamespace[Array] | str | None = None,
-        **kwargs: Any,
+        **__: Any,
     ) -> Self:
         # Construct the dataclass. Need to use `__new__` to ensure that the
         # array (xp) and nn (xpnn) namespaces are available to the dataclass

@@ -43,6 +43,8 @@ from collections.abc import (
 from textwrap import indent
 from typing import Any, Generic, Protocol, TypeVar
 
+from typing_extensions import Self
+
 from stream_mapper.core.utils.sentinel import MISSING, MissingT
 
 ###############################################################################
@@ -50,7 +52,6 @@ from stream_mapper.core.utils.sentinel import MISSING, MissingT
 
 K = TypeVar("K")
 V = TypeVar("V")
-Self = TypeVar("Self", bound="FrozenDict[K, V]")  # type: ignore[valid-type]
 _VT_co = TypeVar("_VT_co", covariant=True)
 
 
