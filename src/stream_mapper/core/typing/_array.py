@@ -4,16 +4,12 @@ from __future__ import annotations
 
 __all__: tuple[str, ...] = ()
 
-from typing import TYPE_CHECKING, Any, Protocol, TypeVar
+from collections.abc import Iterator
+from typing import Any, Protocol, TypeVar
 
-if TYPE_CHECKING:
-    from collections.abc import Iterator
-
+from typing_extensions import Self
 
 #####################################################################
-
-
-Self = TypeVar("Self", bound="ArrayLike")
 
 
 # @runtime_checkable  # TODO: when mypyc supports runtime_checkable protocols

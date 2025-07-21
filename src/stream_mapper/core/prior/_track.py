@@ -90,7 +90,7 @@ class ControlRegions(Prior[Array]):
             self,
             "_w",
             (
-                _atleast_2d(self.xp.squeeze(self.width[self._y_names].array))
+                _atleast_2d(self.xp.squeeze(self.width[self._y_names].array))  # type: ignore[attr-defined]
                 if not isinstance(self.width, float)
                 else self.xp.ones_like(self._y) * self.width
             ),

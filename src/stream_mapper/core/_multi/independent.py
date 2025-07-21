@@ -67,12 +67,12 @@ class IndependentModels(ModelsBase[Array, NNModel]):
     """
 
     @cached_property
-    def indep_coord_names(self) -> tuple[str, ...]:  # type: ignore[override]
+    def indep_coord_names(self) -> tuple[str, ...]:
         """Independent coordinate names."""
         return tuple({n for m in self.components.values() for n in m.indep_coord_names})
 
     @cached_property
-    def params(self) -> ModelParameters[Array]:  # type: ignore[override]
+    def params(self) -> ModelParameters[Array]:
         cps: dict[str, ModelParameter[Array] | FrozenDict[str, ModelParameter[Array]]]
         cps = {
             f"{n}.{k}": v

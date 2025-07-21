@@ -11,6 +11,7 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Literal, Protocol, overload
 
 from stream_mapper.core._api import HasName, SupportsXP, SupportsXPNN
+from stream_mapper.core.params._collection import ModelParameters
 from stream_mapper.core.params._field import ModelParametersField
 from stream_mapper.core.params._values import Params, freeze_params, set_param
 from stream_mapper.core.setup_package import PACK_PARAM_JOIN
@@ -58,11 +59,11 @@ class Model(
     # Coordinates of the model.
     indep_coord_names: tuple[str, ...]
     coord_names: tuple[str, ...]
-    coord_bounds: FrozenDictField[str, BoundsT] = FrozenDictField(FrozenDict())
+    coord_bounds: FrozenDict[str, BoundsT] = FrozenDictField(FrozenDict())  # type: ignore[assignment]
     coord_err_names: tuple[str, ...] | None
 
     # Parameters of the model.
-    params: ModelParametersField[Array] = ModelParametersField[Array]()
+    params: ModelParameters[Array] = ModelParametersField[Array]()  # type: ignore[assignment]
 
     # Priors on the parameters.
     priors: tuple[Prior[Array], ...] = ()

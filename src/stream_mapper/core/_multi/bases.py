@@ -103,7 +103,7 @@ class ModelsBase(
     - :attr:`~stream_mapper.core.ModelBase.coord_bounds`
     """
 
-    components: FrozenDictField[str, Model[Array, NNModel]] = FrozenDictField()
+    components: FrozenDict[str, Model[Array, NNModel]] = FrozenDictField()  # type: ignore[assignment]
 
     _: KW_ONLY
     name: str | None = None  # the name of the model
@@ -126,18 +126,18 @@ class ModelsBase(
         super().__post_init__()  # type: ignore[safe-super]
 
     @cached_property
-    def coord_names(self) -> tuple[str, ...]:  # type: ignore[override]
+    def coord_names(self) -> tuple[str, ...]:
         """Coordinate names, unsorted."""
         return tuple({n for m in self.components.values() for n in m.coord_names})
 
     @cached_property
-    def coord_err_names(self) -> tuple[str, ...] | None:  # type: ignore[override]
+    def coord_err_names(self) -> tuple[str, ...] | None:
         """Coordinate error names, unsorted."""
         return tuple(
             {n for m in self.components.values() for n in (m.coord_err_names or ())}
         )
 
-    @cached_property  # type: ignore[override]
+    @cached_property
     def coord_bounds(self) -> FrozenDict[str, BoundsT]:
         """Coordinate names."""
         # Add the coord_bounds
