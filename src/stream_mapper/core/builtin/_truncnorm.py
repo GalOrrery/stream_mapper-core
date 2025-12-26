@@ -109,7 +109,8 @@ class TruncatedNormal(Normal[Array, NNModel]):
         cns, cens = self.coord_names, self.coord_err_names
         x = data[cns].array
 
-        a, b = self.xp.asarray([self.coord_bounds[k] for k in cns]).T[:, None, :]
+        a, b = self._get_lower_upper_bound(data[self.indep_coord_names].array)
+        # a, b = self.xp.asarray([self.coord_bounds[k] for k in cns]).T[:, None, :]
         mu = self._stack_param(mpars, "mu", cns)[idx]
         ln_s = self._stack_param(mpars, "ln-sigma", cns)[idx]
         if cens is not None:
@@ -117,10 +118,7 @@ class TruncatedNormal(Normal[Array, NNModel]):
             sigma_o = data[cens].array[idx]
             ln_s = self.xp.logaddexp(2 * ln_s, 2 * self.xp.log(sigma_o)) / 2
 
-        _0 = self.xp.zeros_like(x)
-        value = logpdf(
-            x[idx], loc=mu, ln_sigma=ln_s, a=(_0 + a)[idx], b=(_0 + b)[idx], xp=self.xp
-        )
+        value = logpdf(x[idx], loc=mu, ln_sigma=ln_s, a=a[idx], b=b[idx], xp=self.xp)
 
         lnliks = self.xp.full_like(x, 0)  # missing data is ignored
         lnliks = array_at(lnliks, idx).set(value)
