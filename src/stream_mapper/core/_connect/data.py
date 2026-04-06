@@ -75,7 +75,7 @@ def _to_format_structured_array(data: Data[NDArray[Any]], /) -> NDArray[Any]:  #
         The structured array.
     """
     return cast(
-        "NDArray[Any]", unstructured_to_structured(data.array, names=data.names)  # type: ignore[call-overload]
+        "NDArray[Any]", unstructured_to_structured(data.array, names=data.names)
     )
 
 
