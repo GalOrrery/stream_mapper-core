@@ -55,7 +55,7 @@
 
 [build-system]
   requires = [
-    "mypy>=1.0",
+    "mypy>=1.19.1",
     "mypy_extensions>=0.4.3",
     "numpy>=2.0.2",
     "setuptools>=45.0",
