@@ -23,7 +23,7 @@
   ]
   dependencies = [
     "mypy_extensions>=0.4.3",
-    "numpy>=1.21",
+    "numpy>=2.0.2",
   ]
 
 [project.optional-dependencies]
@@ -57,7 +57,7 @@
   requires = [
     "mypy>=1.0",
     "mypy_extensions>=0.4.3",
-    "numpy>=1.21",
+    "numpy>=2.0.2",
     "setuptools>=45.0",
     "setuptools_scm[toml]>=6.3.1",
     "wheel",
