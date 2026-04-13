@@ -59,7 +59,7 @@
     "mypy_extensions>=0.4.3",
     "numpy>=2.0.2",
     "setuptools>=45.0",
-    "setuptools_scm[toml]>=6.3.1",
+    "setuptools_scm[toml]>=9.2.2",
     "wheel",
   ]
 
