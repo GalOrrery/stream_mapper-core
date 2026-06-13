@@ -64,7 +64,7 @@ class TruncatedSkewNormal(SkewNormal[Array, NNModel]):
         cns, cens = self.coord_names, self.coord_err_names
         x = data[cns].array
 
-        a, b = self.xp.asarray([self.coord_bounds[k] for k in cns]).T[:, None, :]
+        a, b = self._get_lower_upper_bound(data[self.indep_coord_names].array)
         mu = self._stack_param(mpars, "mu", cns)[idx]
         ln_s = self._stack_param(mpars, "ln-sigma", cns)[idx]
         skew = self._stack_param(mpars, "skew", cns)[idx]
@@ -76,9 +76,8 @@ class TruncatedSkewNormal(SkewNormal[Array, NNModel]):
                 skew**2 / (1 + (sigma_o / self.xp.exp(ln_s)) ** 2 * (1 + skew**2))
             )
 
-        _0 = self.xp.zeros_like(x)
         value = logpdf(
-            x[idx], loc=mu, ln_sigma=ln_s, skew=skew, a=_0 + a, b=_0 + b, xp=self.xp
+            x[idx], loc=mu, ln_sigma=ln_s, skew=skew, a=a[idx], b=b[idx], xp=self.xp
         )
 
         lnliks = self.xp.full_like(x, 0)  # missing data is ignored

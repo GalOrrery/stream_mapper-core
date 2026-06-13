@@ -14,13 +14,15 @@ __all__ = (
 )
 
 
+from collections.abc import Callable
 from typing import TypeAlias
 
 from stream_mapper.core.typing._array import Array, Array_co, ArrayLike
 from stream_mapper.core.typing._nn import NNModel, NNNamespace
 from stream_mapper.core.typing._xp import ArrayNamespace
 
-BoundsT: TypeAlias = tuple[float, float]
+BoundT: TypeAlias = float | Callable[[float], float]
+BoundsT: TypeAlias = tuple[BoundT, BoundT]
 
 ParamNameTupleOpts: TypeAlias = tuple[str] | tuple[str, str]
 ParamNameAllOpts: TypeAlias = str | ParamNameTupleOpts
